@@ -1,3 +1,5 @@
+import Image from "next/image";
+
 const impactMetrics = [
   { value: "24/7", label: "USSD and web access" },
   { value: "8", label: "Core system modules" },
@@ -80,24 +82,28 @@ export default function Home() {
       <header className="sticky top-0 z-50 border-b border-main-200 bg-main-0/90 backdrop-blur-sm">
         <nav className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5 lg:px-8">
           <a href="#" className="flex items-center gap-3" aria-label="Smart Market home">
-            <span className="flex size-11 items-center justify-center rounded-lg bg-primary-600 text-lg font-bold text-main-0">
-              <i className="bi bi-bar-chart-line" aria-hidden="true" />
+            <span className="flex size-12 items-center justify-center hover:bg-primary-100 rounded-full p-1.5">
+              <Image
+                src="/logo.png"
+                alt=""
+                width={574}
+                height={597}
+                className="h-full w-full object-contain"
+                priority
+              />
             </span>
-            <span className="text-sm font-semibold uppercase text-main-800">
+            <span className="text-sm font-semibold uppercase text-main-800 hover:text-primary-700">
               Smart Market
             </span>
           </a>
           <div className="hidden items-center gap-8 text-sm font-medium text-main-600 md:flex">
             <a className="flex items-center gap-2 hover:text-primary-700" href="#features">
-              <i className="bi bi-grid" aria-hidden="true" />
               Features
             </a>
             <a className="flex items-center gap-2 hover:text-primary-700" href="#architecture">
-              <i className="bi bi-diagram-3" aria-hidden="true" />
               Architecture
             </a>
             <a className="flex items-center gap-2 hover:text-primary-700" href="#benefits">
-              <i className="bi bi-check2-circle" aria-hidden="true" />
               Benefits
             </a>
           </div>
@@ -348,8 +354,14 @@ export default function Home() {
         <div className="mx-auto grid max-w-7xl gap-8 px-6 py-10 md:grid-cols-[1.2fr_0.8fr_0.8fr] lg:px-8">
           <div>
             <a href="#" className="flex items-center gap-3" aria-label="Smart Market home">
-              <span className="flex size-10 items-center justify-center rounded-lg bg-primary-600 text-base font-bold text-main-0">
-                <i className="bi bi-bar-chart-line" aria-hidden="true" />
+              <span className="flex size-11 items-center justify-center rounded-lg border border-main-800 bg-main-0 p-1.5">
+                <Image
+                  src="/logo.png"
+                  alt=""
+                  width={574}
+                  height={597}
+                  className="h-full w-full object-contain"
+                />
               </span>
               <span className="text-sm font-semibold uppercase text-main-100">
                 Smart Market
