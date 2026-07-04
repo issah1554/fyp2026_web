@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 
 const impactMetrics = [
   { value: "24/7", label: "USSD and web access" },
@@ -106,6 +107,13 @@ export default function Home() {
             <a className="flex items-center gap-2 hover:text-primary-700" href="#benefits">
               Benefits
             </a>
+            <Link
+              href="/auth"
+              className="flex items-center gap-2 rounded-md bg-primary-600 px-4 py-2 text-sm font-semibold text-main-0 hover:bg-primary-700"
+            >
+              <i className="bi bi-person-lock" aria-hidden="true" />
+              Sign in
+            </Link>
           </div>
         </nav>
       </header>
@@ -273,7 +281,7 @@ export default function Home() {
                   <i className={`bi ${user.icon}`} aria-hidden="true" />
                 </div>
                 <p className="mt-3 font-semibold text-main-900">{user.label}</p>
-                <p className="mt-2 text-sm text-main-600">Role-aware market access</p>
+                <p className="mt-2 text-sm text-main-600">Personalized market access</p>
               </div>
             ))}
           </div>
@@ -404,7 +412,7 @@ export default function Home() {
               </li>
               <li className="flex items-center gap-2">
                 <i className="bi bi-person-lock" aria-hidden="true" />
-                Role-based market data
+                Personalized market data
               </li>
             </ul>
           </div>
