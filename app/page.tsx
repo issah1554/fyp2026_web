@@ -108,7 +108,7 @@ export default function Home() {
               Benefits
             </a>
             <Link
-              href="/auth"
+              href="/auth/login"
               className="flex items-center gap-2 rounded-md bg-primary-600 px-4 py-2 text-sm font-semibold text-main-0 hover:bg-primary-700"
             >
               <i className="bi bi-person-lock" aria-hidden="true" />
