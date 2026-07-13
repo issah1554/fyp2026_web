@@ -82,7 +82,7 @@ export default function Home() {
 
       <header className="sticky top-0 z-50 border-b border-main-200 bg-main-0/90 backdrop-blur-sm">
         <nav className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5 lg:px-8">
-          <a href="#" className="flex items-center gap-3" aria-label="Smart Market home">
+          <a href="#" className="flex items-center gap-3" aria-label="Marketia home">
             <span className="flex size-12 items-center justify-center hover:bg-primary-100 rounded-full p-1.5">
               <Image
                 src="/logo.png"
@@ -94,7 +94,7 @@ export default function Home() {
               />
             </span>
             <span className="text-sm font-semibold uppercase text-main-800 hover:text-primary-700">
-              Smart Market
+              Marketia
             </span>
           </a>
           <div className="hidden items-center gap-8 text-sm font-medium text-main-600 md:flex">
@@ -125,7 +125,7 @@ export default function Home() {
               Multi-source market analytics and USSD technology
             </p>
             <h1 className="max-w-4xl text-4xl font-bold leading-tight text-main-950 sm:text-5xl lg:text-6xl">
-              Smart Market and Price Decision Support System
+              Marketia and Price Decision Support System
             </h1>
             <p className="mt-6 max-w-2xl text-lg leading-8 text-main-700">
               An intelligent market information platform for farmers, entrepreneurs,
@@ -270,7 +270,7 @@ export default function Home() {
             </p>
             <h2 className="mt-3 text-3xl font-bold text-main-950">Designed for rural markets</h2>
             <p className="mt-4 text-base leading-7 text-main-700">
-              Smart Market supports internet-connected dashboards while keeping essential price
+              Marketia supports internet-connected dashboards while keeping essential price
               lookup and recommendations available through basic mobile phones.
             </p>
           </div>
@@ -342,7 +342,7 @@ export default function Home() {
                 Better decisions for buyers and sellers
               </h2>
               <p className="mt-4 text-base leading-7 text-main-700">
-                Smart Market combines artificial intelligence, machine learning, multi-source data,
+                Marketia combines artificial intelligence, machine learning, multi-source data,
                 and USSD access to improve market efficiency in Ifakara and similar communities.
               </p>
             </div>
@@ -361,7 +361,7 @@ export default function Home() {
       <footer className="border-t border-main-200 bg-main-950 text-main-0">
         <div className="mx-auto grid max-w-7xl gap-8 px-6 py-10 md:grid-cols-[1.2fr_0.8fr_0.8fr] lg:px-8">
           <div>
-            <a href="#" className="flex items-center gap-3" aria-label="Smart Market home">
+            <a href="#" className="flex items-center gap-3" aria-label="Marketia home">
               <span className="flex size-11 items-center justify-center rounded-lg border border-main-800 bg-main-0 p-1.5">
                 <Image
                   src="/logo.png"
@@ -372,7 +372,7 @@ export default function Home() {
                 />
               </span>
               <span className="text-sm font-semibold uppercase text-main-100">
-                Smart Market
+                Marketia
               </span>
             </a>
             <p className="mt-4 max-w-md text-sm leading-6 text-main-300">
@@ -419,7 +419,7 @@ export default function Home() {
         </div>
         <div className="border-t border-main-800">
           <div className="mx-auto flex max-w-7xl flex-col gap-3 px-6 py-5 text-sm text-main-400 sm:flex-row sm:items-center sm:justify-between lg:px-8">
-            <p>Smart Market and Price Decision Support System</p>
+            <p>Marketia and Price Decision Support System</p>
             <a href="#" className="flex items-center gap-2 font-medium text-main-200 hover:text-primary-300">
               <i className="bi bi-arrow-up-circle" aria-hidden="true" />
               Back to top

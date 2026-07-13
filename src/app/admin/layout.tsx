@@ -31,7 +31,7 @@ export default function AdminLayout({
               />
             </span>
             <div>
-              <p className="text-sm font-bold uppercase text-main-950">Smart Market</p>
+              <p className="text-sm font-bold uppercase text-main-950">Marketia</p>
               <p className="text-xs font-semibold text-main-500">Admin Console</p>
             </div>
           </div>

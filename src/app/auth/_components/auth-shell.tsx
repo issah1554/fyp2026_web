@@ -24,7 +24,7 @@ export default function AuthShell({ children, contentClassName = "" }: AuthShell
               />
             </div>
             <h1 className="mt-5 text-4xl font-bold tracking-normal text-main-0 sm:text-5xl">
-              Smart Market
+              Marketia
             </h1>
           </div>
         </div>

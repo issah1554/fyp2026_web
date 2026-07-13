@@ -37,7 +37,7 @@ export default function TopNavBar({ isMobile, onToggleSidebar }: TopNavBarProps)
   };
 
   const initials = `${user?.firstName?.[0] ?? "D"}${user?.lastName?.[0] ?? "B"}`.toUpperCase();
-  const displayName = [user?.firstName, user?.lastName].filter(Boolean).join(" ") || "DataBENKI";
+  const displayName = [user?.firstName, user?.lastName].filter(Boolean).join(" ") || "Marketia";
 
   return (
     <nav ref={navRef} className="sticky top-0 z-30 h-14 border-none border-main-200 bg-main-100 sm:h-16">

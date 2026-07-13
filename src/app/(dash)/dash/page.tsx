@@ -1,8 +1,38 @@
+import StatsGrid from "../_components/ui/StatsGrid";
+
 const metrics = [
-  { label: "Active markets", value: "18", detail: "3 added this month", icon: "bi-shop" },
-  { label: "Daily price records", value: "428", detail: "86% collection coverage", icon: "bi-database-check" },
-  { label: "Pending reviews", value: "34", detail: "12 high priority", icon: "bi-clipboard-check" },
-  { label: "USSD sessions", value: "2,184", detail: "22% above yesterday", icon: "bi-phone" },
+  {
+    label: "Active markets",
+    value: "18",
+    detail: "3 added this month",
+    icon: "bi-shop",
+    color: "text-primary-700",
+    bg: "bg-primary-100",
+  },
+  {
+    label: "Daily price records",
+    value: "428",
+    detail: "86% collection coverage",
+    icon: "bi-database-check",
+    color: "text-accent-700",
+    bg: "bg-accent-100",
+  },
+  {
+    label: "Pending reviews",
+    value: "34",
+    detail: "12 high priority",
+    icon: "bi-clipboard-check",
+    color: "text-warning-700",
+    bg: "bg-warning-100",
+  },
+  {
+    label: "USSD sessions",
+    value: "2,184",
+    detail: "22% above yesterday",
+    icon: "bi-phone",
+    color: "text-success-700",
+    bg: "bg-success-100",
+  },
 ];
 
 const marketRows = [
@@ -30,22 +60,7 @@ export default function DashboardPage() {
         <h1 className="text-2xl font-bold text-main-950 sm:text-3xl">Market Dashboard</h1>
       </section>
 
-      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {metrics.map((metric) => (
-          <article key={metric.label} className="rounded-md border border-main-200 bg-main-0 p-5 shadow-sm">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="text-sm font-semibold text-main-500">{metric.label}</p>
-                <p className="mt-3 text-3xl font-bold text-main-950">{metric.value}</p>
-              </div>
-              <span className="flex size-11 items-center justify-center rounded-md bg-primary-100 text-primary-700">
-                <i className={`bi ${metric.icon}`} aria-hidden="true" />
-              </span>
-            </div>
-            <p className="mt-4 text-sm font-semibold text-main-600">{metric.detail}</p>
-          </article>
-        ))}
-      </section>
+      <StatsGrid stats={metrics} />
 
       <section className="grid gap-6 xl:grid-cols-[1.25fr_0.75fr]">
         <div className="rounded-md border border-main-200 bg-main-0 p-5 shadow-sm">

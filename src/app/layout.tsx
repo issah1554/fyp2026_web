@@ -3,7 +3,7 @@ import "bootstrap-icons/font/bootstrap-icons.css";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Smart Market Decision Support",
+  title: "Marketia Decision Support",
   description:
     "A market intelligence platform for farmers, entrepreneurs, buyers, and market officers in Tanzania.",
 };

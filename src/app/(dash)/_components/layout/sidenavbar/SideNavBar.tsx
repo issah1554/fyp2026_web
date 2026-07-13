@@ -1,9 +1,11 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useMemo } from "react";
 import type { AuthRole, AuthUser } from "../../../../auth/services/authService";
 import { useAuth } from "../../../../auth/hooks/useAuth";
+import appIcon from "../../../../icon.png";
 import { NavItem } from "./NavItem";
 import { NavItems } from "./NavItems";
 import type { NavItemProps } from "./NavItem";
@@ -34,8 +36,10 @@ function SidebarHeader({
       className={`flex items-center py-4 text-xl font-bold text-primary-700 transition-all duration-300 ${effectiveCollapsed ? "justify-center px-1" : "gap-2 px-3"}`}
     >
       <Link href="/dash" prefetch={false} className="flex items-center gap-2" onClick={onCloseMobile}>
-        <i className="bi bi-compass text-primary-700" />
-        {!effectiveCollapsed && <span className="flex-1 overflow-hidden whitespace-nowrap">DataBENKI</span>}
+        <span className="flex size-8 shrink-0 items-center justify-center">
+          <Image src={appIcon} alt="" className="h-full w-full object-contain" priority />
+        </span>
+        {!effectiveCollapsed && <span className="flex-1 overflow-hidden whitespace-nowrap">Marketia</span>}
       </Link>
 
       {!effectiveCollapsed && (
@@ -219,7 +223,7 @@ export function Sidebar({
       </div>
 
       <div className="flex-1 overflow-x-hidden overflow-y-auto">
-        <div className="space-y-3 py-4">
+        <div className="space-y-3 pb-4">
           <NavItems
             collapsed={effectiveCollapsed}
             items={visibleItems}

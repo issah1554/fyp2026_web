@@ -13,14 +13,14 @@ export type AuthUser = {
   permissions: string[];
 };
 
-const AUTH_USER_KEY = "smart-market.auth.user";
-const AUTH_LOGGED_OUT_KEY = "smart-market.auth.logged-out";
+const AUTH_USER_KEY = "marketia.auth.user";
+const AUTH_LOGGED_OUT_KEY = "marketia.auth.logged-out";
 
 export const demoUser: AuthUser = {
   id: "demo-admin",
-  firstName: "Data",
-  lastName: "BENKI",
-  email: "admin@smartmarket.test",
+  firstName: "Marketia",
+  lastName: "Admin",
+  email: "admin@marketia.test",
   role: { id: 1, name: "Admin", code: "admin" },
   permissions: ["*"],
 };

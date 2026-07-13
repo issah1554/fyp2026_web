@@ -15,7 +15,7 @@ function LoginForm() {
             name="email"
             type="email"
             autoComplete="email"
-            placeholder="name@smartmarket.test"
+            placeholder="name@marketia.test"
             className="mt-2 w-full rounded-md border border-main-300 bg-main-100 px-4 py-3 text-base text-main-900 outline-none placeholder:text-main-500 focus:border-primary-500 focus:bg-main-0"
           />
         </div>
@@ -60,7 +60,7 @@ function LoginForm() {
       </form>
 
       <p className="mt-5 text-center text-sm font-semibold text-main-700">
-        New to Smart Market?{" "}
+        New to Marketia?{" "}
         <Link href="/auth/register" className="text-primary-700 hover:text-primary-800">
           Create account
         </Link>

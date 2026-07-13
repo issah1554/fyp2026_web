@@ -29,7 +29,7 @@ export default function RegisterPage() {
             name="email"
             type="email"
             autoComplete="email"
-            placeholder="name@smartmarket.test"
+            placeholder="name@marketia.test"
             className="mt-1.5 w-full rounded-md border border-main-300 bg-main-100 px-4 py-2.5 text-base text-main-900 outline-none placeholder:text-main-500 focus:border-primary-500 focus:bg-main-0"
           />
         </div>
