@@ -51,6 +51,26 @@ export type LoginCredentials = {
   password: string;
 };
 
+export type RegisterPayload = {
+  username: string;
+  email: string;
+  password: string;
+  first_name: string;
+  last_name: string;
+  role?: string;
+  phone_number?: string;
+  organization?: string;
+};
+
+export type RegisterResult = {
+  message: string;
+  user: AuthUser;
+};
+
+export type MessageResult = {
+  message: string;
+};
+
 function isBrowser() {
   return typeof window !== "undefined";
 }
@@ -153,6 +173,64 @@ export async function loginWithPassword(credentials: LoginCredentials): Promise<
     refresh: payload.data.refresh,
   });
   return user;
+}
+
+export async function registerUser(payload: RegisterPayload): Promise<RegisterResult> {
+  const response = await fetch(`${API_BASE_URL}/auth/register/`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+  const result = (await response.json().catch(() => null)) as ApiResponse<BackendUser> | null;
+
+  if (!response.ok || !result?.data) {
+    throw new Error(getErrorMessage(result, "Registration failed. Check your details and try again."));
+  }
+
+  return {
+    message: result.message ?? "Registration successful.",
+    user: normalizeUser(result.data),
+  };
+}
+
+export async function requestPasswordReset(email: string): Promise<MessageResult> {
+  const response = await fetch(`${API_BASE_URL}/auth/password/reset/request/`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ email }),
+  });
+  const result = (await response.json().catch(() => null)) as ApiResponse<unknown> | null;
+
+  if (!response.ok) {
+    throw new Error(getErrorMessage(result, "Password reset request failed. Try again."));
+  }
+
+  return {
+    message: result?.message ?? "If the account exists, a password reset link has been sent.",
+  };
+}
+
+export async function confirmPasswordReset(token: string, password: string): Promise<MessageResult> {
+  const response = await fetch(`${API_BASE_URL}/auth/password/reset/confirm/`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ token, password }),
+  });
+  const result = (await response.json().catch(() => null)) as ApiResponse<unknown> | null;
+
+  if (!response.ok) {
+    throw new Error(getErrorMessage(result, "Password reset failed. Try again."));
+  }
+
+  return {
+    message: result?.message ?? "Password reset successful.",
+  };
 }
 
 export async function logoutFromApi() {
