@@ -2,17 +2,17 @@
 
 import { useCallback, useEffect, useState } from "react";
 import {
-  clearStoredUser,
-  demoUser,
   getStoredUser,
-  setStoredUser,
+  loginWithPassword,
+  logoutFromApi,
+  type LoginCredentials,
   type AuthUser,
-} from "../services/authService";
+} from "@/src/services/auth/authService";
 
 type AuthState = {
   user: AuthUser | null;
   loading: boolean;
-  login: (user?: AuthUser) => Promise<void>;
+  login: (credentials: LoginCredentials) => Promise<void>;
   logout: () => Promise<void>;
 };
 
@@ -27,13 +27,13 @@ export function useAuth(): AuthState {
     });
   }, []);
 
-  const login = useCallback(async (nextUser: AuthUser = demoUser) => {
-    setStoredUser(nextUser);
+  const login = useCallback(async (credentials: LoginCredentials) => {
+    const nextUser = await loginWithPassword(credentials);
     setUser(nextUser);
   }, []);
 
   const logout = useCallback(async () => {
-    clearStoredUser();
+    await logoutFromApi();
     setUser(null);
   }, []);
 

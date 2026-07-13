@@ -7,6 +7,7 @@ type PasswordInputProps = {
   name: string;
   autoComplete: string;
   placeholder: string;
+  required?: boolean;
   className?: string;
 };
 
@@ -15,6 +16,7 @@ export default function PasswordInput({
   name,
   autoComplete,
   placeholder,
+  required = false,
   className = "",
 }: PasswordInputProps) {
   const [isVisible, setIsVisible] = useState(false);
@@ -27,6 +29,7 @@ export default function PasswordInput({
         type={isVisible ? "text" : "password"}
         autoComplete={autoComplete}
         placeholder={placeholder}
+        required={required}
         className={[
           "w-full rounded-md border border-main-300 bg-main-100 px-4 pr-12 text-base text-main-900 outline-none placeholder:text-main-500 focus:border-primary-500 focus:bg-main-0",
           className,

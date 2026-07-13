@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useMemo } from "react";
-import type { AuthRole, AuthUser } from "../../../../auth/services/authService";
+import type { AuthRole, AuthUser } from "@/src/services/auth/authService";
 import { useAuth } from "../../../../auth/hooks/useAuth";
 import appIcon from "../../../../icon.png";
 import { NavItem } from "./NavItem";
