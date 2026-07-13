@@ -19,7 +19,7 @@ function LoginForm() {
     setIsSubmitting(true);
 
     const formData = new FormData(event.currentTarget);
-    const username = String(formData.get("username") ?? "").trim();
+    const username = String(formData.get("login") ?? "").trim();
     const password = String(formData.get("password") ?? "");
 
     try {
@@ -36,15 +36,15 @@ function LoginForm() {
     <>
       <form className="space-y-4" onSubmit={handleSubmit}>
         <div>
-          <label htmlFor="username" className="text-sm font-bold text-main-900">
-            Username
+          <label htmlFor="login" className="text-sm font-bold text-main-900">
+            Email or username
           </label>
           <input
-            id="username"
-            name="username"
+            id="login"
+            name="login"
             type="text"
             autoComplete="username"
-            placeholder="Enter your username"
+            placeholder="Enter your email or username"
             required
             className="mt-2 w-full rounded-md border border-main-300 bg-main-100 px-4 py-3 text-base text-main-900 outline-none placeholder:text-main-500 focus:border-primary-500 focus:bg-main-0"
           />

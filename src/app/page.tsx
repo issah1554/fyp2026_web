@@ -56,17 +56,6 @@ const users = [
   { label: "Researchers", icon: "bi-search" },
 ];
 
-const modules = [
-  { label: "User Management", icon: "bi-people" },
-  { label: "Market Data Collection", icon: "bi-clipboard2-data" },
-  { label: "Data Integration", icon: "bi-bezier2" },
-  { label: "Analytics Engine", icon: "bi-bar-chart-line" },
-  { label: "Price Prediction", icon: "bi-currency-exchange" },
-  { label: "Recommendations", icon: "bi-lightbulb" },
-  { label: "Reporting", icon: "bi-file-earmark-bar-graph" },
-  { label: "Notifications", icon: "bi-bell" },
-];
-
 const benefits = [
   "Improves market transparency",
   "Strengthens bargaining power for farmers",
@@ -100,9 +89,6 @@ export default function Home() {
           <div className="hidden items-center gap-8 text-sm font-medium text-main-600 md:flex">
             <a className="flex items-center gap-2 hover:text-primary-700" href="#features">
               Features
-            </a>
-            <a className="flex items-center gap-2 hover:text-primary-700" href="#architecture">
-              Architecture
             </a>
             <a className="flex items-center gap-2 hover:text-primary-700" href="#benefits">
               Benefits
@@ -139,13 +125,6 @@ export default function Home() {
               >
                 <i className="bi bi-arrow-down-circle" aria-hidden="true" />
                 Explore platform
-              </a>
-              <a
-                href="#architecture"
-                className="flex items-center justify-center gap-2 rounded-md border border-main-300 bg-main-0 px-5 py-3 text-center text-sm font-semibold text-main-800 hover:border-primary-400 hover:text-primary-700"
-              >
-                <i className="bi bi-diagram-3" aria-hidden="true" />
-                See architecture
               </a>
             </div>
             <dl className="mt-10 grid max-w-2xl grid-cols-3 gap-3">
@@ -288,49 +267,6 @@ export default function Home() {
         </div>
       </section>
 
-      <section id="architecture" className="bg-main-50 py-16 lg:py-20">
-        <div className="mx-auto max-w-7xl px-6 lg:px-8">
-          <div className="grid gap-10 lg:grid-cols-[0.9fr_1.1fr]">
-            <div>
-              <p className="text-sm font-semibold uppercase text-primary-700">
-                System architecture
-              </p>
-              <h2 className="mt-3 text-3xl font-bold text-main-950">
-                Modular services connected by one market database
-              </h2>
-              <p className="mt-4 text-base leading-7 text-main-700">
-                Web and USSD interfaces connect through an API gateway into business services for
-                users, data collection, analytics, prediction, recommendations, reporting, and
-                notifications.
-              </p>
-            </div>
-            <div className="rounded-lg border border-main-200 bg-main-0 p-5 shadow-sm">
-              <div className="grid gap-3 md:grid-cols-2">
-                {modules.map((module) => (
-                  <div
-                    key={module.label}
-                    className="flex items-center gap-3 rounded-md border border-main-200 bg-main-50 px-4 py-3"
-                  >
-                    <i className={`bi ${module.icon} text-primary-600`} aria-hidden="true" />
-                    <p className="text-sm font-semibold text-main-900">{module.label}</p>
-                  </div>
-                ))}
-              </div>
-              <div className="mt-5 rounded-md bg-primary-600 p-4 text-main-0">
-                <p className="flex items-center gap-2 text-sm font-semibold">
-                  <i className="bi bi-database-check" aria-hidden="true" />
-                  Centralized Market Database
-                </p>
-                <p className="mt-2 text-sm leading-6 text-primary-50">
-                  Stores clean market records, forecast outputs, reporting data, and audit-ready
-                  operational history.
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
       <section id="benefits" className="bg-main-0 py-16 lg:py-20">
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
           <div className="grid gap-10 lg:grid-cols-[1fr_1fr]">
@@ -387,10 +323,6 @@ export default function Home() {
               <a href="#features" className="flex items-center gap-2 hover:text-primary-300">
                 <i className="bi bi-grid" aria-hidden="true" />
                 Features
-              </a>
-              <a href="#architecture" className="flex items-center gap-2 hover:text-primary-300">
-                <i className="bi bi-diagram-3" aria-hidden="true" />
-                Architecture
               </a>
               <a href="#benefits" className="flex items-center gap-2 hover:text-primary-300">
                 <i className="bi bi-check2-circle" aria-hidden="true" />
