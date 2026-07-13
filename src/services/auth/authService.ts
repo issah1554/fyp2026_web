@@ -16,6 +16,7 @@ export type AuthUser = {
 const AUTH_USER_KEY = "marketia.auth.user";
 const AUTH_ACCESS_TOKEN_KEY = "marketia.auth.access-token";
 const AUTH_REFRESH_TOKEN_KEY = "marketia.auth.refresh-token";
+export const AUTH_SESSION_CHANGED_EVENT = "marketia.auth.session-changed";
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_BACKEND_API_BASE_URL ?? "http://127.0.0.1:8000/api/v1";
 
@@ -37,6 +38,11 @@ type BackendAuthData = {
   access: string;
   refresh: string;
   user: BackendUser;
+};
+
+type BackendRefreshData = {
+  access: string;
+  refresh?: string;
 };
 
 type ApiResponse<T> = {
@@ -73,6 +79,37 @@ export type MessageResult = {
 
 function isBrowser() {
   return typeof window !== "undefined";
+}
+
+function emitAuthSessionChanged() {
+  if (!isBrowser()) {
+    return;
+  }
+
+  window.dispatchEvent(new Event(AUTH_SESSION_CHANGED_EVENT));
+}
+
+function getJwtExpiryMs(token: string): number | null {
+  try {
+    const payload = token.split(".")[1];
+    if (!payload) {
+      return null;
+    }
+
+    const decoded = JSON.parse(window.atob(payload.replace(/-/g, "+").replace(/_/g, "/"))) as { exp?: number };
+    return decoded.exp ? decoded.exp * 1000 : null;
+  } catch {
+    return null;
+  }
+}
+
+function isTokenExpiring(token: string, leewayMs = 60_000) {
+  if (!isBrowser()) {
+    return false;
+  }
+
+  const expiresAt = getJwtExpiryMs(token);
+  return expiresAt !== null && expiresAt <= Date.now() + leewayMs;
 }
 
 function getErrorMessage(payload: ApiResponse<unknown> | null, fallback: string) {
@@ -114,6 +151,14 @@ export function getStoredAccessToken(): string | null {
   return window.localStorage.getItem(AUTH_ACCESS_TOKEN_KEY);
 }
 
+export function getStoredRefreshToken(): string | null {
+  if (!isBrowser()) {
+    return null;
+  }
+
+  return window.localStorage.getItem(AUTH_REFRESH_TOKEN_KEY);
+}
+
 export function getStoredUser(): AuthUser | null {
   if (!isBrowser()) {
     return null;
@@ -141,6 +186,7 @@ export function setStoredUser(user: AuthUser, tokens?: { access: string; refresh
     window.localStorage.setItem(AUTH_ACCESS_TOKEN_KEY, tokens.access);
     window.localStorage.setItem(AUTH_REFRESH_TOKEN_KEY, tokens.refresh);
   }
+  emitAuthSessionChanged();
 }
 
 export function clearStoredUser() {
@@ -151,6 +197,19 @@ export function clearStoredUser() {
   window.localStorage.removeItem(AUTH_USER_KEY);
   window.localStorage.removeItem(AUTH_ACCESS_TOKEN_KEY);
   window.localStorage.removeItem(AUTH_REFRESH_TOKEN_KEY);
+  emitAuthSessionChanged();
+}
+
+function setStoredAccessToken(access: string, refresh?: string) {
+  if (!isBrowser()) {
+    return;
+  }
+
+  window.localStorage.setItem(AUTH_ACCESS_TOKEN_KEY, access);
+  if (refresh) {
+    window.localStorage.setItem(AUTH_REFRESH_TOKEN_KEY, refresh);
+  }
+  emitAuthSessionChanged();
 }
 
 export async function loginWithPassword(credentials: LoginCredentials): Promise<AuthUser> {
@@ -193,6 +252,93 @@ export async function registerUser(payload: RegisterPayload): Promise<RegisterRe
     message: result.message ?? "Registration successful.",
     user: normalizeUser(result.data),
   };
+}
+
+export async function refreshAccessToken(): Promise<string | null> {
+  const refresh = getStoredRefreshToken();
+  if (!refresh) {
+    clearStoredUser();
+    return null;
+  }
+
+  const response = await fetch(`${API_BASE_URL}/auth/token/refresh/`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ refresh }),
+  });
+  const payload = (await response.json().catch(() => null)) as ApiResponse<BackendRefreshData> | null;
+
+  if (!response.ok || !payload?.data?.access) {
+    clearStoredUser();
+    return null;
+  }
+
+  setStoredAccessToken(payload.data.access, payload.data.refresh);
+  return payload.data.access;
+}
+
+export async function initializeAuthSession(): Promise<AuthUser | null> {
+  const user = getStoredUser();
+  if (!user) {
+    clearStoredUser();
+    return null;
+  }
+
+  const access = getStoredAccessToken();
+  if (access && !isTokenExpiring(access)) {
+    return user;
+  }
+
+  const refreshedAccess = await refreshAccessToken();
+  return refreshedAccess ? user : null;
+}
+
+export async function refreshSessionIfNeeded(): Promise<AuthUser | null> {
+  const user = getStoredUser();
+  const access = getStoredAccessToken();
+  if (!user) {
+    clearStoredUser();
+    return null;
+  }
+
+  if (!access || isTokenExpiring(access, 120_000)) {
+    const refreshedAccess = await refreshAccessToken();
+    return refreshedAccess ? user : null;
+  }
+
+  return user;
+}
+
+export async function authenticatedFetch(input: RequestInfo | URL, init: RequestInit = {}) {
+  const requestWithToken = (token: string | null) => {
+    const headers = new Headers(init.headers);
+    if (token) {
+      headers.set("Authorization", `Bearer ${token}`);
+    }
+
+    return fetch(input, {
+      ...init,
+      headers,
+    });
+  };
+
+  let response = await requestWithToken(getStoredAccessToken());
+  if (response.status !== 401) {
+    return response;
+  }
+
+  const refreshedAccess = await refreshAccessToken();
+  if (!refreshedAccess) {
+    return response;
+  }
+
+  response = await requestWithToken(refreshedAccess);
+  if (response.status === 401) {
+    clearStoredUser();
+  }
+  return response;
 }
 
 export async function requestPasswordReset(email: string): Promise<MessageResult> {

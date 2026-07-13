@@ -16,6 +16,7 @@ import {
   type AreaFormPayload,
   type AreaLevel,
   type AreaPathImportPayload,
+  type AreaTotals,
   type BulkAreaImportResponse,
   type PaginationMeta,
 } from "@/src/services/areas/areaService";
@@ -137,6 +138,12 @@ export default function AreasPage() {
   const isAdmin = isAdminUser(user);
   const [areas, setAreas] = useState<Area[]>([]);
   const [allAreas, setAllAreas] = useState<Area[]>([]);
+  const [totals, setTotals] = useState<AreaTotals>({
+    total: 0,
+    regions: 0,
+    districts: 0,
+    wards: 0,
+  });
   const [pagination, setPagination] = useState<PaginationMeta>({
     page: 1,
     page_size: 10,
@@ -148,16 +155,20 @@ export default function AreasPage() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [notice, setNotice] = useState("");
+  const [pageError, setPageError] = useState("");
+  const [pageNotice, setPageNotice] = useState("");
   const [search, setSearch] = useState("");
   const [levelFilter, setLevelFilter] = useState("");
   const [modal, setModal] = useState<ModalState | null>(null);
   const [form, setForm] = useState<FormState>(emptyForm);
+  const [formError, setFormError] = useState("");
+  const [formNotice, setFormNotice] = useState("");
   const [saving, setSaving] = useState(false);
   const [bulkModalOpen, setBulkModalOpen] = useState(false);
   const [bulkJson, setBulkJson] = useState(defaultBulkJson);
   const [bulkResult, setBulkResult] = useState<BulkAreaImportResponse | null>(null);
+  const [bulkError, setBulkError] = useState("");
+  const [bulkNotice, setBulkNotice] = useState("");
   const [bulkSaving, setBulkSaving] = useState(false);
 
   useEffect(() => {
@@ -172,7 +183,7 @@ export default function AreasPage() {
     }
 
     setLoading(true);
-    setError("");
+    setPageError("");
     try {
       const result = await listAreas({
         page,
@@ -182,8 +193,9 @@ export default function AreasPage() {
       });
       setAreas(result.data);
       setPagination(result.pagination);
+      setTotals(result.totals);
     } catch (loadError) {
-      setError(loadError instanceof Error ? loadError.message : "Could not load areas.");
+      setPageError(loadError instanceof Error ? loadError.message : "Could not load areas.");
     } finally {
       setLoading(false);
     }
@@ -213,20 +225,20 @@ export default function AreasPage() {
 
   const stats = useMemo(() => {
     return {
-      total: pagination.total_items,
-      regions: allAreas.filter((area) => area.level === "region").length,
-      districts: allAreas.filter((area) => area.level === "district").length,
-      wards: allAreas.filter((area) => area.level === "ward").length,
+      total: totals.total,
+      regions: totals.regions,
+      districts: totals.districts,
+      wards: totals.wards,
     };
-  }, [allAreas, pagination.total_items]);
+  }, [totals]);
 
   const parentOptions = useMemo(() => getParentOptions(allAreas, form.level), [allAreas, form.level]);
 
   const openCreateModal = () => {
     setForm(emptyForm);
     setModal({ mode: "create", area: null });
-    setError("");
-    setNotice("");
+    setFormError("");
+    setFormNotice("");
   };
 
   const openEditModal = (area: Area) => {
@@ -236,8 +248,8 @@ export default function AreasPage() {
       parent_id: area.parent?.area_id ?? "",
     });
     setModal({ mode: "edit", area });
-    setError("");
-    setNotice("");
+    setFormError("");
+    setFormNotice("");
   };
 
   const handleSaveArea = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -247,19 +259,19 @@ export default function AreasPage() {
     }
 
     setSaving(true);
-    setError("");
-    setNotice("");
+    setFormError("");
+    setFormNotice("");
     try {
       const payload = normalizeFormPayload(form);
       const result =
         modal.mode === "create"
           ? await createArea(payload)
           : await updateArea(modal.area.area_id, payload);
-      setNotice(result.message);
-      setModal(null);
+      setFormNotice(result.message);
       await loadAreas();
+      await loadParentOptions();
     } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : "Could not save area.");
+      setFormError(saveError instanceof Error ? saveError.message : "Could not save area.");
     } finally {
       setSaving(false);
     }
@@ -270,30 +282,30 @@ export default function AreasPage() {
       return;
     }
 
-    setError("");
-    setNotice("");
+    setPageError("");
+    setPageNotice("");
     try {
-      setNotice(await deleteArea(area.area_id));
+      setPageNotice(await deleteArea(area.area_id));
       await loadAreas();
     } catch (deleteError) {
-      setError(deleteError instanceof Error ? deleteError.message : "Could not delete area.");
+      setPageError(deleteError instanceof Error ? deleteError.message : "Could not delete area.");
     }
   };
 
   const handleBulkImport = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setBulkSaving(true);
-    setError("");
-    setNotice("");
+    setBulkError("");
+    setBulkNotice("");
     setBulkResult(null);
     try {
       const result = await bulkImportAreas(parseBulkPayload(bulkJson));
       setBulkResult(result);
-      setNotice(result.message);
+      setBulkNotice(result.message);
       await loadAreas();
       await loadParentOptions();
     } catch (bulkError) {
-      setError(bulkError instanceof Error ? bulkError.message : "Could not import areas.");
+      setBulkError(bulkError instanceof Error ? bulkError.message : "Could not import areas.");
     } finally {
       setBulkSaving(false);
     }
@@ -306,11 +318,11 @@ export default function AreasPage() {
       return;
     }
 
-    setError("");
-    setNotice("");
+    setBulkError("");
+    setBulkNotice("");
 
     if (file.type && file.type !== "application/json" && !file.name.toLowerCase().endsWith(".json")) {
-      setError("Upload a JSON file.");
+      setBulkError("Upload a JSON file.");
       return;
     }
 
@@ -318,9 +330,9 @@ export default function AreasPage() {
       const text = await file.text();
       parseBulkPayload(text);
       setBulkJson(text);
-      setNotice("JSON file loaded and validated.");
+      setBulkNotice("JSON file loaded and validated.");
     } catch (uploadError) {
-      setError(uploadError instanceof Error ? uploadError.message : "Invalid JSON file.");
+      setBulkError(uploadError instanceof Error ? uploadError.message : "Invalid JSON file.");
     }
   };
 
@@ -352,8 +364,8 @@ export default function AreasPage() {
           onClick={() => {
             setBulkResult(null);
             setBulkModalOpen(true);
-            setError("");
-            setNotice("");
+            setBulkError("");
+            setBulkNotice("");
           }}
           className="flex w-fit items-center gap-2 rounded-md border border-main-300 bg-main-100 px-4 py-2 text-sm font-bold text-main-800 hover:border-primary-300 hover:text-primary-700"
         >
@@ -383,15 +395,15 @@ export default function AreasPage() {
         ))}
       </section>
 
-      {(error || notice) && (
+      {(pageError || pageNotice) && (
         <div
           className={`rounded-md border px-4 py-3 text-sm font-semibold ${
-            error
+            pageError
               ? "border-danger-300 bg-danger-100 text-danger-700"
               : "border-success-300 bg-success-100 text-success-700"
           }`}
         >
-          {error || notice}
+          {pageError || pageNotice}
         </div>
       )}
 
@@ -562,6 +574,8 @@ export default function AreasPage() {
                 onChange={(event) => {
                   setBulkJson(event.target.value);
                   setBulkResult(null);
+                  setBulkError("");
+                  setBulkNotice("");
                 }}
                 rows={14}
                 spellCheck={false}
@@ -585,6 +599,18 @@ export default function AreasPage() {
                 <i className={`bi ${bulkSaving ? "bi-arrow-repeat animate-spin" : "bi-upload"}`} aria-hidden="true" />
                 {bulkSaving ? "Importing..." : "Validate and import"}
               </button>
+
+              {(bulkError || bulkNotice) && (
+                <div
+                  className={`mt-4 rounded-md border px-3 py-2 text-sm font-semibold ${
+                    bulkError
+                      ? "border-danger-300 bg-danger-100 text-danger-700"
+                      : "border-success-300 bg-success-100 text-success-700"
+                  }`}
+                >
+                  {bulkError || bulkNotice}
+                </div>
+              )}
 
               {bulkResult && (
                 <div className="mt-4 grid grid-cols-3 gap-2 text-center text-xs">
@@ -630,12 +656,28 @@ export default function AreasPage() {
           </div>
 
           <div className="grid gap-4 px-5 py-5">
+            {(formError || formNotice) && (
+              <div
+                className={`rounded-md border px-3 py-2 text-sm font-semibold ${
+                  formError
+                    ? "border-danger-300 bg-danger-100 text-danger-700"
+                    : "border-success-300 bg-success-100 text-success-700"
+                }`}
+              >
+                {formError || formNotice}
+              </div>
+            )}
+
             <div>
               <label htmlFor="area-name" className="text-sm font-bold text-main-900">Name</label>
               <input
                 id="area-name"
                 value={form.name}
-                onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))}
+                onChange={(event) => {
+                  setForm((current) => ({ ...current, name: event.target.value }));
+                  setFormError("");
+                  setFormNotice("");
+                }}
                 required
                 className="mt-2 w-full rounded-md border border-main-300 bg-main-100 px-4 py-2.5 text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-0"
               />
@@ -646,7 +688,11 @@ export default function AreasPage() {
               <select
                 id="area-level"
                 value={form.level}
-                onChange={(event) => setForm((current) => ({ ...current, level: event.target.value as AreaLevel, parent_id: "" }))}
+                onChange={(event) => {
+                  setForm((current) => ({ ...current, level: event.target.value as AreaLevel, parent_id: "" }));
+                  setFormError("");
+                  setFormNotice("");
+                }}
                 className="mt-2 w-full rounded-md border border-main-300 bg-main-100 px-4 py-2.5 text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-0"
               >
                 <option value="region">Region</option>
@@ -661,7 +707,11 @@ export default function AreasPage() {
                 <select
                   id="area-parent"
                   value={form.parent_id}
-                  onChange={(event) => setForm((current) => ({ ...current, parent_id: event.target.value }))}
+                  onChange={(event) => {
+                    setForm((current) => ({ ...current, parent_id: event.target.value }));
+                    setFormError("");
+                    setFormNotice("");
+                  }}
                   required
                   className="mt-2 w-full rounded-md border border-main-300 bg-main-100 px-4 py-2.5 text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-0"
                 >

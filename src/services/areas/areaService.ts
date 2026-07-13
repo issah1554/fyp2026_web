@@ -1,4 +1,4 @@
-import { getStoredAccessToken } from "@/src/services/auth/authService";
+import { authenticatedFetch } from "@/src/services/auth/authService";
 
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_BACKEND_API_BASE_URL ?? "http://127.0.0.1:8000/api/v1";
@@ -18,6 +18,13 @@ export type PaginationMeta = {
   total_pages: number;
   has_next: boolean;
   has_previous: boolean;
+};
+
+export type AreaTotals = {
+  total: number;
+  regions: number;
+  districts: number;
+  wards: number;
 };
 
 export type AreaLevel = "region" | "district" | "ward";
@@ -77,6 +84,7 @@ export type BulkAreaImportResponse = {
 export type AreaListResult = {
   data: Area[];
   pagination: PaginationMeta;
+  totals: AreaTotals;
 };
 
 function getErrorMessage(payload: ApiResponse<unknown> | null, fallback: string) {
@@ -98,12 +106,10 @@ function getErrorMessage(payload: ApiResponse<unknown> | null, fallback: string)
 }
 
 async function areaRequest<T>(path: string, init: RequestInit = {}, fallback = "Request failed.") {
-  const token = getStoredAccessToken();
-  const response = await fetch(`${API_BASE_URL}${path}`, {
+  const response = await authenticatedFetch(`${API_BASE_URL}${path}`, {
     ...init,
     headers: {
       "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...init.headers,
     },
   });
@@ -129,6 +135,16 @@ function normalizePagination(meta: Record<string, unknown> | undefined, fallback
     total_pages: Number(pagination.total_pages ?? 1),
     has_next: Boolean(pagination.has_next),
     has_previous: Boolean(pagination.has_previous),
+  };
+}
+
+function normalizeTotals(meta: Record<string, unknown> | undefined, fallbackCount: number): AreaTotals {
+  const totals = (meta?.totals ?? {}) as Partial<AreaTotals>;
+  return {
+    total: Number(totals.total ?? fallbackCount),
+    regions: Number(totals.regions ?? 0),
+    districts: Number(totals.districts ?? 0),
+    wards: Number(totals.wards ?? 0),
   };
 }
 
@@ -161,6 +177,7 @@ export async function listAreas(
   return {
     data,
     pagination: normalizePagination(payload.meta, data.length),
+    totals: normalizeTotals(payload.meta, data.length),
   };
 }
 
