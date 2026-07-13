@@ -1,5 +1,6 @@
 import Link from "next/link";
 import AuthShell from "../_components/auth-shell";
+import PasswordInput from "../_components/password-input";
 
 function LoginForm() {
   return (
@@ -23,13 +24,12 @@ function LoginForm() {
           <label htmlFor="password" className="text-sm font-bold text-main-900">
             Password
           </label>
-          <input
+          <PasswordInput
             id="password"
             name="password"
-            type="password"
             autoComplete="current-password"
             placeholder="Enter your password"
-            className="mt-2 w-full rounded-md border border-main-300 bg-main-100 px-4 py-3 text-base text-main-900 outline-none placeholder:text-main-500 focus:border-primary-500 focus:bg-main-0"
+            className="mt-2 py-3"
           />
         </div>
 
