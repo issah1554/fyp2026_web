@@ -21,7 +21,7 @@ export type ModalProps = {
   onClose: () => void;
   children: ReactNode;
 
-  size?: "sm" | "md" | "lg" | "xl" | "full";
+  size?: "sm" | "md" | "lg" | "xl" | "2xl" | "full";
   position?: ModalPosition;
 
   blur?: boolean;
@@ -41,6 +41,7 @@ const sizeClasses: Record<NonNullable<ModalProps["size"]>, string> = {
   md: "max-w-md",
   lg: "max-w-lg",
   xl: "max-w-xl",
+  "2xl": "max-w-5xl",
   full: "w-full h-full max-w-none",
 };
 
@@ -102,7 +103,7 @@ export function Modal({
     >
       {/* Backdrop */}
       <div
-        className={`absolute inset-0 bg-main-950 ${blur ? "backdrop-blur-sm" : ""
+        className={`absolute inset-0 bg-main-950/35 ${blur ? "backdrop-blur-sm" : ""
           } ${backdropClassName}`}
         onClick={closeOnBackdrop ? onClose : undefined}
       />

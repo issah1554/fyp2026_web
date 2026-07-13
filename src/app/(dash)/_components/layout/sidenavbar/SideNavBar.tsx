@@ -143,6 +143,12 @@ export function Sidebar({
         icon: <i className="bi bi-grid-1x2" />,
       },
       {
+        label: "Areas",
+        to: "/areas",
+        icon: <i className="bi bi-geo-alt" />,
+        requiredPermission: "*",
+      },
+      {
         label: "Companies Management",
         icon: <i className="bi bi-buildings" />,
         requiredPermission: "*",
