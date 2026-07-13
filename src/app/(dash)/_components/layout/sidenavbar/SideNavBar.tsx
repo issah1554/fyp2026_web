@@ -33,7 +33,7 @@ function SidebarHeader({
     <div
       className={`flex items-center py-4 text-xl font-bold text-primary-700 transition-all duration-300 ${effectiveCollapsed ? "justify-center px-1" : "gap-2 px-3"}`}
     >
-      <Link href="/dashboard" prefetch={false} className="flex items-center gap-2" onClick={onCloseMobile}>
+      <Link href="/dash" prefetch={false} className="flex items-center gap-2" onClick={onCloseMobile}>
         <i className="bi bi-compass text-primary-700" />
         {!effectiveCollapsed && <span className="flex-1 overflow-hidden whitespace-nowrap">DataBENKI</span>}
       </Link>
@@ -135,7 +135,7 @@ export function Sidebar({
     () => [
       {
         label: "Dashboard",
-        to: "/dashboard",
+        to: "/dash",
         icon: <i className="bi bi-grid-1x2" />,
       },
       {

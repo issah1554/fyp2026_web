@@ -53,7 +53,7 @@ export default function TopNavBar({ isMobile, onToggleSidebar }: TopNavBarProps)
           </button>
 
           <Link
-            href="/dashboard"
+            href="/dash"
             prefetch={false}
             className="hidden truncate text-sm font-semibold text-main-700 hover:text-primary-700 sm:block"
           >
@@ -110,7 +110,7 @@ export default function TopNavBar({ isMobile, onToggleSidebar }: TopNavBarProps)
                   <div className="px-4 py-2 hover:bg-main-300">Payment received</div>
                 </div>
                 <Link
-                  href="/dashboard"
+                  href="/dash"
                   onClick={() => setOpen(null)}
                   prefetch={false}
                   className="block rounded-b-sm border-t border-main-300 px-4 py-2 text-center text-primary-700 hover:border-primary-300 hover:bg-primary-200"
@@ -138,7 +138,7 @@ export default function TopNavBar({ isMobile, onToggleSidebar }: TopNavBarProps)
                   <span className="mx-auto flex size-12 items-center justify-center rounded-full bg-primary-700 text-sm font-semibold text-main-0">
                     {initials}
                   </span>
-                  <div className="mt-2 break-words font-semibold">{displayName}</div>
+                  <div className="mt-2 wrap-break-word font-semibold">{displayName}</div>
                   <div className="break-all text-xs text-main-500">{user?.email}</div>
                 </div>
 
