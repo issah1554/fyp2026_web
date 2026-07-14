@@ -149,6 +149,12 @@ export function Sidebar({
         requiredPermission: "*",
       },
       {
+        label: "Catalogs",
+        to: "/commodities",
+        icon: <i className="bi bi-basket" />,
+        requiredPermission: "*",
+      },
+      {
         label: "Companies Management",
         icon: <i className="bi bi-buildings" />,
         requiredPermission: "*",
