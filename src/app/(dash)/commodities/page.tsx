@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import { HorizontalTabs, type HorizontalTab } from "@/src/components/ui/HorizontalTabs";
 import { Modal } from "@/src/components/ui/Modal";
 import Pagination from "@/src/components/ui/Pagination";
 import { useAuth } from "../../auth/hooks/useAuth";
@@ -58,6 +59,14 @@ type UnitModalState =
   | { mode: "create"; unit: null }
   | { mode: "edit"; unit: CommodityUnit };
 
+type CatalogTab = "commodities" | "categories" | "units";
+
+const catalogTabs: HorizontalTab<CatalogTab>[] = [
+  { id: "commodities", label: "Commodities" },
+  { id: "categories", label: "Categories" },
+  { id: "units", label: "Units" },
+];
+
 const emptyCommodityForm: CommodityFormState = {
   name: "",
   unit: "",
@@ -103,8 +112,14 @@ function normalizeCommodityForm(form: CommodityFormState): CommodityFormPayload 
 
 export default function CommoditiesPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { user, loading: authLoading } = useAuth();
   const isAdmin = isAdminUser(user);
+  const tabParam = searchParams.get("tab");
+  const activeTab: CatalogTab =
+    tabParam === "categories" || tabParam === "units" || tabParam === "commodities"
+      ? tabParam
+      : "commodities";
   const [commodities, setCommodities] = useState<Commodity[]>([]);
   const [categories, setCategories] = useState<CommodityCategory[]>([]);
   const [units, setUnits] = useState<CommodityUnit[]>([]);
@@ -426,34 +441,7 @@ export default function CommoditiesPage() {
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 py-4">
       <section className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <p className="text-sm font-semibold text-main-500">Administration</p>
-          <h1 className="text-2xl font-bold text-main-950 sm:text-3xl">Commodity Catalog</h1>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <button
-            type="button"
-            onClick={openCreateUnitModal}
-            className="flex w-fit items-center gap-2 rounded-md border border-main-300 bg-main-100 px-4 py-2 text-sm font-bold text-main-800 hover:border-primary-300 hover:text-primary-700"
-          >
-            <i className="bi bi-rulers" aria-hidden="true" />
-            Add unit
-          </button>
-          <button
-            type="button"
-            onClick={openCreateCategoryModal}
-            className="flex w-fit items-center gap-2 rounded-md border border-main-300 bg-main-100 px-4 py-2 text-sm font-bold text-main-800 hover:border-primary-300 hover:text-primary-700"
-          >
-            <i className="bi bi-tag" aria-hidden="true" />
-            Add category
-          </button>
-          <button
-            type="button"
-            onClick={openCreateCommodityModal}
-            className="flex w-fit items-center gap-2 rounded-md bg-primary-600 px-4 py-2 text-sm font-bold text-main-0 hover:bg-primary-700"
-          >
-            <i className="bi bi-plus-circle" aria-hidden="true" />
-            Add commodity
-          </button>
+          <p className="text-sm font-semibold text-main-500">Commodity Catalog</p>
         </div>
       </section>
 
@@ -485,14 +473,17 @@ export default function CommoditiesPage() {
         </div>
       )}
 
-      <section className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_22rem]">
-        <div className="rounded-md border border-main-200 bg-main-0 p-5 shadow-sm">
+      <section className="rounded-md border border-main-200 bg-main-0 shadow-sm">
+        <HorizontalTabs tabs={catalogTabs} activeTab={activeTab} basePath="/commodities" className="px-5" />
+
+        <div className="p-5">
+        <div className={activeTab === "commodities" ? "" : "hidden"}>
           <div className="flex flex-col gap-3 border-b border-main-200 pb-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
               <p className="text-sm font-semibold text-main-500">Market items</p>
               <h2 className="mt-1 text-xl font-bold text-main-950">Commodities</h2>
             </div>
-            <div className="grid gap-2 sm:grid-cols-[minmax(0,16rem)_12rem]">
+            <div className="grid gap-2 sm:grid-cols-[minmax(0,16rem)_12rem_auto]">
               <input
                 value={search}
                 onChange={(event) => {
@@ -517,6 +508,14 @@ export default function CommoditiesPage() {
                   </option>
                 ))}
               </select>
+              <button
+                type="button"
+                onClick={openCreateCommodityModal}
+                className="flex size-9 items-center justify-center rounded-md border border-main-300 bg-main-100 text-main-700 hover:border-primary-300 hover:text-primary-700"
+                aria-label="Add commodity"
+              >
+                <i className="bi bi-plus-lg" aria-hidden="true" />
+              </button>
             </div>
           </div>
 
@@ -628,8 +627,8 @@ export default function CommoditiesPage() {
           </div>
         </div>
 
-        <aside className="space-y-6">
-          <div className="rounded-md border border-main-200 bg-main-0 p-5 shadow-sm">
+        <div className={activeTab === "categories" ? "" : "hidden"}>
+          <div>
             <div className="flex items-center justify-between gap-3 border-b border-main-200 pb-4">
               <div>
                 <p className="text-sm font-semibold text-main-500">Grouping</p>
@@ -683,7 +682,10 @@ export default function CommoditiesPage() {
             </div>
           </div>
 
-          <div className="rounded-md border border-main-200 bg-main-0 p-5 shadow-sm">
+        </div>
+
+        <div className={activeTab === "units" ? "" : "hidden"}>
+          <div>
             <div className="flex items-center justify-between gap-3 border-b border-main-200 pb-4">
               <div>
                 <p className="text-sm font-semibold text-main-500">Measurements</p>
@@ -737,7 +739,8 @@ export default function CommoditiesPage() {
               )}
             </div>
           </div>
-        </aside>
+        </div>
+        </div>
       </section>
 
       <Modal
