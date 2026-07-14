@@ -155,39 +155,14 @@ export function Sidebar({
         requiredPermission: "*",
       },
       {
-        label: "Companies Management",
-        icon: <i className="bi bi-buildings" />,
-        requiredPermission: "*",
-        subItems: [
-          {
-            label: "All Companies",
-            to: "/companies",
-            icon: <i className="bi bi-list-ul" />,
-            requiredPermission: "*",
-          },
-          {
-            label: "Registration Settings",
-            to: "/companies/registration/settings",
-            icon: <i className="bi bi-sliders" />,
-            requiredPermission: "*",
-          },
-          {
-            label: "Pending Applications",
-            to: "/companies/applications",
-            icon: <i className="bi bi-hourglass-split" />,
-            requiredPermission: "*",
-          },
-        ],
-      },
-      {
         label: "System Access Control",
         icon: <i className="bi bi-shield-lock" />,
         subItems: [
           {
             label: "System Users",
-            to: "/system/users",
+            to: "/users",
             icon: <i className="bi bi-people" />,
-            requiredPermission: "users.list",
+            requiredPermission: "*",
           },
           {
             label: "System Roles",
