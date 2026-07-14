@@ -2,15 +2,29 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { Modal } from "@/src/components/ui/Modal";
 import { useAuth } from "../../../../auth/hooks/useAuth";
 import type { AuthRole, AuthUser } from "@/src/services/auth/authService";
 import {
+  createRole,
+  deleteRole,
   listPermissions,
   listRoles,
+  updateRole,
   updateRolePermissions,
   type Permission,
   type Role,
+  type RoleFormPayload,
 } from "@/src/services/access-control/accessControlService";
+
+type ModalState = { mode: "create"; role: null } | { mode: "edit"; role: Role };
+
+const emptyForm: RoleFormPayload = {
+  code: "",
+  name: "",
+  description: "",
+  permission_ids: [],
+};
 
 function isAdminUser(user: AuthUser | null) {
   const role = user?.role;
@@ -32,6 +46,11 @@ export default function RolesPage() {
   const [saving, setSaving] = useState(false);
   const [pageError, setPageError] = useState("");
   const [pageNotice, setPageNotice] = useState("");
+  const [modal, setModal] = useState<ModalState | null>(null);
+  const [form, setForm] = useState<RoleFormPayload>(emptyForm);
+  const [formError, setFormError] = useState("");
+  const [formNotice, setFormNotice] = useState("");
+  const [savingRole, setSavingRole] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !isAdmin) router.replace("/dash");
@@ -72,6 +91,25 @@ export default function RolesPage() {
     setPageNotice("");
   };
 
+  const openCreateModal = () => {
+    setForm(emptyForm);
+    setModal({ mode: "create", role: null });
+    setFormError("");
+    setFormNotice("");
+  };
+
+  const openEditModal = (role: Role) => {
+    setForm({
+      code: role.code,
+      name: role.name,
+      description: role.description,
+      permission_ids: role.permission_ids,
+    });
+    setModal({ mode: "edit", role });
+    setFormError("");
+    setFormNotice("");
+  };
+
   const togglePermission = (permissionId: string) => {
     setSelectedPermissionIds((current) =>
       current.includes(permissionId)
@@ -98,15 +136,73 @@ export default function RolesPage() {
     }
   };
 
+  const handleSaveRole = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!modal) return;
+    setSavingRole(true);
+    setFormError("");
+    setFormNotice("");
+    try {
+      const payload = {
+        code: form.code.trim(),
+        name: form.name.trim(),
+        description: form.description.trim(),
+        permission_ids: form.permission_ids,
+      };
+      const result = modal.mode === "create"
+        ? await createRole(payload)
+        : await updateRole(modal.role.role_id, payload);
+      setFormNotice(result.message);
+      await loadAccessControl();
+      if (result.role?.role_id) {
+        setSelectedRoleId(result.role.role_id);
+      }
+    } catch (error) {
+      setFormError(error instanceof Error ? error.message : "Could not save role.");
+    } finally {
+      setSavingRole(false);
+    }
+  };
+
+  const handleDeleteRole = async (role: Role) => {
+    if (!window.confirm(`Delete ${role.name}?`)) return;
+    setPageError("");
+    setPageNotice("");
+    try {
+      setPageNotice(await deleteRole(role.role_id));
+      setSelectedRoleId("");
+      await loadAccessControl();
+    } catch (error) {
+      setPageError(error instanceof Error ? error.message : "Could not delete role.");
+    }
+  };
+
+  const toggleFormPermission = (permissionId: string) => {
+    setForm((current) => ({
+      ...current,
+      permission_ids: current.permission_ids.includes(permissionId)
+        ? current.permission_ids.filter((id) => id !== permissionId)
+        : [...current.permission_ids, permissionId],
+    }));
+    setFormError("");
+    setFormNotice("");
+  };
+
   if (authLoading || (!authLoading && !isAdmin)) {
     return <div className="flex min-h-96 items-center justify-center text-main-600"><span className="size-4 animate-spin rounded-full border-2 border-primary-700 border-t-transparent" /></div>;
   }
 
   return (
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 py-4">
-      <section>
-        <p className="text-sm font-semibold text-main-500">System Access Control</p>
-        <h1 className="text-2xl font-bold text-main-950 sm:text-3xl">Roles</h1>
+      <section className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className="text-sm font-semibold text-main-500">System Access Control</p>
+          <h1 className="text-2xl font-bold text-main-950 sm:text-3xl">Roles</h1>
+        </div>
+        <button type="button" onClick={openCreateModal} className="flex w-fit items-center gap-2 rounded-md bg-primary-600 px-4 py-2 text-sm font-bold text-main-0 hover:bg-primary-700">
+          <i className="bi bi-plus-circle" aria-hidden="true" />
+          Add role
+        </button>
       </section>
 
       {(pageError || pageNotice) && (
@@ -119,26 +215,34 @@ export default function RolesPage() {
         <aside className="rounded-md border border-main-200 bg-main-0 p-4 shadow-sm">
           <div className="border-b border-main-200 pb-3">
             <p className="text-sm font-semibold text-main-500">Role catalog</p>
-            <h2 className="mt-1 text-xl font-bold text-main-950">System Roles</h2>
+            <h2 className="mt-1 text-xl font-bold text-main-950">Roles</h2>
           </div>
           <div className="mt-4 space-y-2">
             {loading ? (
               <p className="py-8 text-center text-sm text-main-500">Loading roles...</p>
             ) : (
               roles.map((role) => (
-                <button
-                  key={role.role_id}
-                  type="button"
-                  onClick={() => handleSelectRole(role)}
-                  className={`w-full rounded-md border px-3 py-3 text-left text-sm ${
-                    selectedRoleId === role.role_id
-                      ? "border-primary-300 bg-primary-100 text-primary-700"
-                      : "border-main-200 bg-main-50 text-main-800 hover:border-primary-300"
-                  }`}
-                >
-                  <span className="font-bold">{role.name}</span>
-                  <span className="mt-1 block text-xs opacity-80">{role.permission_ids.length} permission(s)</span>
-                </button>
+                <div key={role.role_id} className={`rounded-md border ${selectedRoleId === role.role_id ? "border-primary-300 bg-primary-100" : "border-main-200 bg-main-50"}`}>
+                  <button
+                    type="button"
+                    onClick={() => handleSelectRole(role)}
+                    className={`w-full px-3 py-3 text-left text-sm ${selectedRoleId === role.role_id ? "text-primary-700" : "text-main-800"}`}
+                  >
+                    <span className="font-bold">{role.name}</span>
+                    <span className="mt-1 block font-mono text-xs opacity-80">{role.code}</span>
+                    <span className="mt-1 block text-xs opacity-80">{role.permission_ids.length} permission(s){role.is_system ? " - system" : ""}</span>
+                  </button>
+                  <div className="flex justify-end gap-1 border-t border-main-200 px-2 py-2">
+                    <button type="button" onClick={() => openEditModal(role)} className="flex size-8 items-center justify-center rounded-md text-main-600 hover:bg-main-100 hover:text-primary-700" aria-label={`Edit ${role.name}`}>
+                      <i className="bi bi-pencil" aria-hidden="true" />
+                    </button>
+                    {!role.is_system && (
+                      <button type="button" onClick={() => void handleDeleteRole(role)} className="flex size-8 items-center justify-center rounded-md text-danger-700 hover:bg-danger-100" aria-label={`Delete ${role.name}`}>
+                        <i className="bi bi-trash" aria-hidden="true" />
+                      </button>
+                    )}
+                  </div>
+                </div>
               ))
             )}
           </div>
@@ -183,12 +287,72 @@ export default function RolesPage() {
               ))
             ) : (
               <p className="rounded-md border border-main-200 bg-main-50 px-3 py-8 text-center text-sm text-main-500 md:col-span-2 xl:col-span-3">
-                No permissions found. Create permissions first.
+                No permissions found.
               </p>
             )}
           </div>
         </div>
       </section>
+
+      <Modal open={Boolean(modal)} onClose={() => setModal(null)} size="xl" className="rounded-md border border-main-300 bg-main-0 p-0 shadow-lg">
+        <form onSubmit={(event) => void handleSaveRole(event)}>
+          <div className="flex items-center justify-between border-b border-main-200 px-5 py-4">
+            <div>
+              <p className="text-sm font-semibold text-main-500">Role details</p>
+              <h2 className="text-xl font-bold text-main-950">{modal?.mode === "edit" ? "Edit role" : "Create role"}</h2>
+            </div>
+            <button type="button" onClick={() => setModal(null)} className="flex size-9 items-center justify-center rounded-md text-main-500 hover:bg-main-100 hover:text-main-900" aria-label="Close">
+              <i className="bi bi-x-lg" aria-hidden="true" />
+            </button>
+          </div>
+
+          <div className="grid max-h-[calc(100vh-10rem)] gap-4 overflow-y-auto px-5 py-5">
+            {(formError || formNotice) && (
+              <div className={`rounded-md border px-3 py-2 text-sm font-semibold ${formError ? "border-danger-300 bg-danger-100 text-danger-700" : "border-success-300 bg-success-100 text-success-700"}`}>
+                {formError || formNotice}
+              </div>
+            )}
+
+            <div className="grid gap-4 md:grid-cols-2">
+              <div>
+                <label htmlFor="role-code" className="text-sm font-bold text-main-900">Code</label>
+                <input id="role-code" value={form.code} disabled={modal?.mode === "edit" && modal.role.is_system} onChange={(event) => { setForm((current) => ({ ...current, code: event.target.value })); setFormError(""); setFormNotice(""); }} required className="mt-2 w-full rounded-md border border-main-300 bg-main-100 px-4 py-2.5 text-sm text-main-900 outline-none disabled:opacity-60 focus:border-primary-500 focus:bg-main-0" />
+              </div>
+              <div>
+                <label htmlFor="role-name" className="text-sm font-bold text-main-900">Name</label>
+                <input id="role-name" value={form.name} onChange={(event) => { setForm((current) => ({ ...current, name: event.target.value })); setFormError(""); setFormNotice(""); }} required className="mt-2 w-full rounded-md border border-main-300 bg-main-100 px-4 py-2.5 text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-0" />
+              </div>
+            </div>
+
+            <div>
+              <label htmlFor="role-description" className="text-sm font-bold text-main-900">Description</label>
+              <textarea id="role-description" value={form.description} onChange={(event) => { setForm((current) => ({ ...current, description: event.target.value })); setFormError(""); setFormNotice(""); }} rows={3} className="mt-2 w-full rounded-md border border-main-300 bg-main-100 px-4 py-2.5 text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-0" />
+            </div>
+
+            <div>
+              <p className="text-sm font-bold text-main-900">Default permissions</p>
+              <div className="mt-2 grid gap-2 md:grid-cols-2">
+                {permissions.map((permission) => (
+                  <label key={permission.permission_id} className="flex cursor-pointer gap-3 rounded-md border border-main-200 bg-main-50 p-3 hover:border-primary-300">
+                    <input type="checkbox" checked={form.permission_ids.includes(permission.permission_id)} onChange={() => toggleFormPermission(permission.permission_id)} className="mt-1 size-4 accent-primary-600" />
+                    <span>
+                      <span className="block font-mono text-xs font-bold text-main-950">{permission.code}</span>
+                      <span className="mt-1 block text-sm font-bold text-main-800">{permission.name}</span>
+                    </span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-2 border-t border-main-200 px-5 py-4">
+            <button type="button" onClick={() => setModal(null)} className="rounded-md border border-main-300 bg-main-100 px-4 py-2 text-sm font-bold text-main-700 hover:bg-main-200">Cancel</button>
+            <button type="submit" disabled={savingRole} className="rounded-md bg-primary-600 px-4 py-2 text-sm font-bold text-main-0 hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-60">
+              {savingRole ? "Saving..." : "Save role"}
+            </button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 }

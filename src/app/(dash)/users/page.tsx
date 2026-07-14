@@ -6,6 +6,7 @@ import { Modal } from "@/src/components/ui/Modal";
 import Pagination from "@/src/components/ui/Pagination";
 import { useAuth } from "../../auth/hooks/useAuth";
 import type { AuthRole, AuthUser } from "@/src/services/auth/authService";
+import { listRoles, type Role } from "@/src/services/access-control/accessControlService";
 import {
   createUser,
   deleteUser,
@@ -36,15 +37,6 @@ type ModalState =
   | { mode: "create"; user: null }
   | { mode: "edit"; user: ManagedUser };
 
-const roles: Array<{ value: UserRole; label: string }> = [
-  { value: "farmer", label: "Farmer" },
-  { value: "entrepreneur", label: "Entrepreneur" },
-  { value: "buyer", label: "Buyer" },
-  { value: "market_officer", label: "Market Officer" },
-  { value: "researcher", label: "Researcher" },
-  { value: "admin", label: "Administrator" },
-];
-
 const emptyForm: FormState = {
   username: "",
   email: "",
@@ -67,8 +59,8 @@ function isAdminUser(user: AuthUser | null) {
   return normalizedRole.id === 1 || normalizedRole.name?.toLowerCase() === "admin" || normalizedRole.code === "admin";
 }
 
-function roleLabel(role: UserRole) {
-  return roles.find((item) => item.value === role)?.label ?? role;
+function roleLabel(role: UserRole, roles: Role[]) {
+  return roles.find((item) => item.code === role)?.name ?? role;
 }
 
 function normalizeCreatePayload(form: FormState): UserFormPayload {
@@ -114,6 +106,7 @@ export default function UsersPage() {
   const { user, loading: authLoading } = useAuth();
   const isAdmin = isAdminUser(user);
   const [users, setUsers] = useState<ManagedUser[]>([]);
+  const [roles, setRoles] = useState<Role[]>([]);
   const [totals, setTotals] = useState<UserTotals>({
     total: 0,
     active: 0,
@@ -171,10 +164,22 @@ export default function UsersPage() {
     }
   }, [activeFilter, isAdmin, page, pageSize, roleFilter, search]);
 
+  const loadRoles = useCallback(async () => {
+    if (!isAdmin) return;
+    try {
+      setRoles(await listRoles());
+    } catch {
+      setRoles([]);
+    }
+  }, [isAdmin]);
+
   useEffect(() => {
-    const timeout = window.setTimeout(() => void loadUsers(), 0);
+    const timeout = window.setTimeout(() => {
+      void loadUsers();
+      void loadRoles();
+    }, 0);
     return () => window.clearTimeout(timeout);
-  }, [loadUsers]);
+  }, [loadRoles, loadUsers]);
 
   const stats = useMemo(
     () => [
@@ -317,7 +322,7 @@ export default function UsersPage() {
             >
               <option value="">All roles</option>
               {roles.map((role) => (
-                <option key={role.value} value={role.value}>{role.label}</option>
+                <option key={role.role_id} value={role.code}>{role.name}</option>
               ))}
             </select>
             <select
@@ -366,7 +371,7 @@ export default function UsersPage() {
                     </td>
                     <td className="py-4 pr-4">
                       <span className={`rounded-full px-3 py-1 text-xs font-bold ${roleBadgeClass(managedUser.profile.role)}`}>
-                        {roleLabel(managedUser.profile.role)}
+                        {roleLabel(managedUser.profile.role, roles)}
                       </span>
                     </td>
                     <td className="py-4 pr-4">
@@ -505,7 +510,7 @@ export default function UsersPage() {
                 }}
                 className="mt-2 w-full rounded-md border border-main-300 bg-main-100 px-4 py-2.5 text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-0"
               >
-                {roles.map((role) => <option key={role.value} value={role.value}>{role.label}</option>)}
+                {roles.map((role) => <option key={role.role_id} value={role.code}>{role.name}</option>)}
               </select>
             </div>
 

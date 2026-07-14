@@ -11,7 +11,7 @@ type ApiResponse<T> = {
   meta?: Record<string, unknown>;
 };
 
-export type UserRole = "farmer" | "entrepreneur" | "buyer" | "market_officer" | "admin" | "researcher";
+export type UserRole = string;
 
 export type ManagedProfile = {
   role: UserRole;

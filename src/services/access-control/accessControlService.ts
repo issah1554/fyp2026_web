@@ -20,9 +20,19 @@ export type Permission = {
 
 export type Role = {
   role_id: string;
+  code: string;
   name: string;
+  description: string;
+  is_system: boolean;
   permission_ids: string[];
   permissions: Permission[];
+};
+
+export type RoleFormPayload = {
+  code: string;
+  name: string;
+  description: string;
+  permission_ids: string[];
 };
 
 function getErrorMessage(payload: ApiResponse<unknown> | null, fallback: string) {
@@ -54,6 +64,30 @@ export async function listRoles() {
   return payload.data ?? [];
 }
 
+export async function createRole(data: RoleFormPayload) {
+  const payload = await accessRequest<Role>(
+    "/users/roles/",
+    {
+      method: "POST",
+      body: JSON.stringify(data),
+    },
+    "Could not create role.",
+  );
+  return { message: payload.message ?? "Role created successfully.", role: payload.data };
+}
+
+export async function updateRole(roleId: string, data: RoleFormPayload) {
+  const payload = await accessRequest<Role>(
+    `/users/roles/${roleId}/`,
+    {
+      method: "PUT",
+      body: JSON.stringify(data),
+    },
+    "Could not update role.",
+  );
+  return { message: payload.message ?? "Role updated successfully.", role: payload.data };
+}
+
 export async function updateRolePermissions(roleId: string, permissionIds: string[]) {
   const payload = await accessRequest<Role>(
     `/users/roles/${roleId}/`,
@@ -64,6 +98,15 @@ export async function updateRolePermissions(roleId: string, permissionIds: strin
     "Could not update role permissions.",
   );
   return { message: payload.message ?? "Role permissions updated successfully.", role: payload.data };
+}
+
+export async function deleteRole(roleId: string) {
+  const payload = await accessRequest<unknown>(
+    `/users/roles/${roleId}/`,
+    { method: "DELETE" },
+    "Could not delete role.",
+  );
+  return payload.message ?? "Role deleted successfully.";
 }
 
 export async function listPermissions(params: { search?: string } = {}) {
