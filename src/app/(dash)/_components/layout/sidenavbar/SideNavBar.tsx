@@ -155,28 +155,16 @@ export function Sidebar({
         requiredPermission: "*",
       },
       {
-        label: "System Access Control",
+        label: "Users",
+        to: "/users",
+        icon: <i className="bi bi-people" />,
+        requiredPermission: "*",
+      },
+      {
+        label: "RBAC",
+        to: "/rbac",
         icon: <i className="bi bi-shield-lock" />,
-        subItems: [
-          {
-            label: "System Users",
-            to: "/users",
-            icon: <i className="bi bi-people" />,
-            requiredPermission: "*",
-          },
-          {
-            label: "System Roles",
-            to: "/system/access-control/roles",
-            icon: <i className="bi bi-person-badge" />,
-            requiredPermission: ["roles.list", "roles.create", "roles.update", "roles.delete"],
-          },
-          {
-            label: "System Permissions",
-            to: "/system/access-control/permissions",
-            icon: <i className="bi bi-key" />,
-            requiredPermission: ["permissions.list", "roles.permissions.update"],
-          },
-        ],
+        requiredPermission: ["roles.list", "roles.create", "roles.update", "roles.delete", "permissions.list", "roles.permissions.update"],
       },
       {
         label: "Reports",
