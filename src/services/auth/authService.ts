@@ -1,9 +1,11 @@
 import { API_BASE_URL } from "@/src/services/config";
 
 export type AuthRole = {
-  id?: number;
+  id?: string | number;
+  role_id?: string;
   name?: string;
   code?: string;
+  permissions?: BackendPermission[];
 };
 
 export type AuthUser = {
@@ -21,7 +23,8 @@ const AUTH_REFRESH_TOKEN_KEY = "marketia.auth.refresh-token";
 export const AUTH_SESSION_CHANGED_EVENT = "marketia.auth.session-changed";
 
 type BackendProfile = {
-  role?: string;
+  role?: string | AuthRole;
+  permissions?: BackendPermission[];
 };
 
 type BackendUser = {
@@ -31,7 +34,15 @@ type BackendUser = {
   email?: string;
   first_name?: string;
   last_name?: string;
+  role?: string | AuthRole;
+  permissions?: BackendPermission[] | string[];
   profile?: BackendProfile;
+};
+
+type BackendPermission = {
+  permission_id?: string;
+  code?: string;
+  name?: string;
 };
 
 type BackendAuthData = {
@@ -130,8 +141,50 @@ function getErrorMessage(payload: ApiResponse<unknown> | null, fallback: string)
   return fallback;
 }
 
+function getRoleCode(role: string | AuthRole | undefined) {
+  if (!role) {
+    return "user";
+  }
+
+  return typeof role === "string" ? role : role.code ?? role.name ?? "user";
+}
+
+function normalizePermissions(permissions: BackendPermission[] | string[] | undefined) {
+  if (!permissions) {
+    return [];
+  }
+
+  return permissions
+    .map((permission) => (typeof permission === "string" ? permission : permission.code))
+    .filter((permission): permission is string => Boolean(permission));
+}
+
+function normalizeRole(role: string | AuthRole | undefined): string | AuthRole {
+  if (!role) {
+    return "user";
+  }
+
+  if (typeof role === "string") {
+    return role;
+  }
+
+  return {
+    ...role,
+    id: role.role_id ?? role.id,
+  };
+}
+
 function normalizeUser(user: BackendUser): AuthUser {
-  const role = user.profile?.role ?? "user";
+  const backendRole = user.profile?.role ?? user.role;
+  const role = normalizeRole(backendRole);
+  const roleCode = getRoleCode(role);
+  const rolePermissions = typeof backendRole === "object" ? normalizePermissions(backendRole.permissions) : [];
+  const permissions = [
+    ...normalizePermissions(user.permissions),
+    ...normalizePermissions(user.profile?.permissions),
+    ...rolePermissions,
+  ];
+  const uniquePermissions = Array.from(new Set(permissions));
 
   return {
     id: String(user.user_id ?? user.id ?? user.username ?? user.email ?? ""),
@@ -139,7 +192,7 @@ function normalizeUser(user: BackendUser): AuthUser {
     lastName: user.last_name ?? "",
     email: user.email ?? "",
     role,
-    permissions: role.toLowerCase() === "admin" ? ["*"] : [],
+    permissions: roleCode.toLowerCase() === "admin" ? ["*"] : uniquePermissions,
   };
 }
 
@@ -189,6 +242,24 @@ export function setStoredUser(user: AuthUser, tokens?: { access: string; refresh
   emitAuthSessionChanged();
 }
 
+async function fetchCurrentUser(): Promise<AuthUser | null> {
+  const response = await authenticatedFetch(`${API_BASE_URL}/auth/me/`);
+  const payload = (await response.json().catch(() => null)) as ApiResponse<BackendUser> | null;
+
+  if (response.status === 401) {
+    clearStoredUser();
+    return null;
+  }
+
+  if (!response.ok || !payload?.data) {
+    return getStoredUser();
+  }
+
+  const user = normalizeUser(payload.data);
+  setStoredUser(user);
+  return user;
+}
+
 export function clearStoredUser() {
   if (!isBrowser()) {
     return;
@@ -231,7 +302,7 @@ export async function loginWithPassword(credentials: LoginCredentials): Promise<
     access: payload.data.access,
     refresh: payload.data.refresh,
   });
-  return user;
+  return (await fetchCurrentUser()) ?? user;
 }
 
 export async function registerUser(payload: RegisterPayload): Promise<RegisterResult> {
@@ -288,11 +359,11 @@ export async function initializeAuthSession(): Promise<AuthUser | null> {
 
   const access = getStoredAccessToken();
   if (access && !isTokenExpiring(access)) {
-    return user;
+    return (await fetchCurrentUser()) ?? user;
   }
 
   const refreshedAccess = await refreshAccessToken();
-  return refreshedAccess ? user : null;
+  return refreshedAccess ? (await fetchCurrentUser()) ?? user : null;
 }
 
 export async function refreshSessionIfNeeded(): Promise<AuthUser | null> {
@@ -305,7 +376,7 @@ export async function refreshSessionIfNeeded(): Promise<AuthUser | null> {
 
   if (!access || isTokenExpiring(access, 120_000)) {
     const refreshedAccess = await refreshAccessToken();
-    return refreshedAccess ? user : null;
+    return refreshedAccess ? (await fetchCurrentUser()) ?? user : null;
   }
 
   return user;
@@ -376,6 +447,44 @@ export async function confirmPasswordReset(token: string, password: string): Pro
 
   return {
     message: result?.message ?? "Password reset successful.",
+  };
+}
+
+export async function verifyEmail(token: string): Promise<MessageResult> {
+  const response = await fetch(`${API_BASE_URL}/auth/email/verify/`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ token }),
+  });
+  const result = (await response.json().catch(() => null)) as ApiResponse<unknown> | null;
+
+  if (!response.ok) {
+    throw new Error(getErrorMessage(result, "Email verification failed. The link may be invalid or expired."));
+  }
+
+  return {
+    message: result?.message ?? "Email verified successfully.",
+  };
+}
+
+export async function resendEmailVerification(email: string): Promise<MessageResult> {
+  const response = await fetch(`${API_BASE_URL}/auth/email/resend/`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ email }),
+  });
+  const result = (await response.json().catch(() => null)) as ApiResponse<unknown> | null;
+
+  if (!response.ok) {
+    throw new Error(getErrorMessage(result, "Could not resend the verification link. Try again."));
+  }
+
+  return {
+    message: result?.message ?? "A new verification link has been sent to your email.",
   };
 }
 

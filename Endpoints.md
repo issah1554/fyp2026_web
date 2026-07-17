@@ -20,8 +20,8 @@ Frontend status values:
 | POST | `/api/v1/auth/register/` | Register new user and send email verification token. | None | Working | Integrated |
 | POST | `/api/v1/auth/login/` | Login with username/email and password. Returns access and refresh tokens. | None | Working | Integrated |
 | POST | `/api/v1/auth/token/refresh/` | Refresh access token using refresh token. | None | Working | Integrated |
-| POST | `/api/v1/auth/email/verify/` | Verify registered user email with token. | None | Working | Not integrated |
-| POST | `/api/v1/auth/email/resend/` | Resend email verification token. | None | Working | Not integrated |
+| POST | `/api/v1/auth/email/verify/` | Verify registered user email with token. | None | Working | Integrated |
+| POST | `/api/v1/auth/email/resend/` | Resend email verification token. | None | Working | Integrated |
 | POST | `/api/v1/auth/password/reset/request/` | Request password reset link by email. | None | Working | Integrated |
 | POST | `/api/v1/auth/password/reset/confirm/` | Reset password with token. | None | Working | Integrated |
 | GET | `/api/v1/auth/me/` | Get current authenticated user profile. | Bearer token | Working | Not integrated |
