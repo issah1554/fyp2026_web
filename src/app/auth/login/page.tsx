@@ -11,11 +11,13 @@ function LoginForm() {
   const router = useRouter();
   const { login } = useAuth();
   const [error, setError] = useState("");
+  const [verificationEmail, setVerificationEmail] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError("");
+    setVerificationEmail("");
     setIsSubmitting(true);
 
     const formData = new FormData(event.currentTarget);
@@ -26,11 +28,20 @@ function LoginForm() {
       await login({ username, password });
       router.replace("/dash");
     } catch (loginError) {
-      setError(loginError instanceof Error ? loginError.message : "Login failed. Try again.");
+      const message = loginError instanceof Error ? loginError.message : "Login failed. Try again.";
+      setError(message);
+      if (message.toLowerCase().includes("not verified") && username.includes("@")) {
+        setVerificationEmail(username);
+      }
     } finally {
       setIsSubmitting(false);
     }
   };
+
+  const isUnverifiedError = error.toLowerCase().includes("not verified");
+  const verificationHref = verificationEmail
+    ? `/auth/email-verification?email=${encodeURIComponent(verificationEmail)}`
+    : "/auth/email-verification";
 
   return (
     <>
@@ -66,7 +77,16 @@ function LoginForm() {
 
         {error && (
           <div className="rounded-md border border-danger-300 bg-danger-100 px-4 py-3 text-sm font-semibold text-danger-700">
-            {error}
+            <p>{error}</p>
+            {isUnverifiedError && (
+              <Link
+                href={verificationHref}
+                className="mt-2 inline-flex items-center gap-2 text-primary-700 underline-offset-4 hover:text-primary-800 hover:underline"
+              >
+                Request a new verification link
+                <i className="bi bi-arrow-right" aria-hidden="true" />
+              </Link>
+            )}
           </div>
         )}
 
