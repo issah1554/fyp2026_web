@@ -1,3 +1,5 @@
+import { API_BASE_URL } from "@/src/services/config";
+
 export type AuthRole = {
   id?: number;
   name?: string;
@@ -17,8 +19,6 @@ const AUTH_USER_KEY = "marketia.auth.user";
 const AUTH_ACCESS_TOKEN_KEY = "marketia.auth.access-token";
 const AUTH_REFRESH_TOKEN_KEY = "marketia.auth.refresh-token";
 export const AUTH_SESSION_CHANGED_EVENT = "marketia.auth.session-changed";
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_BACKEND_API_BASE_URL ?? "http://127.0.0.1:8000/api/v1";
 
 type BackendProfile = {
   role?: string;

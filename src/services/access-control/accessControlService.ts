@@ -1,7 +1,5 @@
 import { authenticatedFetch } from "@/src/services/auth/authService";
-
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_BACKEND_API_BASE_URL ?? "http://127.0.0.1:8000/api/v1";
+import { API_BASE_URL } from "@/src/services/config";
 
 type ApiResponse<T> = {
   success?: boolean;
