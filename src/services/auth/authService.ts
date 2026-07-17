@@ -128,17 +128,30 @@ function getErrorMessage(payload: ApiResponse<unknown> | null, fallback: string)
     return payload.message;
   }
 
-  if (payload?.errors && typeof payload.errors === "object") {
-    const firstError = Object.values(payload.errors)[0];
-    if (Array.isArray(firstError) && firstError[0]) {
-      return String(firstError[0]);
-    }
-    if (firstError) {
-      return String(firstError);
-    }
-  }
+  const firstError = getFirstErrorMessage(payload?.errors);
+  if (firstError) return firstError;
 
   return fallback;
+}
+
+function getFirstErrorMessage(errors: unknown): string {
+  if (Array.isArray(errors)) {
+    for (const error of errors) {
+      const message = getFirstErrorMessage(error);
+      if (message) return message;
+    }
+    return "";
+  }
+
+  if (errors && typeof errors === "object") {
+    for (const error of Object.values(errors)) {
+      const message = getFirstErrorMessage(error);
+      if (message) return message;
+    }
+    return "";
+  }
+
+  return errors ? String(errors) : "";
 }
 
 function getRoleCode(role: string | AuthRole | undefined) {

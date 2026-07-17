@@ -18,6 +18,7 @@ import {
   type UserRole,
   type UserTotals,
 } from "@/src/services/users/userService";
+import { PHONE_NUMBER_ERROR, validateInternationalPhoneNumber } from "@/src/utils/phoneValidation";
 
 type FormState = {
   username: string;
@@ -220,6 +221,11 @@ export default function UsersPage() {
   const handleSave = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!modal) return;
+    if (!validateInternationalPhoneNumber(form.phone_number)) {
+      setFormError(PHONE_NUMBER_ERROR);
+      setFormNotice("");
+      return;
+    }
     setSaving(true);
     setFormError("");
     setFormNotice("");
@@ -459,7 +465,7 @@ export default function UsersPage() {
               ["email", "Email", "email"],
               ["first_name", "First name", "text"],
               ["last_name", "Last name", "text"],
-              ["phone_number", "Phone number", "text"],
+              ["phone_number", "Phone number", "tel"],
               ["organization", "Organization", "text"],
             ].map(([key, label, type]) => (
               <div key={key}>
@@ -467,6 +473,10 @@ export default function UsersPage() {
                 <input
                   id={`user-${key}`}
                   type={type}
+                  inputMode={key === "phone_number" ? "tel" : undefined}
+                  pattern={key === "phone_number" ? "^\\+[1-9][0-9]{7,14}$" : undefined}
+                  title={key === "phone_number" ? PHONE_NUMBER_ERROR : undefined}
+                  placeholder={key === "phone_number" ? "+255700000001" : undefined}
                   value={String(form[key as keyof FormState])}
                   onChange={(event) => {
                     setForm((current) => ({ ...current, [key]: event.target.value }));

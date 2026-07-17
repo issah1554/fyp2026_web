@@ -6,6 +6,7 @@ import { useState } from "react";
 import AuthShell from "../_components/auth-shell";
 import PasswordInput from "../_components/password-input";
 import { registerUser } from "@/src/services/auth/authService";
+import { PHONE_NUMBER_ERROR, validateInternationalPhoneNumber } from "@/src/utils/phoneValidation";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -24,9 +25,15 @@ export default function RegisterPage() {
     const lastName = lastNameParts.join(" ");
     const password = String(formData.get("password") ?? "");
     const confirmPassword = String(formData.get("confirm-password") ?? "");
+    const phoneNumber = String(formData.get("phone_number") ?? "").trim();
 
     if (password !== confirmPassword) {
       setError("Passwords do not match.");
+      return;
+    }
+
+    if (!validateInternationalPhoneNumber(phoneNumber)) {
+      setError(PHONE_NUMBER_ERROR);
       return;
     }
 
@@ -39,7 +46,7 @@ export default function RegisterPage() {
         first_name: firstName,
         last_name: lastName,
         role: String(formData.get("role") ?? "farmer"),
-        phone_number: String(formData.get("phone_number") ?? "").trim(),
+        phone_number: phoneNumber,
         organization: String(formData.get("organization") ?? "").trim(),
       });
 
@@ -157,6 +164,9 @@ export default function RegisterPage() {
               type="tel"
               autoComplete="tel"
               placeholder="+255..."
+              pattern="^\+[1-9][0-9]{7,14}$"
+              inputMode="tel"
+              title={PHONE_NUMBER_ERROR}
               className="mt-1.5 w-full rounded-md border border-main-300 bg-main-100 px-4 py-2.5 text-base text-main-900 outline-none placeholder:text-main-500 focus:border-primary-500 focus:bg-main-0"
             />
           </div>
