@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import AuthShell from "../_components/auth-shell";
 import { resendEmailVerification, verifyEmail } from "@/src/services/auth/authService";
@@ -9,7 +9,6 @@ import { resendEmailVerification, verifyEmail } from "@/src/services/auth/authSe
 type VerificationStatus = "checking" | "success" | "error" | "idle";
 
 function EmailVerificationContent() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const token = searchParams.get("token")?.trim() ?? "";
   const emailFromLink = searchParams.get("email")?.trim() ?? "";
@@ -36,7 +35,6 @@ function EmailVerificationContent() {
         }
         setStatus("success");
         setMessage(result.message);
-        window.setTimeout(() => router.replace("/auth/login"), 1400);
       } catch (verificationError) {
         if (!isMounted) {
           return;
@@ -55,7 +53,7 @@ function EmailVerificationContent() {
     return () => {
       isMounted = false;
     };
-  }, [router, token]);
+  }, [token]);
 
   const handleResend = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
