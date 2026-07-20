@@ -243,6 +243,7 @@ export function Sidebar({
         .filter((group) => group.items.length > 0),
     [groups, permissions, isAdmin],
   );
+  const visibleItems = useMemo(() => visibleGroups.flatMap((group) => group.items), [visibleGroups]);
 
   return (
     <aside
@@ -261,9 +262,13 @@ export function Sidebar({
 
       <div className="flex-1 overflow-x-hidden overflow-y-auto">
         <div className="space-y-3 pb-4">
-          {visibleGroups.map((group) => (
-            <NavItems key={group.title} collapsed={effectiveCollapsed} title={group.title} items={group.items} />
-          ))}
+          {effectiveCollapsed ? (
+            <NavItems collapsed items={visibleItems} />
+          ) : (
+            visibleGroups.map((group) => (
+              <NavItems key={group.title} title={group.title} items={group.items} />
+            ))
+          )}
         </div>
       </div>
 
