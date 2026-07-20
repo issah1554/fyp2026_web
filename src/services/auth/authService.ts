@@ -76,7 +76,6 @@ export type RegisterPayload = {
   last_name: string;
   role?: string;
   phone_number?: string;
-  organization?: string;
 };
 
 export type RegisterResult = {

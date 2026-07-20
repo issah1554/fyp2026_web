@@ -47,7 +47,6 @@ export default function RegisterPage() {
         last_name: lastName,
         role: String(formData.get("role") ?? "farmer"),
         phone_number: phoneNumber,
-        organization: String(formData.get("organization") ?? "").trim(),
       });
 
       setSuccess(result.message);
@@ -153,37 +152,21 @@ export default function RegisterPage() {
           </select>
         </div>
 
-        <div className="grid gap-3 sm:grid-cols-2">
-          <div>
-            <label htmlFor="phone_number" className="text-sm font-bold text-main-900">
-              Phone
-            </label>
-            <input
-              id="phone_number"
-              name="phone_number"
-              type="tel"
-              autoComplete="tel"
-              placeholder="+255..."
-              pattern="^\+[1-9][0-9]{7,14}$"
-              inputMode="tel"
-              title={PHONE_NUMBER_ERROR}
-              className="mt-1.5 w-full rounded-md border border-main-300 bg-main-100 px-4 py-2.5 text-base text-main-900 outline-none placeholder:text-main-500 focus:border-primary-500 focus:bg-main-0"
-            />
-          </div>
-
-          <div>
-            <label htmlFor="organization" className="text-sm font-bold text-main-900">
-              Organization
-            </label>
-            <input
-              id="organization"
-              name="organization"
-              type="text"
-              autoComplete="organization"
-              placeholder="Optional"
-              className="mt-1.5 w-full rounded-md border border-main-300 bg-main-100 px-4 py-2.5 text-base text-main-900 outline-none placeholder:text-main-500 focus:border-primary-500 focus:bg-main-0"
-            />
-          </div>
+        <div>
+          <label htmlFor="phone_number" className="text-sm font-bold text-main-900">
+            Phone
+          </label>
+          <input
+            id="phone_number"
+            name="phone_number"
+            type="tel"
+            autoComplete="tel"
+            placeholder="+255..."
+            pattern="^\+[1-9][0-9]{7,14}$"
+            inputMode="tel"
+            title={PHONE_NUMBER_ERROR}
+            className="mt-1.5 w-full rounded-md border border-main-300 bg-main-100 px-4 py-2.5 text-base text-main-900 outline-none placeholder:text-main-500 focus:border-primary-500 focus:bg-main-0"
+          />
         </div>
 
         {error && (
