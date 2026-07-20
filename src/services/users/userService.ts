@@ -1,5 +1,5 @@
 import { authenticatedFetch } from "@/src/services/auth/authService";
-import { API_BASE_URL } from "@/src/services/config";
+import { apiUrl } from "@/src/services/config";
 
 type ApiResponse<T> = {
   success?: boolean;
@@ -102,7 +102,7 @@ function getFirstErrorMessage(errors: unknown): string {
 }
 
 async function userRequest<T>(path: string, init: RequestInit = {}, fallback = "Request failed.") {
-  const response = await authenticatedFetch(`${API_BASE_URL}${path}`, {
+  const response = await authenticatedFetch(apiUrl(path), {
     ...init,
     headers: {
       "Content-Type": "application/json",
@@ -156,7 +156,7 @@ export async function listUsers(
   if (params.page_size) query.set("page_size", String(params.page_size));
 
   const payload = await userRequest<ManagedUser[]>(
-    `/users/${query.toString() ? `?${query.toString()}` : ""}`,
+    `/users${query.toString() ? `?${query.toString()}` : ""}`,
     {},
     "Could not load users.",
   );
@@ -170,7 +170,7 @@ export async function listUsers(
 
 export async function createUser(data: UserFormPayload) {
   const payload = await userRequest<ManagedUser>(
-    "/users/",
+    "/users",
     {
       method: "POST",
       body: JSON.stringify(data),
@@ -182,7 +182,7 @@ export async function createUser(data: UserFormPayload) {
 
 export async function updateUser(userId: string, data: Omit<UserFormPayload, "password">) {
   const payload = await userRequest<ManagedUser>(
-    `/users/${userId}/`,
+    `/users/${userId}`,
     {
       method: "PATCH",
       body: JSON.stringify(data),
@@ -194,7 +194,7 @@ export async function updateUser(userId: string, data: Omit<UserFormPayload, "pa
 
 export async function deleteUser(userId: string) {
   const payload = await userRequest<unknown>(
-    `/users/${userId}/`,
+    `/users/${userId}`,
     { method: "DELETE" },
     "Could not delete user.",
   );

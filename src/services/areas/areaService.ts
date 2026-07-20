@@ -1,5 +1,5 @@
 import { authenticatedFetch } from "@/src/services/auth/authService";
-import { API_BASE_URL } from "@/src/services/config";
+import { apiUrl } from "@/src/services/config";
 
 type ApiResponse<T> = {
   success?: boolean;
@@ -104,7 +104,7 @@ function getErrorMessage(payload: ApiResponse<unknown> | null, fallback: string)
 }
 
 async function areaRequest<T>(path: string, init: RequestInit = {}, fallback = "Request failed.") {
-  const response = await authenticatedFetch(`${API_BASE_URL}${path}`, {
+  const response = await authenticatedFetch(apiUrl(path), {
     ...init,
     headers: {
       "Content-Type": "application/json",
@@ -167,7 +167,7 @@ export async function listAreas(
   }
 
   const payload = await areaRequest<Area[]>(
-    `/areas/${query.toString() ? `?${query.toString()}` : ""}`,
+    `/areas${query.toString() ? `?${query.toString()}` : ""}`,
     {},
     "Could not load areas.",
   );
@@ -181,7 +181,7 @@ export async function listAreas(
 
 export async function createArea(data: AreaFormPayload) {
   const payload = await areaRequest<Area>(
-    "/areas/",
+    "/areas",
     {
       method: "POST",
       body: JSON.stringify(data),
@@ -193,7 +193,7 @@ export async function createArea(data: AreaFormPayload) {
 
 export async function updateArea(areaId: string, data: AreaFormPayload) {
   const payload = await areaRequest<Area>(
-    `/areas/${areaId}/`,
+    `/areas/${areaId}`,
     {
       method: "PATCH",
       body: JSON.stringify(data),
@@ -205,7 +205,7 @@ export async function updateArea(areaId: string, data: AreaFormPayload) {
 
 export async function deleteArea(areaId: string) {
   const payload = await areaRequest<unknown>(
-    `/areas/${areaId}/`,
+    `/areas/${areaId}`,
     {
       method: "DELETE",
     },

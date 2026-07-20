@@ -1,5 +1,5 @@
 import { authenticatedFetch } from "@/src/services/auth/authService";
-import { API_BASE_URL } from "@/src/services/config";
+import { apiUrl } from "@/src/services/config";
 
 type ApiResponse<T> = {
   success?: boolean;
@@ -95,7 +95,7 @@ function getErrorMessage(payload: ApiResponse<unknown> | null, fallback: string)
 }
 
 async function commodityRequest<T>(path: string, init: RequestInit = {}, fallback = "Request failed.") {
-  const response = await authenticatedFetch(`${API_BASE_URL}${path}`, {
+  const response = await authenticatedFetch(apiUrl(path), {
     ...init,
     headers: {
       "Content-Type": "application/json",
@@ -156,7 +156,7 @@ export async function listCommodities(
   }
 
   const payload = await commodityRequest<Commodity[]>(
-    `/commodities/${query.toString() ? `?${query.toString()}` : ""}`,
+    `/commodities${query.toString() ? `?${query.toString()}` : ""}`,
     {},
     "Could not load commodities.",
   );
@@ -170,7 +170,7 @@ export async function listCommodities(
 
 export async function listCommodityCategories() {
   const payload = await commodityRequest<CommodityCategory[]>(
-    "/commodities/categories/",
+    "/commodities/categories",
     {},
     "Could not load commodity categories.",
   );
@@ -179,7 +179,7 @@ export async function listCommodityCategories() {
 
 export async function listCommodityUnits() {
   const payload = await commodityRequest<CommodityUnit[]>(
-    "/commodities/units/",
+    "/commodities/units",
     {},
     "Could not load commodity units.",
   );
@@ -188,7 +188,7 @@ export async function listCommodityUnits() {
 
 export async function createCommodity(data: CommodityFormPayload) {
   const payload = await commodityRequest<Commodity>(
-    "/commodities/",
+    "/commodities",
     {
       method: "POST",
       body: JSON.stringify(data),
@@ -200,7 +200,7 @@ export async function createCommodity(data: CommodityFormPayload) {
 
 export async function updateCommodity(commodityId: string, data: CommodityFormPayload) {
   const payload = await commodityRequest<Commodity>(
-    `/commodities/${commodityId}/`,
+    `/commodities/${commodityId}`,
     {
       method: "PATCH",
       body: JSON.stringify(data),
@@ -212,7 +212,7 @@ export async function updateCommodity(commodityId: string, data: CommodityFormPa
 
 export async function deleteCommodity(commodityId: string) {
   const payload = await commodityRequest<unknown>(
-    `/commodities/${commodityId}/`,
+    `/commodities/${commodityId}`,
     { method: "DELETE" },
     "Could not delete commodity.",
   );
@@ -221,7 +221,7 @@ export async function deleteCommodity(commodityId: string) {
 
 export async function createCommodityCategory(data: CategoryFormPayload) {
   const payload = await commodityRequest<CommodityCategory>(
-    "/commodities/categories/",
+    "/commodities/categories",
     {
       method: "POST",
       body: JSON.stringify(data),
@@ -233,7 +233,7 @@ export async function createCommodityCategory(data: CategoryFormPayload) {
 
 export async function updateCommodityCategory(categoryId: string, data: CategoryFormPayload) {
   const payload = await commodityRequest<CommodityCategory>(
-    `/commodities/categories/${categoryId}/`,
+    `/commodities/categories/${categoryId}`,
     {
       method: "PATCH",
       body: JSON.stringify(data),
@@ -245,7 +245,7 @@ export async function updateCommodityCategory(categoryId: string, data: Category
 
 export async function deleteCommodityCategory(categoryId: string) {
   const payload = await commodityRequest<unknown>(
-    `/commodities/categories/${categoryId}/`,
+    `/commodities/categories/${categoryId}`,
     { method: "DELETE" },
     "Could not delete category.",
   );
@@ -254,7 +254,7 @@ export async function deleteCommodityCategory(categoryId: string) {
 
 export async function createCommodityUnit(data: UnitFormPayload) {
   const payload = await commodityRequest<CommodityUnit>(
-    "/commodities/units/",
+    "/commodities/units",
     {
       method: "POST",
       body: JSON.stringify(data),
@@ -266,7 +266,7 @@ export async function createCommodityUnit(data: UnitFormPayload) {
 
 export async function updateCommodityUnit(unitId: string, data: UnitFormPayload) {
   const payload = await commodityRequest<CommodityUnit>(
-    `/commodities/units/${unitId}/`,
+    `/commodities/units/${unitId}`,
     {
       method: "PATCH",
       body: JSON.stringify(data),
@@ -278,7 +278,7 @@ export async function updateCommodityUnit(unitId: string, data: UnitFormPayload)
 
 export async function deleteCommodityUnit(unitId: string) {
   const payload = await commodityRequest<unknown>(
-    `/commodities/units/${unitId}/`,
+    `/commodities/units/${unitId}`,
     { method: "DELETE" },
     "Could not delete unit.",
   );

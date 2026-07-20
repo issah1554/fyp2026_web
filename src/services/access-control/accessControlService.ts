@@ -1,5 +1,5 @@
 import { authenticatedFetch } from "@/src/services/auth/authService";
-import { API_BASE_URL } from "@/src/services/config";
+import { apiUrl } from "@/src/services/config";
 
 type ApiResponse<T> = {
   success?: boolean;
@@ -44,7 +44,7 @@ function getErrorMessage(payload: ApiResponse<unknown> | null, fallback: string)
 }
 
 async function accessRequest<T>(path: string, init: RequestInit = {}, fallback = "Request failed.") {
-  const response = await authenticatedFetch(`${API_BASE_URL}${path}`, {
+  const response = await authenticatedFetch(apiUrl(path), {
     ...init,
     headers: {
       "Content-Type": "application/json",
@@ -58,13 +58,13 @@ async function accessRequest<T>(path: string, init: RequestInit = {}, fallback =
 }
 
 export async function listRoles() {
-  const payload = await accessRequest<Role[]>("/users/roles/", {}, "Could not load roles.");
+  const payload = await accessRequest<Role[]>("/users/roles", {}, "Could not load roles.");
   return payload.data ?? [];
 }
 
 export async function createRole(data: RoleFormPayload) {
   const payload = await accessRequest<Role>(
-    "/users/roles/",
+    "/users/roles",
     {
       method: "POST",
       body: JSON.stringify(data),
@@ -76,7 +76,7 @@ export async function createRole(data: RoleFormPayload) {
 
 export async function updateRole(roleId: string, data: RoleFormPayload) {
   const payload = await accessRequest<Role>(
-    `/users/roles/${roleId}/`,
+    `/users/roles/${roleId}`,
     {
       method: "PUT",
       body: JSON.stringify(data),
@@ -88,7 +88,7 @@ export async function updateRole(roleId: string, data: RoleFormPayload) {
 
 export async function updateRolePermissions(roleId: string, permissionIds: string[]) {
   const payload = await accessRequest<Role>(
-    `/users/roles/${roleId}/`,
+    `/users/roles/${roleId}`,
     {
       method: "PATCH",
       body: JSON.stringify({ permission_ids: permissionIds }),
@@ -100,7 +100,7 @@ export async function updateRolePermissions(roleId: string, permissionIds: strin
 
 export async function deleteRole(roleId: string) {
   const payload = await accessRequest<unknown>(
-    `/users/roles/${roleId}/`,
+    `/users/roles/${roleId}`,
     { method: "DELETE" },
     "Could not delete role.",
   );
@@ -111,7 +111,7 @@ export async function listPermissions(params: { search?: string } = {}) {
   const query = new URLSearchParams();
   if (params.search) query.set("search", params.search);
   const payload = await accessRequest<Permission[]>(
-    `/users/permissions/${query.toString() ? `?${query.toString()}` : ""}`,
+    `/users/permissions${query.toString() ? `?${query.toString()}` : ""}`,
     {},
     "Could not load permissions.",
   );

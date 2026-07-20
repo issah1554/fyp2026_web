@@ -1,6 +1,12 @@
 import type { Metadata } from "next";
+import { Inter } from "next/font/google";
 import "bootstrap-icons/font/bootstrap-icons.css";
 import "./globals.css";
+
+const inter = Inter({
+  subsets: ["latin"],
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: "Marketia Decision Support",
@@ -15,7 +21,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className="bg-main-50 text-main-900 antialiased">{children}</body>
+      <body className={`${inter.className} bg-main-50 text-main-900 antialiased`}>{children}</body>
     </html>
   );
 }

@@ -1,4 +1,4 @@
-import { API_BASE_URL } from "@/src/services/config";
+import { apiUrl } from "@/src/services/config";
 
 export type AuthRole = {
   id?: string | number;
@@ -256,7 +256,7 @@ export function setStoredUser(user: AuthUser, tokens?: { access: string; refresh
 }
 
 async function fetchCurrentUser(): Promise<AuthUser | null> {
-  const response = await authenticatedFetch(`${API_BASE_URL}/auth/me/`);
+  const response = await authenticatedFetch(apiUrl("/auth/me"));
   const payload = (await response.json().catch(() => null)) as ApiResponse<BackendUser> | null;
 
   if (response.status === 401) {
@@ -297,7 +297,7 @@ function setStoredAccessToken(access: string, refresh?: string) {
 }
 
 export async function loginWithPassword(credentials: LoginCredentials): Promise<AuthUser> {
-  const response = await fetch(`${API_BASE_URL}/auth/login/`, {
+  const response = await fetch(apiUrl("/auth/login"), {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -319,7 +319,7 @@ export async function loginWithPassword(credentials: LoginCredentials): Promise<
 }
 
 export async function registerUser(payload: RegisterPayload): Promise<RegisterResult> {
-  const response = await fetch(`${API_BASE_URL}/auth/register/`, {
+  const response = await fetch(apiUrl("/auth/register"), {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -345,7 +345,7 @@ export async function refreshAccessToken(): Promise<string | null> {
     return null;
   }
 
-  const response = await fetch(`${API_BASE_URL}/auth/token/refresh/`, {
+  const response = await fetch(apiUrl("/auth/token/refresh"), {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -426,7 +426,7 @@ export async function authenticatedFetch(input: RequestInfo | URL, init: Request
 }
 
 export async function requestPasswordReset(email: string): Promise<MessageResult> {
-  const response = await fetch(`${API_BASE_URL}/auth/password/reset/request/`, {
+  const response = await fetch(apiUrl("/auth/password/reset/request"), {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -445,7 +445,7 @@ export async function requestPasswordReset(email: string): Promise<MessageResult
 }
 
 export async function confirmPasswordReset(token: string, password: string): Promise<MessageResult> {
-  const response = await fetch(`${API_BASE_URL}/auth/password/reset/confirm/`, {
+  const response = await fetch(apiUrl("/auth/password/reset/confirm"), {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -464,7 +464,7 @@ export async function confirmPasswordReset(token: string, password: string): Pro
 }
 
 export async function verifyEmail(token: string): Promise<MessageResult> {
-  const response = await fetch(`${API_BASE_URL}/auth/email/verify/`, {
+  const response = await fetch(apiUrl("/auth/email/verify"), {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -483,7 +483,7 @@ export async function verifyEmail(token: string): Promise<MessageResult> {
 }
 
 export async function resendEmailVerification(email: string): Promise<MessageResult> {
-  const response = await fetch(`${API_BASE_URL}/auth/email/resend/`, {
+  const response = await fetch(apiUrl("/auth/email/resend"), {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -509,7 +509,7 @@ export async function logoutFromApi() {
   }
 
   try {
-    await fetch(`${API_BASE_URL}/auth/logout/`, {
+    await fetch(apiUrl("/auth/logout"), {
       method: "POST",
       headers: {
         Authorization: `Bearer ${token}`,
