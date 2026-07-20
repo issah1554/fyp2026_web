@@ -14,7 +14,6 @@ export default function TopNavBar({ isMobile, onToggleSidebar }: TopNavBarProps)
   const router = useRouter();
   const { user, logout } = useAuth();
   const [open, setOpen] = useState<"notif" | "profile" | null>(null);
-  const [language, setLanguage] = useState<"EN" | "SW">("EN");
   const navRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -62,35 +61,7 @@ export default function TopNavBar({ isMobile, onToggleSidebar }: TopNavBarProps)
           </Link>
         </div>
 
-        <div className="hidden min-w-0 flex-1 justify-center px-2 md:flex">
-          <label className="relative w-full max-w-xl">
-            <span className="sr-only">Search dashboard</span>
-            <i className="bi bi-search absolute left-3 top-1/2 -translate-y-1/2 text-main-500" />
-            <input
-              className="h-10 w-full rounded-md border border-main-200 bg-main-0 px-10 text-sm text-main-900 outline-none transition focus:border-primary-600"
-              placeholder="Search markets, commodities, orders..."
-              type="search"
-            />
-            <span className="absolute right-3 top-1/2 -translate-y-1/2 rounded bg-main-100 px-2 py-0.5 text-xs font-bold text-main-500">
-              /
-            </span>
-          </label>
-        </div>
-
         <div className="flex shrink-0 items-center gap-2 sm:gap-3">
-          <div className="hidden rounded-md border border-main-200 bg-main-0 p-1 sm:flex">
-            {(["EN", "SW"] as const).map((item) => (
-              <button
-                key={item}
-                onClick={() => setLanguage(item)}
-                className={`rounded px-2 py-1 text-xs font-bold ${language === item ? "bg-primary-600 text-main-0" : "text-main-600 hover:bg-main-100"}`}
-                type="button"
-              >
-                {item}
-              </button>
-            ))}
-          </div>
-
           <button
             onClick={(event) => {
               const icon = event.currentTarget.querySelector("i");
