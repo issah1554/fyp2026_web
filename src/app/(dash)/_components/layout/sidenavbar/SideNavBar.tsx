@@ -20,6 +20,11 @@ type SideNavBarProps = {
   onCloseMobile?: () => void;
 };
 
+type NavGroup = {
+  title: string;
+  items: NavItemProps[];
+};
+
 function SidebarHeader({
   effectiveCollapsed,
   isPinned,
@@ -135,78 +140,109 @@ export function Sidebar({
   const { user } = useAuth();
   const permissions = useMemo(() => user?.permissions ?? [], [user?.permissions]);
   const isAdmin = isAdminUser(user);
-  const items = useMemo<NavItemProps[]>(
+  const groups = useMemo<NavGroup[]>(
     () => [
       {
-        label: "Dashboard Overview",
-        to: "/dash",
-        icon: <i className="bi bi-grid-1x2" />,
-      },
-      {
-        label: "Field Market Records",
-        to: "/market-data",
-        icon: <i className="bi bi-clipboard-data" />,
-      },
-      {
-        label: "Price Validation & Outliers",
-        to: "/validations",
-        icon: <i className="bi bi-shield-check" />,
-      },
-      {
-        label: "Web Scraping & APIs",
-        to: "/scrapers",
-        icon: <i className="bi bi-cloud-arrow-down" />,
-      },
-      {
-        label: "Commodities Catalog",
-        to: "/commodities",
-        icon: <i className="bi bi-basket" />,
-        requiredPermission: "*",
-      },
-      {
-        label: "Administrative Areas",
-        to: "/areas",
-        icon: <i className="bi bi-geo-alt" />,
-        requiredPermission: "*",
-      },
-      {
-        label: "Commodity Listings",
-        to: "/listings",
-        icon: <i className="bi bi-tags" />,
-      },
-      {
-        label: "Commodity Orders",
-        to: "/orders",
-        icon: <i className="bi bi-cart-check" />,
-      },
-      {
-        label: "AI Insights & Forecasting",
-        to: "/ai-forecasting",
-        icon: <i className="bi bi-graph-up-arrow" />,
-      },
-      {
-        label: "USSD Gateway",
-        to: "/ussd",
-        icon: <i className="bi bi-phone" />,
-      },
-      {
-        label: "User & Role Management",
-        icon: <i className="bi bi-people" />,
-        requiredPermission: "*",
-        subItems: [
-          { label: "Users", to: "/users", icon: <i className="bi bi-person-lines-fill" />, requiredPermission: "*" },
-          { label: "Roles", to: "/rbac", icon: <i className="bi bi-shield-lock" />, requiredPermission: ["roles.list", "roles.create", "roles.update", "roles.delete", "permissions.list", "roles.permissions.update"] },
+        title: "Overview",
+        items: [
+          {
+            label: "Dashboard",
+            to: "/dash",
+            icon: <i className="bi bi-grid-1x2" />,
+          },
+          {
+            label: "Market Data",
+            to: "/market-data",
+            icon: <i className="bi bi-clipboard-data" />,
+          },
+          {
+            label: "Validation",
+            to: "/validations",
+            icon: <i className="bi bi-shield-check" />,
+          },
         ],
       },
       {
-        label: "Reports & Exports",
-        to: "/reports",
-        icon: <i className="bi bi-file-earmark-bar-graph" />,
+        title: "Trade",
+        items: [
+          {
+            label: "Listings",
+            to: "/listings",
+            icon: <i className="bi bi-tags" />,
+          },
+          {
+            label: "Orders",
+            to: "/orders",
+            icon: <i className="bi bi-cart-check" />,
+          },
+        ],
+      },
+      {
+        title: "Data Ops",
+        items: [
+          {
+            label: "Scrapers",
+            to: "/scrapers",
+            icon: <i className="bi bi-cloud-arrow-down" />,
+          },
+          {
+            label: "Commodities",
+            to: "/commodities",
+            icon: <i className="bi bi-basket" />,
+            requiredPermission: "*",
+          },
+          {
+            label: "Areas",
+            to: "/areas",
+            icon: <i className="bi bi-geo-alt" />,
+            requiredPermission: "*",
+          },
+          {
+            label: "USSD",
+            to: "/ussd",
+            icon: <i className="bi bi-phone" />,
+          },
+        ],
+      },
+      {
+        title: "Insights",
+        items: [
+          {
+            label: "Forecasting",
+            to: "/ai-forecasting",
+            icon: <i className="bi bi-graph-up-arrow" />,
+          },
+          {
+            label: "Reports",
+            to: "/reports",
+            icon: <i className="bi bi-file-earmark-bar-graph" />,
+          },
+        ],
+      },
+      {
+        title: "Admin",
+        items: [
+          {
+            label: "Access",
+            icon: <i className="bi bi-people" />,
+            requiredPermission: "*",
+            subItems: [
+              { label: "Users", to: "/users", icon: <i className="bi bi-person-lines-fill" />, requiredPermission: "*" },
+              { label: "Roles", to: "/rbac", icon: <i className="bi bi-shield-lock" />, requiredPermission: ["roles.list", "roles.create", "roles.update", "roles.delete", "permissions.list", "roles.permissions.update"] },
+            ],
+          },
+        ],
       },
     ],
     [],
   );
-  const visibleItems = useMemo(() => filterNavItems(items, permissions, isAdmin), [items, permissions, isAdmin]);
+  const visibleGroups = useMemo(
+    () =>
+      groups
+        .map((group) => ({ ...group, items: filterNavItems(group.items, permissions, isAdmin) }))
+        .filter((group) => group.items.length > 0),
+    [groups, permissions, isAdmin],
+  );
 
   return (
     <aside
@@ -225,10 +261,9 @@ export function Sidebar({
 
       <div className="flex-1 overflow-x-hidden overflow-y-auto">
         <div className="space-y-3 pb-4">
-          <NavItems
-            collapsed={effectiveCollapsed}
-            items={visibleItems}
-          />
+          {visibleGroups.map((group) => (
+            <NavItems key={group.title} collapsed={effectiveCollapsed} title={group.title} items={group.items} />
+          ))}
         </div>
       </div>
 
