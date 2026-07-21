@@ -6,7 +6,7 @@ import { HorizontalTabs, type HorizontalTab } from "@/src/components/ui/Horizont
 import { Modal } from "@/src/components/ui/Modal";
 import Pagination from "@/src/components/ui/Pagination";
 import { useAuth } from "../../auth/hooks/useAuth";
-import type { AuthRole, AuthUser } from "@/src/services/auth/authService";
+import { userCan } from "@/src/services/auth/authService";
 import {
   createCommodity,
   createCommodityCategory,
@@ -86,20 +86,6 @@ const emptyUnitForm: UnitFormState = {
   description: "",
 };
 
-function isAdminUser(user: AuthUser | null) {
-  const role = user?.role;
-  if (!role) {
-    return false;
-  }
-
-  if (typeof role === "string") {
-    return role.toLowerCase() === "admin";
-  }
-
-  const normalizedRole = role as AuthRole;
-  return normalizedRole.id === 1 || normalizedRole.name?.toLowerCase() === "admin" || normalizedRole.code === "admin";
-}
-
 function normalizeCommodityForm(form: CommodityFormState): CommodityFormPayload {
   return {
     name: form.name.trim(),
@@ -114,7 +100,19 @@ export default function CommoditiesPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user, loading: authLoading } = useAuth();
-  const isAdmin = isAdminUser(user);
+  const canListCommodities = userCan(user, "commodities.list");
+  const canCreateCommodities = userCan(user, "commodities.create");
+  const canUpdateCommodities = userCan(user, "commodities.update");
+  const canDeleteCommodities = userCan(user, "commodities.delete");
+  const canListCategories = userCan(user, "commodities.categories.list");
+  const canCreateCategories = userCan(user, "commodities.categories.create");
+  const canUpdateCategories = userCan(user, "commodities.categories.update");
+  const canDeleteCategories = userCan(user, "commodities.categories.delete");
+  const canListUnits = userCan(user, "commodities.units.list");
+  const canCreateUnits = userCan(user, "commodities.units.create");
+  const canUpdateUnits = userCan(user, "commodities.units.update");
+  const canDeleteUnits = userCan(user, "commodities.units.delete");
+  const canViewCatalog = canListCommodities || canListCategories || canListUnits;
   const tabParam = searchParams.get("tab");
   const activeTab: CatalogTab =
     tabParam === "categories" || tabParam === "units" || tabParam === "commodities"
@@ -162,13 +160,13 @@ export default function CommoditiesPage() {
   const [savingUnit, setSavingUnit] = useState(false);
 
   useEffect(() => {
-    if (!authLoading && !isAdmin) {
+    if (!authLoading && !canViewCatalog) {
       router.replace("/dash");
     }
-  }, [authLoading, isAdmin, router]);
+  }, [authLoading, canViewCatalog, router]);
 
   const loadCommodities = useCallback(async () => {
-    if (!isAdmin) {
+    if (!canListCommodities) {
       return;
     }
 
@@ -189,10 +187,10 @@ export default function CommoditiesPage() {
     } finally {
       setLoading(false);
     }
-  }, [categoryFilter, isAdmin, page, pageSize, search]);
+  }, [categoryFilter, canListCommodities, page, pageSize, search]);
 
   const loadCategories = useCallback(async () => {
-    if (!isAdmin) {
+    if (!canListCategories) {
       return;
     }
 
@@ -201,10 +199,10 @@ export default function CommoditiesPage() {
     } catch {
       setCategories([]);
     }
-  }, [isAdmin]);
+  }, [canListCategories]);
 
   const loadUnits = useCallback(async () => {
-    if (!isAdmin) {
+    if (!canListUnits) {
       return;
     }
 
@@ -213,7 +211,7 @@ export default function CommoditiesPage() {
     } catch {
       setUnits([]);
     }
-  }, [isAdmin]);
+  }, [canListUnits]);
 
   useEffect(() => {
     const timeout = window.setTimeout(() => {
@@ -429,7 +427,7 @@ export default function CommoditiesPage() {
     setCommodityFormNotice("");
   };
 
-  if (authLoading || (!authLoading && !isAdmin)) {
+  if (authLoading || (!authLoading && !canViewCatalog)) {
     return (
       <div className="flex min-h-96 items-center justify-center text-main-600">
         <span className="size-4 animate-spin rounded-full border-2 border-primary-700 border-t-transparent" />
@@ -508,14 +506,16 @@ export default function CommoditiesPage() {
                   </option>
                 ))}
               </select>
-              <button
-                type="button"
-                onClick={openCreateCommodityModal}
-                className="flex size-9 items-center justify-center rounded-md border border-main-300 bg-main-100 text-main-700 hover:border-primary-300 hover:text-primary-700"
-                aria-label="Add commodity"
-              >
-                <i className="bi bi-plus-lg" aria-hidden="true" />
-              </button>
+              {canCreateCommodities && (
+                <button
+                  type="button"
+                  onClick={openCreateCommodityModal}
+                  className="flex size-9 items-center justify-center rounded-md border border-main-300 bg-main-100 text-main-700 hover:border-primary-300 hover:text-primary-700"
+                  aria-label="Add commodity"
+                >
+                  <i className="bi bi-plus-lg" aria-hidden="true" />
+                </button>
+              )}
             </div>
           </div>
 
@@ -527,13 +527,13 @@ export default function CommoditiesPage() {
                   <th className="py-3 pr-4">Unit</th>
                   <th className="py-3 pr-4">Categories</th>
                   <th className="py-3 pr-4">Commodity ID</th>
-                  <th className="py-3 pr-4 text-right">Actions</th>
+                  {(canUpdateCommodities || canDeleteCommodities) && <th className="py-3 pr-4 text-right">Actions</th>}
                 </tr>
               </thead>
               <tbody className="divide-y divide-main-200">
                 {loading ? (
                   <tr>
-                    <td colSpan={5} className="py-10 text-center text-main-500">
+                    <td colSpan={canUpdateCommodities || canDeleteCommodities ? 5 : 4} className="py-10 text-center text-main-500">
                       <span className="inline-flex items-center gap-2">
                         <span className="size-4 animate-spin rounded-full border-2 border-primary-700 border-t-transparent" />
                         Loading commodities...
@@ -564,31 +564,31 @@ export default function CommoditiesPage() {
                         </div>
                       </td>
                       <td className="py-4 pr-4 font-mono text-xs text-main-600">{commodity.commodity_id}</td>
-                      <td className="py-4 pr-4">
+                      {(canUpdateCommodities || canDeleteCommodities) && <td className="py-4 pr-4">
                         <div className="flex justify-end gap-2">
-                          <button
+                          {canUpdateCommodities && <button
                             type="button"
                             onClick={() => openEditCommodityModal(commodity)}
                             className="flex size-8 items-center justify-center rounded-md border border-main-300 bg-main-100 text-main-700 hover:border-primary-300 hover:text-primary-700"
                             aria-label={`Edit ${commodity.name}`}
                           >
                             <i className="bi bi-pencil-square" aria-hidden="true" />
-                          </button>
-                          <button
+                          </button>}
+                          {canDeleteCommodities && <button
                             type="button"
                             onClick={() => void handleDeleteCommodity(commodity)}
                             className="flex size-8 items-center justify-center rounded-md border border-danger-300 bg-danger-100 text-danger-700 hover:bg-danger-200"
                             aria-label={`Delete ${commodity.name}`}
                           >
                             <i className="bi bi-trash" aria-hidden="true" />
-                          </button>
+                          </button>}
                         </div>
-                      </td>
+                      </td>}
                     </tr>
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={5} className="py-10 text-center text-main-500">
+                    <td colSpan={canUpdateCommodities || canDeleteCommodities ? 5 : 4} className="py-10 text-center text-main-500">
                       No commodities found.
                     </td>
                   </tr>
@@ -634,14 +634,16 @@ export default function CommoditiesPage() {
                 <p className="text-sm font-semibold text-main-500">Grouping</p>
                 <h2 className="mt-1 text-xl font-bold text-main-950">Categories</h2>
               </div>
-              <button
-                type="button"
-                onClick={openCreateCategoryModal}
-                className="flex size-9 items-center justify-center rounded-md border border-main-300 bg-main-100 text-main-700 hover:border-primary-300 hover:text-primary-700"
-                aria-label="Add category"
-              >
-                <i className="bi bi-plus-lg" aria-hidden="true" />
-              </button>
+              {canCreateCategories && (
+                <button
+                  type="button"
+                  onClick={openCreateCategoryModal}
+                  className="flex size-9 items-center justify-center rounded-md border border-main-300 bg-main-100 text-main-700 hover:border-primary-300 hover:text-primary-700"
+                  aria-label="Add category"
+                >
+                  <i className="bi bi-plus-lg" aria-hidden="true" />
+                </button>
+              )}
             </div>
 
             <div className="mt-4 space-y-2">
@@ -653,24 +655,24 @@ export default function CommoditiesPage() {
                         <p className="font-bold text-main-900">{category.name}</p>
                         {category.description && <p className="mt-1 line-clamp-2 text-xs text-main-500">{category.description}</p>}
                       </div>
-                      <div className="flex shrink-0 gap-1">
-                        <button
+                      {(canUpdateCategories || canDeleteCategories) && <div className="flex shrink-0 gap-1">
+                        {canUpdateCategories && <button
                           type="button"
                           onClick={() => openEditCategoryModal(category)}
                           className="flex size-8 items-center justify-center rounded-md text-main-600 hover:bg-main-100 hover:text-primary-700"
                           aria-label={`Edit ${category.name}`}
                         >
                           <i className="bi bi-pencil" aria-hidden="true" />
-                        </button>
-                        <button
+                        </button>}
+                        {canDeleteCategories && <button
                           type="button"
                           onClick={() => void handleDeleteCategory(category)}
                           className="flex size-8 items-center justify-center rounded-md text-danger-700 hover:bg-danger-100"
                           aria-label={`Delete ${category.name}`}
                         >
                           <i className="bi bi-trash" aria-hidden="true" />
-                        </button>
-                      </div>
+                        </button>}
+                      </div>}
                     </div>
                   </div>
                 ))
@@ -691,14 +693,16 @@ export default function CommoditiesPage() {
                 <p className="text-sm font-semibold text-main-500">Measurements</p>
                 <h2 className="mt-1 text-xl font-bold text-main-950">Units</h2>
               </div>
-              <button
-                type="button"
-                onClick={openCreateUnitModal}
-                className="flex size-9 items-center justify-center rounded-md border border-main-300 bg-main-100 text-main-700 hover:border-primary-300 hover:text-primary-700"
-                aria-label="Add unit"
-              >
-                <i className="bi bi-plus-lg" aria-hidden="true" />
-              </button>
+              {canCreateUnits && (
+                <button
+                  type="button"
+                  onClick={openCreateUnitModal}
+                  className="flex size-9 items-center justify-center rounded-md border border-main-300 bg-main-100 text-main-700 hover:border-primary-300 hover:text-primary-700"
+                  aria-label="Add unit"
+                >
+                  <i className="bi bi-plus-lg" aria-hidden="true" />
+                </button>
+              )}
             </div>
 
             <div className="mt-4 space-y-2">
@@ -711,24 +715,24 @@ export default function CommoditiesPage() {
                         <p className="mt-1 font-mono text-xs font-bold text-accent-700">{unit.symbol}</p>
                         {unit.description && <p className="mt-1 line-clamp-2 text-xs text-main-500">{unit.description}</p>}
                       </div>
-                      <div className="flex shrink-0 gap-1">
-                        <button
+                      {(canUpdateUnits || canDeleteUnits) && <div className="flex shrink-0 gap-1">
+                        {canUpdateUnits && <button
                           type="button"
                           onClick={() => openEditUnitModal(unit)}
                           className="flex size-8 items-center justify-center rounded-md text-main-600 hover:bg-main-100 hover:text-primary-700"
                           aria-label={`Edit ${unit.name}`}
                         >
                           <i className="bi bi-pencil" aria-hidden="true" />
-                        </button>
-                        <button
+                        </button>}
+                        {canDeleteUnits && <button
                           type="button"
                           onClick={() => void handleDeleteUnit(unit)}
                           className="flex size-8 items-center justify-center rounded-md text-danger-700 hover:bg-danger-100"
                           aria-label={`Delete ${unit.name}`}
                         >
                           <i className="bi bi-trash" aria-hidden="true" />
-                        </button>
-                      </div>
+                        </button>}
+                      </div>}
                     </div>
                   </div>
                 ))

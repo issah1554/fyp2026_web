@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Modal } from "@/src/components/ui/Modal";
 import Pagination from "@/src/components/ui/Pagination";
 import { useAuth } from "../../auth/hooks/useAuth";
-import type { AuthRole, AuthUser } from "@/src/services/auth/authService";
+import { userCan } from "@/src/services/auth/authService";
 import { listAreas, type Area } from "@/src/services/areas/areaService";
 import { listCommodities, type Commodity } from "@/src/services/commodities/commodityService";
 import {
@@ -85,14 +85,6 @@ const emptyPriceForm: PriceFormState = {
   price_date: today,
 };
 
-function isAdminUser(user: AuthUser | null) {
-  const role = user?.role;
-  if (!role) return false;
-  if (typeof role === "string") return role.toLowerCase() === "admin";
-  const normalizedRole = role as AuthRole;
-  return normalizedRole.id === 1 || normalizedRole.name?.toLowerCase() === "admin" || normalizedRole.code === "admin";
-}
-
 function asNumberOrNull(value: string) {
   if (!value.trim()) return null;
   const parsed = Number(value);
@@ -150,7 +142,12 @@ function statusBadgeClass(status: string) {
 
 export default function MarketsPage() {
   const { user, loading: authLoading } = useAuth();
-  const isAdmin = isAdminUser(user);
+  const canCreateMarkets = userCan(user, "markets.create");
+  const canUpdateMarkets = userCan(user, "markets.update");
+  const canDeleteMarkets = userCan(user, "markets.delete");
+  const canCreatePrices = userCan(user, "market_prices.create");
+  const canUpdatePrices = userCan(user, "market_prices.update");
+  const canDeletePrices = userCan(user, "market_prices.delete");
   const [markets, setMarkets] = useState<Market[]>([]);
   const [prices, setPrices] = useState<MarketPrice[]>([]);
   const [areas, setAreas] = useState<Area[]>([]);
@@ -457,16 +454,16 @@ export default function MarketsPage() {
           <p className="text-sm font-semibold text-main-500">Market operations</p>
           <h1 className="text-2xl font-bold text-main-950 sm:text-3xl">Markets</h1>
         </div>
-        {isAdmin && (
+        {(canCreateMarkets || canCreatePrices) && (
           <div className="flex flex-wrap gap-2">
-            <button type="button" onClick={() => openCreatePrice()} className="flex items-center gap-2 rounded-md border border-main-300 bg-main-100 px-4 py-2 text-sm font-bold text-main-800 hover:border-primary-300 hover:text-primary-700">
+            {canCreatePrices && <button type="button" onClick={() => openCreatePrice()} className="flex items-center gap-2 rounded-md border border-main-300 bg-main-100 px-4 py-2 text-sm font-bold text-main-800 hover:border-primary-300 hover:text-primary-700">
               <i className="bi bi-cash-coin" aria-hidden="true" />
               Add price
-            </button>
-            <button type="button" onClick={openCreateMarket} className="flex items-center gap-2 rounded-md bg-primary-600 px-4 py-2 text-sm font-bold text-main-0 hover:bg-primary-700">
+            </button>}
+            {canCreateMarkets && <button type="button" onClick={openCreateMarket} className="flex items-center gap-2 rounded-md bg-primary-600 px-4 py-2 text-sm font-bold text-main-0 hover:bg-primary-700">
               <i className="bi bi-plus-circle" aria-hidden="true" />
               Add market
-            </button>
+            </button>}
           </div>
         )}
       </section>
@@ -537,8 +534,8 @@ export default function MarketsPage() {
                   <td className="py-4 pr-4">
                     <div className="flex justify-end gap-2">
                       <button type="button" onClick={() => setSelectedMarketId(market.market_id)} className="flex size-8 items-center justify-center rounded-md border border-main-300 bg-main-100 text-main-700 hover:border-primary-300 hover:text-primary-700" aria-label={`View ${market.name}`}><i className="bi bi-eye" /></button>
-                      {isAdmin && <button type="button" onClick={() => openEditMarket(market)} className="flex size-8 items-center justify-center rounded-md border border-main-300 bg-main-100 text-main-700 hover:border-primary-300 hover:text-primary-700" aria-label={`Edit ${market.name}`}><i className="bi bi-pencil-square" /></button>}
-                      {isAdmin && <button type="button" onClick={() => void removeMarket(market)} className="flex size-8 items-center justify-center rounded-md border border-danger-300 bg-danger-100 text-danger-700 hover:bg-danger-200" aria-label={`Delete ${market.name}`}><i className="bi bi-trash" /></button>}
+                      {canUpdateMarkets && <button type="button" onClick={() => openEditMarket(market)} className="flex size-8 items-center justify-center rounded-md border border-main-300 bg-main-100 text-main-700 hover:border-primary-300 hover:text-primary-700" aria-label={`Edit ${market.name}`}><i className="bi bi-pencil-square" /></button>}
+                      {canDeleteMarkets && <button type="button" onClick={() => void removeMarket(market)} className="flex size-8 items-center justify-center rounded-md border border-danger-300 bg-danger-100 text-danger-700 hover:bg-danger-200" aria-label={`Delete ${market.name}`}><i className="bi bi-trash" /></button>}
                     </div>
                   </td>
                 </tr>
@@ -566,7 +563,7 @@ export default function MarketsPage() {
               <p className="text-sm font-semibold text-main-500">Market detail</p>
               <h2 className="mt-1 text-xl font-bold text-main-950">{selectedMarket.name}</h2>
             </div>
-            {isAdmin && <button type="button" onClick={() => openCreatePrice(selectedMarket.market_id)} className="flex w-fit items-center gap-2 rounded-md bg-primary-600 px-4 py-2 text-sm font-bold text-main-0 hover:bg-primary-700"><i className="bi bi-plus-circle" />Add price</button>}
+            {canCreatePrices && <button type="button" onClick={() => openCreatePrice(selectedMarket.market_id)} className="flex w-fit items-center gap-2 rounded-md bg-primary-600 px-4 py-2 text-sm font-bold text-main-0 hover:bg-primary-700"><i className="bi bi-plus-circle" />Add price</button>}
           </div>
           <div className="mt-4 flex gap-2 overflow-x-auto border-b border-main-200">
             {(["details", "prices", "latest"] as DetailTab[]).map((tab) => (
@@ -585,8 +582,8 @@ export default function MarketsPage() {
               ))}
             </div>
           )}
-          {detailTab === "prices" && <PriceTable prices={marketDetailPrices} markets={markets} commodities={commodities} isAdmin={isAdmin} onEdit={(price) => openEditPrice(price, selectedMarket.market_id)} onDelete={removePrice} emptyText="No prices recorded for this market." />}
-          {detailTab === "latest" && <PriceTable prices={latestPrices} markets={markets} commodities={commodities} isAdmin={isAdmin} onEdit={(price) => openEditPrice(price, selectedMarket.market_id)} onDelete={removePrice} emptyText="No latest prices available." />}
+          {detailTab === "prices" && <PriceTable prices={marketDetailPrices} markets={markets} commodities={commodities} canUpdate={canUpdatePrices} canDelete={canDeletePrices} onEdit={(price) => openEditPrice(price, selectedMarket.market_id)} onDelete={removePrice} emptyText="No prices recorded for this market." />}
+          {detailTab === "latest" && <PriceTable prices={latestPrices} markets={markets} commodities={commodities} canUpdate={canUpdatePrices} canDelete={canDeletePrices} onEdit={(price) => openEditPrice(price, selectedMarket.market_id)} onDelete={removePrice} emptyText="No latest prices available." />}
         </section>
       )}
 
@@ -604,7 +601,7 @@ export default function MarketsPage() {
             <input type="date" value={dateToFilter} onChange={(event) => { setDateToFilter(event.target.value); setPricePage(1); }} className="rounded-md border border-main-300 bg-main-100 px-3 py-2 text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-0" />
           </div>
         </div>
-        {loadingPrices ? <p className="py-10 text-center text-main-500">Loading prices...</p> : <PriceTable prices={prices} markets={markets} commodities={commodities} isAdmin={isAdmin} onEdit={(price) => openEditPrice(price)} onDelete={removePrice} emptyText="No market prices found." />}
+        {loadingPrices ? <p className="py-10 text-center text-main-500">Loading prices...</p> : <PriceTable prices={prices} markets={markets} commodities={commodities} canUpdate={canUpdatePrices} canDelete={canDeletePrices} onEdit={(price) => openEditPrice(price)} onDelete={removePrice} emptyText="No market prices found." />}
         <div className="mt-4 flex flex-col gap-3 border-t border-main-200 pt-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-2 text-sm text-main-600"><span>Rows</span><select value={pricePageSize} onChange={(event) => { setPricePageSize(Number(event.target.value)); setPricePage(1); }} className="rounded-md border border-main-300 bg-main-100 px-2 py-1 text-sm text-main-900 outline-none">{[10, 25, 50, 100].map((size) => <option key={size} value={size}>{size}</option>)}</select></div>
           <Pagination page={pricePagination.page} pageSize={pricePagination.page_size} totalItems={pricePagination.total_items} onChange={setPricePage} showHelper size="sm" rounded="full" disabled={loadingPrices} />
@@ -672,11 +669,12 @@ export default function MarketsPage() {
   );
 }
 
-function PriceTable({ prices, markets, commodities, isAdmin, onEdit, onDelete, emptyText }: { prices: MarketPrice[]; markets: Market[]; commodities: Commodity[]; isAdmin: boolean; onEdit: (price: MarketPrice) => void; onDelete: (price: MarketPrice) => void; emptyText: string }) {
+function PriceTable({ prices, markets, commodities, canUpdate, canDelete, onEdit, onDelete, emptyText }: { prices: MarketPrice[]; markets: Market[]; commodities: Commodity[]; canUpdate: boolean; canDelete: boolean; onEdit: (price: MarketPrice) => void; onDelete: (price: MarketPrice) => void; emptyText: string }) {
+  const canMutate = canUpdate || canDelete;
   return (
     <div className="mt-5 overflow-x-auto">
       <table className="w-full min-w-180 text-left text-sm">
-        <thead><tr className="border-b border-main-200 text-xs font-bold uppercase text-main-500"><th className="py-3 pr-4">Market</th><th className="py-3 pr-4">Commodity</th><th className="py-3 pr-4">Price</th><th className="py-3 pr-4">Price date</th><th className="py-3 pr-4">Created</th>{isAdmin && <th className="py-3 pr-4 text-right">Actions</th>}</tr></thead>
+        <thead><tr className="border-b border-main-200 text-xs font-bold uppercase text-main-500"><th className="py-3 pr-4">Market</th><th className="py-3 pr-4">Commodity</th><th className="py-3 pr-4">Price</th><th className="py-3 pr-4">Price date</th><th className="py-3 pr-4">Created</th>{canMutate && <th className="py-3 pr-4 text-right">Actions</th>}</tr></thead>
         <tbody className="divide-y divide-main-200">
           {prices.length ? prices.map((price) => (
             <tr key={price.price_id} className="hover:bg-main-50">
@@ -685,9 +683,9 @@ function PriceTable({ prices, markets, commodities, isAdmin, onEdit, onDelete, e
               <td className="py-4 pr-4 font-bold text-primary-700">{formatMoney(price.price, price.currency)}</td>
               <td className="py-4 pr-4 text-main-700">{formatDate(price.price_date)}</td>
               <td className="py-4 pr-4 text-main-700">{formatDate(price.created_at)}</td>
-              {isAdmin && <td className="py-4 pr-4"><div className="flex justify-end gap-2"><button type="button" onClick={() => onEdit(price)} className="flex size-8 items-center justify-center rounded-md border border-main-300 bg-main-100 text-main-700 hover:border-primary-300 hover:text-primary-700" aria-label="Edit price"><i className="bi bi-pencil-square" /></button><button type="button" onClick={() => void onDelete(price)} className="flex size-8 items-center justify-center rounded-md border border-danger-300 bg-danger-100 text-danger-700 hover:bg-danger-200" aria-label="Delete price"><i className="bi bi-trash" /></button></div></td>}
+              {canMutate && <td className="py-4 pr-4"><div className="flex justify-end gap-2">{canUpdate && <button type="button" onClick={() => onEdit(price)} className="flex size-8 items-center justify-center rounded-md border border-main-300 bg-main-100 text-main-700 hover:border-primary-300 hover:text-primary-700" aria-label="Edit price"><i className="bi bi-pencil-square" /></button>}{canDelete && <button type="button" onClick={() => void onDelete(price)} className="flex size-8 items-center justify-center rounded-md border border-danger-300 bg-danger-100 text-danger-700 hover:bg-danger-200" aria-label="Delete price"><i className="bi bi-trash" /></button>}</div></td>}
             </tr>
-          )) : <tr><td colSpan={isAdmin ? 6 : 5} className="py-10 text-center text-main-500">{emptyText}</td></tr>}
+          )) : <tr><td colSpan={canMutate ? 6 : 5} className="py-10 text-center text-main-500">{emptyText}</td></tr>}
         </tbody>
       </table>
     </div>

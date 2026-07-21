@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { HorizontalTabs, type HorizontalTab } from "@/src/components/ui/HorizontalTabs";
 import { Modal } from "@/src/components/ui/Modal";
 import { useAuth } from "../../auth/hooks/useAuth";
-import type { AuthRole, AuthUser } from "@/src/services/auth/authService";
+import { userCan } from "@/src/services/auth/authService";
 import {
   createRole,
   deleteRole,
@@ -33,19 +33,17 @@ const emptyForm: RoleFormPayload = {
   permission_ids: [],
 };
 
-function isAdminUser(user: AuthUser | null) {
-  const role = user?.role;
-  if (!role) return false;
-  if (typeof role === "string") return role.toLowerCase() === "admin";
-  const normalizedRole = role as AuthRole;
-  return normalizedRole.id === 1 || normalizedRole.name?.toLowerCase() === "admin" || normalizedRole.code === "admin";
-}
-
 export default function RbacPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user, loading: authLoading } = useAuth();
-  const isAdmin = isAdminUser(user);
+  const canListRoles = userCan(user, "roles.list");
+  const canCreateRoles = userCan(user, "roles.create");
+  const canUpdateRoles = userCan(user, "roles.update");
+  const canDeleteRoles = userCan(user, "roles.delete");
+  const canUpdateRolePermissions = userCan(user, "roles.permissions.update");
+  const canListPermissions = userCan(user, "permissions.list");
+  const canViewPage = canListRoles || canListPermissions;
   const tabParam = searchParams.get("tab");
   const activeTab: RbacTab = tabParam === "permissions" || tabParam === "roles" ? tabParam : "roles";
   const [roles, setRoles] = useState<Role[]>([]);
@@ -64,15 +62,18 @@ export default function RbacPage() {
   const [savingRole, setSavingRole] = useState(false);
 
   useEffect(() => {
-    if (!authLoading && !isAdmin) router.replace("/dash");
-  }, [authLoading, isAdmin, router]);
+    if (!authLoading && !canViewPage) router.replace("/dash");
+  }, [authLoading, canViewPage, router]);
 
   const loadAccessControl = useCallback(async () => {
-    if (!isAdmin) return;
+    if (!canViewPage) return;
     setLoading(true);
     setPageError("");
     try {
-      const [nextRoles, nextPermissions] = await Promise.all([listRoles(), listPermissions()]);
+      const [nextRoles, nextPermissions] = await Promise.all([
+        canListRoles ? listRoles() : Promise.resolve([]),
+        canListPermissions ? listPermissions() : Promise.resolve([]),
+      ]);
       setRoles(nextRoles);
       setPermissions(nextPermissions);
       const nextSelectedRole = selectedRoleId || nextRoles[0]?.role_id || "";
@@ -83,7 +84,7 @@ export default function RbacPage() {
     } finally {
       setLoading(false);
     }
-  }, [isAdmin, selectedRoleId]);
+  }, [canListPermissions, canListRoles, canViewPage, selectedRoleId]);
 
   useEffect(() => {
     const timeout = window.setTimeout(() => void loadAccessControl(), 0);
@@ -143,6 +144,7 @@ export default function RbacPage() {
   };
 
   const handleSave = async () => {
+    if (!canUpdateRolePermissions) return;
     if (!selectedRole) return;
     setSaving(true);
     setPageError("");
@@ -161,6 +163,8 @@ export default function RbacPage() {
   const handleSaveRole = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!modal) return;
+    if (modal.mode === "create" && !canCreateRoles) return;
+    if (modal.mode === "edit" && !canUpdateRoles) return;
     setSavingRole(true);
     setFormError("");
     setFormNotice("");
@@ -187,6 +191,7 @@ export default function RbacPage() {
   };
 
   const handleDeleteRole = async (role: Role) => {
+    if (!canDeleteRoles) return;
     if (!window.confirm(`Delete ${role.name}?`)) return;
     setPageError("");
     setPageNotice("");
@@ -210,7 +215,7 @@ export default function RbacPage() {
     setFormNotice("");
   };
 
-  if (authLoading || (!authLoading && !isAdmin)) {
+  if (authLoading || (!authLoading && !canViewPage)) {
     return <div className="flex min-h-96 items-center justify-center text-main-600"><span className="size-4 animate-spin rounded-full border-2 border-primary-700 border-t-transparent" /></div>;
   }
 
@@ -221,7 +226,7 @@ export default function RbacPage() {
           <p className="text-sm font-semibold text-main-500">User access</p>
           <h1 className="text-2xl font-bold text-main-950 sm:text-3xl">RBAC</h1>
         </div>
-        {activeTab === "roles" && <button type="button" onClick={openCreateModal} className="flex w-fit items-center gap-2 rounded-md bg-primary-600 px-4 py-2 text-sm font-bold text-main-0 hover:bg-primary-700">
+        {activeTab === "roles" && canCreateRoles && <button type="button" onClick={openCreateModal} className="flex w-fit items-center gap-2 rounded-md bg-primary-600 px-4 py-2 text-sm font-bold text-main-0 hover:bg-primary-700">
           <i className="bi bi-plus-circle" aria-hidden="true" />
           Add role
         </button>}
@@ -258,16 +263,20 @@ export default function RbacPage() {
                         <span className="mt-1 block font-mono text-xs opacity-80">{role.code}</span>
                         <span className="mt-1 block text-xs opacity-80">{role.permission_ids.length} permission(s){role.is_system ? " - system" : ""}</span>
                       </button>
+                      {(canUpdateRoles || canDeleteRoles) && (
                       <div className="flex justify-end gap-1 border-t border-main-200 px-2 py-2">
-                        <button type="button" onClick={() => openEditModal(role)} className="flex size-8 items-center justify-center rounded-md text-main-600 hover:bg-main-100 hover:text-primary-700" aria-label={`Edit ${role.name}`}>
-                          <i className="bi bi-pencil" aria-hidden="true" />
-                        </button>
-                        {!role.is_system && (
+                        {canUpdateRoles && (
+                          <button type="button" onClick={() => openEditModal(role)} className="flex size-8 items-center justify-center rounded-md text-main-600 hover:bg-main-100 hover:text-primary-700" aria-label={`Edit ${role.name}`}>
+                            <i className="bi bi-pencil" aria-hidden="true" />
+                          </button>
+                        )}
+                        {!role.is_system && canDeleteRoles && (
                           <button type="button" onClick={() => void handleDeleteRole(role)} className="flex size-8 items-center justify-center rounded-md text-danger-700 hover:bg-danger-100" aria-label={`Delete ${role.name}`}>
                             <i className="bi bi-trash" aria-hidden="true" />
                           </button>
                         )}
                       </div>
+                      )}
                     </div>
                   ))
                 )}
@@ -283,7 +292,7 @@ export default function RbacPage() {
                 <button
                   type="button"
                   onClick={() => void handleSave()}
-                  disabled={!selectedRole || saving}
+                  disabled={!selectedRole || saving || !canUpdateRolePermissions}
                   className="flex w-fit items-center gap-2 rounded-md bg-primary-600 px-4 py-2 text-sm font-bold text-main-0 hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   <i className={`bi ${saving ? "bi-arrow-repeat animate-spin" : "bi-check2-circle"}`} aria-hidden="true" />
@@ -301,6 +310,7 @@ export default function RbacPage() {
                       <input
                         type="checkbox"
                         checked={selectedPermissionIds.includes(permission.permission_id)}
+                        disabled={!canUpdateRolePermissions}
                         onChange={() => togglePermission(permission.permission_id)}
                         className="mt-1 size-4 accent-primary-600"
                       />

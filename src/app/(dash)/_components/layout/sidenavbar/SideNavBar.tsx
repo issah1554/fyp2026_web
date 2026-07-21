@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useMemo } from "react";
-import type { AuthRole, AuthUser } from "@/src/services/auth/authService";
+import { userCan } from "@/src/services/auth/authService";
 import { useAuth } from "../../../../auth/hooks/useAuth";
 import appIcon from "../../../../icon.png";
 import { NavItem } from "./NavItem";
@@ -69,50 +69,12 @@ function SidebarFooter({ effectiveCollapsed }: { effectiveCollapsed: boolean }) 
   );
 }
 
-function isAdminUser(user: AuthUser | null) {
-  const role = user?.role;
-  if (!role) {
-    return false;
-  }
-
-  if (typeof role === "string") {
-    return role.toLowerCase() === "admin";
-  }
-
-  const normalizedRole = role as AuthRole;
-  return normalizedRole.id === 1 || normalizedRole.name?.toLowerCase() === "admin" || normalizedRole.code === "admin";
-}
-
-function userCan(permissions: string[], requiredPermission?: string | string[], isAdmin = false) {
-  if (!requiredPermission) {
-    return true;
-  }
-
-  if (isAdmin || permissions.includes("*")) {
-    return true;
-  }
-
-  const required = Array.isArray(requiredPermission) ? requiredPermission : [requiredPermission];
-  return required.some((permission) => {
-    if (permissions.includes(permission)) {
-      return true;
-    }
-
-    const dotPosition = permission.indexOf(".");
-    if (dotPosition === -1) {
-      return false;
-    }
-
-    return permissions.includes(`${permission.slice(0, dotPosition)}.*`);
-  });
-}
-
-function filterNavItems(items: NavItemProps[], permissions: string[], isAdmin = false): NavItemProps[] {
+function filterNavItems(items: NavItemProps[], user: ReturnType<typeof useAuth>["user"]): NavItemProps[] {
   const filtered: NavItemProps[] = [];
 
   for (const item of items) {
-    const subItems = item.subItems ? filterNavItems(item.subItems, permissions, isAdmin) : undefined;
-    const allowed = userCan(permissions, item.requiredPermission, isAdmin);
+    const subItems = item.subItems ? filterNavItems(item.subItems, user) : undefined;
+    const allowed = userCan(user, item.requiredPermission);
 
     if (!allowed && (!subItems || subItems.length === 0)) {
       continue;
@@ -138,8 +100,6 @@ export function Sidebar({
   onCloseMobile,
 }: SideNavBarProps) {
   const { user } = useAuth();
-  const permissions = useMemo(() => user?.permissions ?? [], [user?.permissions]);
-  const isAdmin = isAdminUser(user);
   const groups = useMemo<NavGroup[]>(
     () => [
       {
@@ -189,7 +149,7 @@ export function Sidebar({
             label: "Commodities",
             to: "/commodities",
             icon: <i className="bi bi-basket" />,
-            requiredPermission: "*",
+            requiredPermission: ["commodities.list", "commodities.categories.list", "commodities.units.list"],
           },
           {
             label: "Markets",
@@ -200,7 +160,7 @@ export function Sidebar({
             label: "Areas",
             to: "/areas",
             icon: <i className="bi bi-geo-alt" />,
-            requiredPermission: "*",
+            requiredPermission: "areas.list",
           },
           {
             label: "USSD",
@@ -230,9 +190,9 @@ export function Sidebar({
           {
             label: "Access",
             icon: <i className="bi bi-people" />,
-            requiredPermission: "*",
+            requiredPermission: ["users.list", "roles.list", "permissions.list"],
             subItems: [
-              { label: "Users", to: "/users", icon: <i className="bi bi-person-lines-fill" />, requiredPermission: "*" },
+              { label: "Users", to: "/users", icon: <i className="bi bi-person-lines-fill" />, requiredPermission: "users.list" },
               { label: "Roles", to: "/rbac", icon: <i className="bi bi-shield-lock" />, requiredPermission: ["roles.list", "roles.create", "roles.update", "roles.delete", "permissions.list", "roles.permissions.update"] },
             ],
           },
@@ -244,9 +204,9 @@ export function Sidebar({
   const visibleGroups = useMemo(
     () =>
       groups
-        .map((group) => ({ ...group, items: filterNavItems(group.items, permissions, isAdmin) }))
+        .map((group) => ({ ...group, items: filterNavItems(group.items, user) }))
         .filter((group) => group.items.length > 0),
-    [groups, permissions, isAdmin],
+    [groups, user],
   );
   const visibleItems = useMemo(() => visibleGroups.flatMap((group) => group.items), [visibleGroups]);
 

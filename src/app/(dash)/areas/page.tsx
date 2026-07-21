@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Modal } from "@/src/components/ui/Modal";
 import Pagination from "@/src/components/ui/Pagination";
 import { useAuth } from "../../auth/hooks/useAuth";
-import type { AuthRole, AuthUser } from "@/src/services/auth/authService";
+import { userCan } from "@/src/services/auth/authService";
 import {
   bulkImportAreas,
   createArea,
@@ -52,20 +52,6 @@ const defaultBulkJson = JSON.stringify(
   null,
   2,
 );
-
-function isAdminUser(user: AuthUser | null) {
-  const role = user?.role;
-  if (!role) {
-    return false;
-  }
-
-  if (typeof role === "string") {
-    return role.toLowerCase() === "admin";
-  }
-
-  const normalizedRole = role as AuthRole;
-  return normalizedRole.id === 1 || normalizedRole.name?.toLowerCase() === "admin" || normalizedRole.code === "admin";
-}
 
 function getParentOptions(areas: Area[], level: AreaLevel) {
   if (level === "district") {
@@ -135,7 +121,11 @@ function levelBadgeClass(level: AreaLevel) {
 export default function AreasPage() {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
-  const isAdmin = isAdminUser(user);
+  const canListAreas = userCan(user, "areas.list");
+  const canCreateAreas = userCan(user, "areas.create");
+  const canBulkImportAreas = userCan(user, "areas.bulk_import");
+  const canUpdateAreas = userCan(user, "areas.update");
+  const canDeleteAreas = userCan(user, "areas.delete");
   const [areas, setAreas] = useState<Area[]>([]);
   const [allAreas, setAllAreas] = useState<Area[]>([]);
   const [totals, setTotals] = useState<AreaTotals>({
@@ -172,13 +162,13 @@ export default function AreasPage() {
   const [bulkSaving, setBulkSaving] = useState(false);
 
   useEffect(() => {
-    if (!authLoading && !isAdmin) {
+    if (!authLoading && !canListAreas) {
       router.replace("/dash");
     }
-  }, [authLoading, isAdmin, router]);
+  }, [authLoading, canListAreas, router]);
 
   const loadAreas = useCallback(async () => {
-    if (!isAdmin) {
+    if (!canListAreas) {
       return;
     }
 
@@ -199,10 +189,10 @@ export default function AreasPage() {
     } finally {
       setLoading(false);
     }
-  }, [isAdmin, levelFilter, page, pageSize, search]);
+  }, [canListAreas, levelFilter, page, pageSize, search]);
 
   const loadParentOptions = useCallback(async () => {
-    if (!isAdmin) {
+    if (!canListAreas) {
       return;
     }
 
@@ -212,7 +202,7 @@ export default function AreasPage() {
     } catch {
       setAllAreas([]);
     }
-  }, [isAdmin]);
+  }, [canListAreas]);
 
   useEffect(() => {
     const timeout = window.setTimeout(() => {
@@ -336,7 +326,7 @@ export default function AreasPage() {
     }
   };
 
-  if (authLoading || (!authLoading && !isAdmin)) {
+  if (authLoading || (!authLoading && !canListAreas)) {
     return (
       <div className="flex min-h-96 items-center justify-center text-main-600">
         <span className="size-4 animate-spin rounded-full border-2 border-primary-700 border-t-transparent" />
@@ -351,27 +341,31 @@ export default function AreasPage() {
           <p className="text-sm font-semibold text-main-500">Administration</p>
           <h1 className="text-2xl font-bold text-main-950 sm:text-3xl">Areas</h1>
         </div>
-        <button
-          type="button"
-          onClick={openCreateModal}
-          className="flex w-fit items-center gap-2 rounded-md bg-primary-600 px-4 py-2 text-sm font-bold text-main-0 hover:bg-primary-700"
-        >
-          <i className="bi bi-plus-circle" aria-hidden="true" />
-          Add area
-        </button>
-        <button
-          type="button"
-          onClick={() => {
-            setBulkResult(null);
-            setBulkModalOpen(true);
-            setBulkError("");
-            setBulkNotice("");
-          }}
-          className="flex w-fit items-center gap-2 rounded-md border border-main-300 bg-main-100 px-4 py-2 text-sm font-bold text-main-800 hover:border-primary-300 hover:text-primary-700"
-        >
-          <i className="bi bi-upload" aria-hidden="true" />
-          Import paths
-        </button>
+        {canCreateAreas && (
+          <button
+            type="button"
+            onClick={openCreateModal}
+            className="flex w-fit items-center gap-2 rounded-md bg-primary-600 px-4 py-2 text-sm font-bold text-main-0 hover:bg-primary-700"
+          >
+            <i className="bi bi-plus-circle" aria-hidden="true" />
+            Add area
+          </button>
+        )}
+        {canBulkImportAreas && (
+          <button
+            type="button"
+            onClick={() => {
+              setBulkResult(null);
+              setBulkModalOpen(true);
+              setBulkError("");
+              setBulkNotice("");
+            }}
+            className="flex w-fit items-center gap-2 rounded-md border border-main-300 bg-main-100 px-4 py-2 text-sm font-bold text-main-800 hover:border-primary-300 hover:text-primary-700"
+          >
+            <i className="bi bi-upload" aria-hidden="true" />
+            Import paths
+          </button>
+        )}
       </section>
 
       <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -447,13 +441,13 @@ export default function AreasPage() {
                 <th className="py-3 pr-4">Level</th>
                 <th className="py-3 pr-4">Parent</th>
                 <th className="py-3 pr-4">Area ID</th>
-                <th className="py-3 pr-4 text-right">Actions</th>
+                {(canUpdateAreas || canDeleteAreas) && <th className="py-3 pr-4 text-right">Actions</th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-main-200">
               {loading ? (
                 <tr>
-                  <td colSpan={5} className="py-10 text-center text-main-500">
+                  <td colSpan={canUpdateAreas || canDeleteAreas ? 5 : 4} className="py-10 text-center text-main-500">
                     <span className="inline-flex items-center gap-2">
                       <span className="size-4 animate-spin rounded-full border-2 border-primary-700 border-t-transparent" />
                       Loading areas...
@@ -471,31 +465,31 @@ export default function AreasPage() {
                     </td>
                     <td className="py-4 pr-4 text-main-700">{area.parent?.name ?? "None"}</td>
                     <td className="py-4 pr-4 font-mono text-xs text-main-600">{area.area_id}</td>
-                    <td className="py-4 pr-4">
+                    {(canUpdateAreas || canDeleteAreas) && <td className="py-4 pr-4">
                       <div className="flex justify-end gap-2">
-                        <button
+                        {canUpdateAreas && <button
                           type="button"
                           onClick={() => openEditModal(area)}
                           className="flex size-8 items-center justify-center rounded-md border border-main-300 bg-main-100 text-main-700 hover:border-primary-300 hover:text-primary-700"
                           aria-label={`Edit ${area.name}`}
                         >
                           <i className="bi bi-pencil-square" aria-hidden="true" />
-                        </button>
-                        <button
+                        </button>}
+                        {canDeleteAreas && <button
                           type="button"
                           onClick={() => void handleDeleteArea(area)}
                           className="flex size-8 items-center justify-center rounded-md border border-danger-300 bg-danger-100 text-danger-700 hover:bg-danger-200"
                           aria-label={`Delete ${area.name}`}
                         >
                           <i className="bi bi-trash" aria-hidden="true" />
-                        </button>
+                        </button>}
                       </div>
-                    </td>
+                    </td>}
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td colSpan={5} className="py-10 text-center text-main-500">
+                  <td colSpan={canUpdateAreas || canDeleteAreas ? 5 : 4} className="py-10 text-center text-main-500">
                     No areas found.
                   </td>
                 </tr>

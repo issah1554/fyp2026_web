@@ -87,6 +87,39 @@ export type MessageResult = {
   message: string;
 };
 
+export function getRoleCode(role: string | AuthRole | undefined) {
+  if (!role) {
+    return "user";
+  }
+
+  return typeof role === "string" ? role : role.code ?? role.name ?? "user";
+}
+
+export function isAdminUser(user: AuthUser | null | undefined) {
+  return getRoleCode(user?.role).toLowerCase() === "admin" || user?.permissions.includes("*") === true;
+}
+
+export function userCan(user: AuthUser | null | undefined, requiredPermission?: string | string[]) {
+  if (!requiredPermission) {
+    return true;
+  }
+
+  const permissions = user?.permissions ?? [];
+  if (isAdminUser(user) || permissions.includes("*")) {
+    return true;
+  }
+
+  const required = Array.isArray(requiredPermission) ? requiredPermission : [requiredPermission];
+  return required.some((permission) => {
+    if (permissions.includes(permission)) {
+      return true;
+    }
+
+    const dotPosition = permission.indexOf(".");
+    return dotPosition !== -1 && permissions.includes(`${permission.slice(0, dotPosition)}.*`);
+  });
+}
+
 function isBrowser() {
   return typeof window !== "undefined";
 }
@@ -151,14 +184,6 @@ function getFirstErrorMessage(errors: unknown): string {
   }
 
   return errors ? String(errors) : "";
-}
-
-function getRoleCode(role: string | AuthRole | undefined) {
-  if (!role) {
-    return "user";
-  }
-
-  return typeof role === "string" ? role : role.code ?? role.name ?? "user";
 }
 
 function normalizePermissions(permissions: BackendPermission[] | string[] | undefined) {

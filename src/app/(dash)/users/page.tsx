@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Modal } from "@/src/components/ui/Modal";
 import Pagination from "@/src/components/ui/Pagination";
 import { useAuth } from "../../auth/hooks/useAuth";
-import type { AuthRole, AuthUser } from "@/src/services/auth/authService";
+import { userCan } from "@/src/services/auth/authService";
 import { listRoles, type Role } from "@/src/services/access-control/accessControlService";
 import {
   createUser,
@@ -52,14 +52,6 @@ const emptyForm: FormState = {
   is_superuser: false,
 };
 
-function isAdminUser(user: AuthUser | null) {
-  const role = user?.role;
-  if (!role) return false;
-  if (typeof role === "string") return role.toLowerCase() === "admin";
-  const normalizedRole = role as AuthRole;
-  return normalizedRole.id === 1 || normalizedRole.name?.toLowerCase() === "admin" || normalizedRole.code === "admin";
-}
-
 function roleLabel(role: UserRole, roles: Role[]) {
   return roles.find((item) => item.code === role)?.name ?? role;
 }
@@ -105,7 +97,11 @@ function roleBadgeClass(role: UserRole) {
 export default function UsersPage() {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
-  const isAdmin = isAdminUser(user);
+  const canListUsers = userCan(user, "users.list");
+  const canCreateUsers = userCan(user, "users.create");
+  const canUpdateUsers = userCan(user, "users.update");
+  const canDeleteUsers = userCan(user, "users.delete");
+  const canListRoles = userCan(user, "roles.list");
   const [users, setUsers] = useState<ManagedUser[]>([]);
   const [roles, setRoles] = useState<Role[]>([]);
   const [totals, setTotals] = useState<UserTotals>({
@@ -138,13 +134,13 @@ export default function UsersPage() {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    if (!authLoading && !isAdmin) {
+    if (!authLoading && !canListUsers) {
       router.replace("/dash");
     }
-  }, [authLoading, isAdmin, router]);
+  }, [authLoading, canListUsers, router]);
 
   const loadUsers = useCallback(async () => {
-    if (!isAdmin) return;
+    if (!canListUsers) return;
     setLoading(true);
     setPageError("");
     try {
@@ -163,16 +159,16 @@ export default function UsersPage() {
     } finally {
       setLoading(false);
     }
-  }, [activeFilter, isAdmin, page, pageSize, roleFilter, search]);
+  }, [activeFilter, canListUsers, page, pageSize, roleFilter, search]);
 
   const loadRoles = useCallback(async () => {
-    if (!isAdmin) return;
+    if (!canListRoles) return;
     try {
       setRoles(await listRoles());
     } catch {
       setRoles([]);
     }
-  }, [isAdmin]);
+  }, [canListRoles]);
 
   useEffect(() => {
     const timeout = window.setTimeout(() => {
@@ -255,7 +251,7 @@ export default function UsersPage() {
     }
   };
 
-  if (authLoading || (!authLoading && !isAdmin)) {
+  if (authLoading || (!authLoading && !canListUsers)) {
     return (
       <div className="flex min-h-96 items-center justify-center text-main-600">
         <span className="size-4 animate-spin rounded-full border-2 border-primary-700 border-t-transparent" />
@@ -270,14 +266,16 @@ export default function UsersPage() {
           <p className="text-sm font-semibold text-main-500">Administration</p>
           <h1 className="text-2xl font-bold text-main-950 sm:text-3xl">Users</h1>
         </div>
-        <button
-          type="button"
-          onClick={openCreateModal}
-          className="flex w-fit items-center gap-2 rounded-md bg-primary-600 px-4 py-2 text-sm font-bold text-main-0 hover:bg-primary-700"
-        >
-          <i className="bi bi-person-plus" aria-hidden="true" />
-          Add user
-        </button>
+        {canCreateUsers && (
+          <button
+            type="button"
+            onClick={openCreateModal}
+            className="flex w-fit items-center gap-2 rounded-md bg-primary-600 px-4 py-2 text-sm font-bold text-main-0 hover:bg-primary-700"
+          >
+            <i className="bi bi-person-plus" aria-hidden="true" />
+            Add user
+          </button>
+        )}
       </section>
 
       <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -355,13 +353,13 @@ export default function UsersPage() {
                 <th className="py-3 pr-4">Status</th>
                 <th className="py-3 pr-4">Organization</th>
                 <th className="py-3 pr-4">User ID</th>
-                <th className="py-3 pr-4 text-right">Actions</th>
+                {(canUpdateUsers || canDeleteUsers) && <th className="py-3 pr-4 text-right">Actions</th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-main-200">
               {loading ? (
                 <tr>
-                  <td colSpan={6} className="py-10 text-center text-main-500">
+                  <td colSpan={canUpdateUsers || canDeleteUsers ? 6 : 5} className="py-10 text-center text-main-500">
                     <span className="inline-flex items-center gap-2">
                       <span className="size-4 animate-spin rounded-full border-2 border-primary-700 border-t-transparent" />
                       Loading users...
@@ -392,31 +390,37 @@ export default function UsersPage() {
                     </td>
                     <td className="py-4 pr-4 text-main-700">{managedUser.profile.organization || "None"}</td>
                     <td className="py-4 pr-4 font-mono text-xs text-main-600">{managedUser.user_id}</td>
-                    <td className="py-4 pr-4">
-                      <div className="flex justify-end gap-2">
-                        <button
-                          type="button"
-                          onClick={() => openEditModal(managedUser)}
-                          className="flex size-8 items-center justify-center rounded-md border border-main-300 bg-main-100 text-main-700 hover:border-primary-300 hover:text-primary-700"
-                          aria-label={`Edit ${managedUser.username}`}
-                        >
-                          <i className="bi bi-pencil-square" aria-hidden="true" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => void handleDelete(managedUser)}
-                          className="flex size-8 items-center justify-center rounded-md border border-danger-300 bg-danger-100 text-danger-700 hover:bg-danger-200"
-                          aria-label={`Delete ${managedUser.username}`}
-                        >
-                          <i className="bi bi-trash" aria-hidden="true" />
-                        </button>
-                      </div>
-                    </td>
+                    {(canUpdateUsers || canDeleteUsers) && (
+                      <td className="py-4 pr-4">
+                        <div className="flex justify-end gap-2">
+                          {canUpdateUsers && (
+                            <button
+                              type="button"
+                              onClick={() => openEditModal(managedUser)}
+                              className="flex size-8 items-center justify-center rounded-md border border-main-300 bg-main-100 text-main-700 hover:border-primary-300 hover:text-primary-700"
+                              aria-label={`Edit ${managedUser.username}`}
+                            >
+                              <i className="bi bi-pencil-square" aria-hidden="true" />
+                            </button>
+                          )}
+                          {canDeleteUsers && (
+                            <button
+                              type="button"
+                              onClick={() => void handleDelete(managedUser)}
+                              className="flex size-8 items-center justify-center rounded-md border border-danger-300 bg-danger-100 text-danger-700 hover:bg-danger-200"
+                              aria-label={`Delete ${managedUser.username}`}
+                            >
+                              <i className="bi bi-trash" aria-hidden="true" />
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    )}
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td colSpan={6} className="py-10 text-center text-main-500">No users found.</td>
+                  <td colSpan={canUpdateUsers || canDeleteUsers ? 6 : 5} className="py-10 text-center text-main-500">No users found.</td>
                 </tr>
               )}
             </tbody>
