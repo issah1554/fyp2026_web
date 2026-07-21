@@ -17,6 +17,8 @@ export type AuthUser = {
   permissions: string[];
 };
 
+type StoredAuthUser = Omit<AuthUser, "permissions">;
+
 const AUTH_USER_KEY = "marketia.auth.user";
 const AUTH_ACCESS_TOKEN_KEY = "marketia.auth.access-token";
 const AUTH_REFRESH_TOKEN_KEY = "marketia.auth.refresh-token";
@@ -124,12 +126,12 @@ function isBrowser() {
   return typeof window !== "undefined";
 }
 
-function emitAuthSessionChanged() {
+function emitAuthSessionChanged(user?: AuthUser | null) {
   if (!isBrowser()) {
     return;
   }
 
-  window.dispatchEvent(new Event(AUTH_SESSION_CHANGED_EVENT));
+  window.dispatchEvent(new CustomEvent<AuthUser | null | undefined>(AUTH_SESSION_CHANGED_EVENT, { detail: user }));
 }
 
 function getJwtExpiryMs(token: string): number | null {
@@ -233,6 +235,16 @@ function normalizeUser(user: BackendUser): AuthUser {
   };
 }
 
+function toStoredUser(user: AuthUser): StoredAuthUser {
+  return {
+    id: user.id,
+    firstName: user.firstName,
+    lastName: user.lastName,
+    email: user.email,
+    role: user.role,
+  };
+}
+
 export function getStoredAccessToken(): string | null {
   if (!isBrowser()) {
     return null;
@@ -257,7 +269,8 @@ export function getStoredUser(): AuthUser | null {
   const stored = window.localStorage.getItem(AUTH_USER_KEY);
   if (stored) {
     try {
-      return JSON.parse(stored) as AuthUser;
+      const user = JSON.parse(stored) as StoredAuthUser;
+      return { ...user, permissions: [] };
     } catch {
       window.localStorage.removeItem(AUTH_USER_KEY);
     }
@@ -271,12 +284,34 @@ export function setStoredUser(user: AuthUser, tokens?: { access: string; refresh
     return;
   }
 
-  window.localStorage.setItem(AUTH_USER_KEY, JSON.stringify(user));
+  window.localStorage.setItem(AUTH_USER_KEY, JSON.stringify(toStoredUser(user)));
   if (tokens) {
     window.localStorage.setItem(AUTH_ACCESS_TOKEN_KEY, tokens.access);
     window.localStorage.setItem(AUTH_REFRESH_TOKEN_KEY, tokens.refresh);
   }
-  emitAuthSessionChanged();
+  emitAuthSessionChanged(user);
+}
+
+export function clearStoredUser() {
+  if (!isBrowser()) {
+    return;
+  }
+
+  window.localStorage.removeItem(AUTH_USER_KEY);
+  window.localStorage.removeItem(AUTH_ACCESS_TOKEN_KEY);
+  window.localStorage.removeItem(AUTH_REFRESH_TOKEN_KEY);
+  emitAuthSessionChanged(null);
+}
+
+function setStoredAccessToken(access: string, refresh?: string) {
+  if (!isBrowser()) {
+    return;
+  }
+
+  window.localStorage.setItem(AUTH_ACCESS_TOKEN_KEY, access);
+  if (refresh) {
+    window.localStorage.setItem(AUTH_REFRESH_TOKEN_KEY, refresh);
+  }
 }
 
 async function fetchCurrentUser(): Promise<AuthUser | null> {
@@ -295,29 +330,6 @@ async function fetchCurrentUser(): Promise<AuthUser | null> {
   const user = normalizeUser(payload.data);
   setStoredUser(user);
   return user;
-}
-
-export function clearStoredUser() {
-  if (!isBrowser()) {
-    return;
-  }
-
-  window.localStorage.removeItem(AUTH_USER_KEY);
-  window.localStorage.removeItem(AUTH_ACCESS_TOKEN_KEY);
-  window.localStorage.removeItem(AUTH_REFRESH_TOKEN_KEY);
-  emitAuthSessionChanged();
-}
-
-function setStoredAccessToken(access: string, refresh?: string) {
-  if (!isBrowser()) {
-    return;
-  }
-
-  window.localStorage.setItem(AUTH_ACCESS_TOKEN_KEY, access);
-  if (refresh) {
-    window.localStorage.setItem(AUTH_REFRESH_TOKEN_KEY, refresh);
-  }
-  emitAuthSessionChanged();
 }
 
 export async function loginWithPassword(credentials: LoginCredentials): Promise<AuthUser> {
@@ -339,7 +351,7 @@ export async function loginWithPassword(credentials: LoginCredentials): Promise<
     access: payload.data.access,
     refresh: payload.data.refresh,
   });
-  return (await fetchCurrentUser()) ?? user;
+  return user;
 }
 
 export async function registerUser(payload: RegisterPayload): Promise<RegisterResult> {
@@ -389,12 +401,12 @@ export async function refreshAccessToken(): Promise<string | null> {
 
 export async function initializeAuthSession(): Promise<AuthUser | null> {
   const user = getStoredUser();
-  if (!user) {
+  const access = getStoredAccessToken();
+  if (!access) {
     clearStoredUser();
     return null;
   }
 
-  const access = getStoredAccessToken();
   if (access && !isTokenExpiring(access)) {
     return (await fetchCurrentUser()) ?? user;
   }
@@ -416,7 +428,7 @@ export async function refreshSessionIfNeeded(): Promise<AuthUser | null> {
     return refreshedAccess ? (await fetchCurrentUser()) ?? user : null;
   }
 
-  return user;
+  return (await fetchCurrentUser()) ?? user;
 }
 
 export async function authenticatedFetch(input: RequestInfo | URL, init: RequestInit = {}) {

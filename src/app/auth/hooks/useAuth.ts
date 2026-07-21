@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useState } from "react";
 import {
   AUTH_SESSION_CHANGED_EVENT,
-  getStoredUser,
   initializeAuthSession,
   loginWithPassword,
   logoutFromApi,
@@ -26,8 +25,8 @@ export function useAuth(): AuthState {
   useEffect(() => {
     let active = true;
 
-    const syncUser = () => {
-      setUser(getStoredUser());
+    const syncUser = (event: Event) => {
+      setUser((event as CustomEvent<AuthUser | null | undefined>).detail ?? null);
     };
 
     window.addEventListener(AUTH_SESSION_CHANGED_EVENT, syncUser);
