@@ -192,6 +192,11 @@ export function Sidebar({
             requiredPermission: "*",
           },
           {
+            label: "Markets",
+            to: "/markets",
+            icon: <i className="bi bi-shop" />,
+          },
+          {
             label: "Areas",
             to: "/areas",
             icon: <i className="bi bi-geo-alt" />,
