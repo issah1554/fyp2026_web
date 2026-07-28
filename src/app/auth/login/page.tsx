@@ -83,7 +83,7 @@ function LoginForm() {
                 href={verificationHref}
                 className="mt-2 inline-flex items-center gap-2 text-primary-700 underline-offset-4 hover:text-primary-800 hover:underline"
               >
-                Request a new verification link
+                Enter or resend verification code
                 <i className="bi bi-arrow-right" aria-hidden="true" />
               </Link>
             )}

@@ -499,18 +499,18 @@ export async function confirmPasswordReset(token: string, password: string): Pro
   };
 }
 
-export async function verifyEmail(token: string): Promise<MessageResult> {
+export async function verifyEmail(email: string, code: string): Promise<MessageResult> {
   const response = await fetch(apiUrl("/auth/email/verify"), {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ token }),
+    body: JSON.stringify({ email, code }),
   });
   const result = (await response.json().catch(() => null)) as ApiResponse<unknown> | null;
 
   if (!response.ok) {
-    throw new Error(getErrorMessage(result, "Email verification failed. The link may be invalid or expired."));
+    throw new Error(getErrorMessage(result, "Email verification failed. The code may be invalid or expired."));
   }
 
   return {
@@ -529,11 +529,11 @@ export async function resendEmailVerification(email: string): Promise<MessageRes
   const result = (await response.json().catch(() => null)) as ApiResponse<unknown> | null;
 
   if (!response.ok) {
-    throw new Error(getErrorMessage(result, "Could not resend the verification link. Try again."));
+    throw new Error(getErrorMessage(result, "Could not resend the verification code. Try again."));
   }
 
   return {
-    message: result?.message ?? "A new verification link has been sent to your email.",
+    message: result?.message ?? "A new verification code has been sent to your email.",
   };
 }
 

@@ -50,7 +50,10 @@ export default function RegisterPage() {
       });
 
       setSuccess(result.message);
-      window.setTimeout(() => router.replace("/auth/login"), 1200);
+      window.setTimeout(
+        () => router.replace(`/auth/email-verification?email=${encodeURIComponent(result.user.email)}`),
+        1200,
+      );
     } catch (registerError) {
       setError(registerError instanceof Error ? registerError.message : "Registration failed. Try again.");
     } finally {
