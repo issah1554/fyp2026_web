@@ -194,11 +194,20 @@ export function Sidebar({
         icon: <i className="bi bi-people" />,
         items: [
           {
-            label: "Access",
-            requiredPermission: ["users.list", "roles.list", "permissions.list"],
-            subItems: [
-              { label: "Users", to: "/users", requiredPermission: "users.list" },
-              { label: "Roles", to: "/rbac", requiredPermission: ["roles.list", "roles.create", "roles.update", "roles.delete", "permissions.list", "roles.permissions.update"] },
+            label: "Users",
+            to: "/users",
+            requiredPermission: "users.list",
+          },
+          {
+            label: "Roles & Permissions",
+            to: "/rbac",
+            requiredPermission: [
+              "roles.list",
+              "roles.create",
+              "roles.update",
+              "roles.delete",
+              "permissions.list",
+              "roles.permissions.update",
             ],
           },
         ],

@@ -40,17 +40,16 @@ export function NavItem({
   const isActive = Boolean(to && pathname === to);
   const isChildActive = Boolean(hasSubItems && subItems?.some((item) => navItemContainsPath(item, pathname)));
   const isOpen = !collapsed && (manualOpen || isChildActive);
-  const activeParentClasses = ["bg-main-500 text-main-0", "bg-main-400 text-main-0", "bg-main-300 text-primary-700"][depth] ?? "bg-main-300 text-primary-700";
-  const openParentClasses = ["bg-main-400 text-main-0", "bg-main-300 text-primary-700", "bg-main-200 text-primary-700"][depth] ?? "bg-main-200 text-primary-700";
-  const parentFocusClass = hasSubItems ? (isChildActive ? activeParentClasses : isOpen ? openParentClasses : "") : "";
+  const openParentClasses = ["bg-main-400 text-main-0 hover:text-primary-400", "bg-main-300 text-primary-700 hover:bg-main-400", "bg-main-200 text-primary-700 hover:bg-main-300"][depth] ?? "bg-main-200 text-primary-700 hover:bg-main-300";
+  const parentFocusClass = hasSubItems && (isChildActive || isOpen) ? openParentClasses : "";
   const activeParentChildClass = parentActive && isSubItem ? "bg-main-300 hover:bg-main-300" : "";
 
   const depthPadding = ["pl-3", "pl-8", "pl-12", "pl-16"][depth] ?? "pl-16";
 
   const content = (
     <div
-      className={`relative flex cursor-pointer items-center py-2 pr-1 text-sm text-main-600 hover:bg-main-300 hover:text-primary-700 ${collapsed ? "pl-0" : depthPadding} ${className ?? ""}
-                ${activeParentChildClass} ${isActive ? "bg-main-300 text-primary-700" : ""} ${parentFocusClass}
+      className={`relative flex cursor-pointer items-center py-2 pr-1 text-sm text-main-600 hover:bg-main-400/60 hover:text-primary-700 ${collapsed ? "pl-0" : depthPadding} ${className ?? ""}
+                ${activeParentChildClass} ${isActive ? "bg-main-400/60 text-primary-700" : ""} ${parentFocusClass}
                 ${collapsed ? "justify-center" : "justify-between"}
             `}
       onClick={() => hasSubItems && !collapsed && setManualOpen((current) => !current)}
