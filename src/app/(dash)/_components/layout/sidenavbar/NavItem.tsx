@@ -14,7 +14,12 @@ export type NavItemProps = {
   depth?: number;
   className?: string;
   collapsed?: boolean;
+  parentActive?: boolean;
 };
+
+function navItemContainsPath(item: NavItemProps, pathname: string): boolean {
+  return item.to === pathname || Boolean(item.subItems?.some((subItem) => navItemContainsPath(subItem, pathname)));
+}
 
 export function NavItem({
   label,
@@ -25,6 +30,7 @@ export function NavItem({
   depth = 0,
   className,
   collapsed = false,
+  parentActive = false,
 }: NavItemProps) {
   const pathname = usePathname();
   const isSubItem = depth > 0;
@@ -32,15 +38,19 @@ export function NavItem({
   const [manualOpen, setManualOpen] = useState(false);
 
   const isActive = Boolean(to && pathname === to);
-  const isChildActive = Boolean(hasSubItems && subItems?.some((item) => item.to === pathname));
+  const isChildActive = Boolean(hasSubItems && subItems?.some((item) => navItemContainsPath(item, pathname)));
   const isOpen = !collapsed && (manualOpen || isChildActive);
+  const activeParentClasses = ["bg-main-500 text-main-0", "bg-main-400 text-main-0", "bg-main-300 text-primary-700"][depth] ?? "bg-main-300 text-primary-700";
+  const openParentClasses = ["bg-main-400 text-main-0", "bg-main-300 text-primary-700", "bg-main-200 text-primary-700"][depth] ?? "bg-main-200 text-primary-700";
+  const parentFocusClass = hasSubItems ? (isChildActive ? activeParentClasses : isOpen ? openParentClasses : "") : "";
+  const activeParentChildClass = parentActive && isSubItem ? "bg-main-300 hover:bg-main-300" : "";
 
   const depthPadding = ["pl-3", "pl-8", "pl-12", "pl-16"][depth] ?? "pl-16";
 
   const content = (
     <div
       className={`relative flex cursor-pointer items-center py-2 pr-1 text-sm text-main-600 hover:bg-main-300 hover:text-primary-700 ${collapsed ? "pl-0" : depthPadding} ${className ?? ""}
-                ${isActive || isChildActive ? "bg-main-300 text-primary-700" : ""} ${isOpen && hasSubItems ? "bg-main-200" : ""}
+                ${activeParentChildClass} ${isActive ? "bg-main-300 text-primary-700" : ""} ${parentFocusClass}
                 ${collapsed ? "justify-center" : "justify-between"}
             `}
       onClick={() => hasSubItems && !collapsed && setManualOpen((current) => !current)}
@@ -86,7 +96,7 @@ export function NavItem({
       {hasSubItems && isOpen && !collapsed && (
         <div className="bg-main-200">
           {subItems?.map((item, index) => (
-            <NavItem key={`${label}-${index}`} {...item} collapsed={collapsed} depth={depth + 1} />
+            <NavItem key={`${label}-${index}`} {...item} collapsed={collapsed} depth={depth + 1} parentActive={isChildActive} />
           ))}
         </div>
       )}

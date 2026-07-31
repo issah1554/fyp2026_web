@@ -22,6 +22,7 @@ type SideNavBarProps = {
 
 type NavGroup = {
   title: string;
+  icon: NavItemProps["icon"];
   items: NavItemProps[];
 };
 
@@ -90,6 +91,14 @@ function filterNavItems(items: NavItemProps[], user: ReturnType<typeof useAuth>[
   return filtered;
 }
 
+function stripNavItemIcons(items: NavItemProps[]): NavItemProps[] {
+  return items.map(({ subItems, ...item }) => ({
+    ...item,
+    icon: undefined,
+    subItems: subItems ? stripNavItemIcons(subItems) : undefined,
+  }));
+}
+
 export function Sidebar({
   effectiveCollapsed,
   isPinned,
@@ -104,101 +113,92 @@ export function Sidebar({
     () => [
       {
         title: "Overview",
+        icon: <i className="bi bi-grid-1x2" />,
         items: [
           {
             label: "Dashboard",
             to: "/dash",
-            icon: <i className="bi bi-grid-1x2" />,
           },
           {
             label: "Market Data",
             to: "/market-data",
-            icon: <i className="bi bi-clipboard-data" />,
           },
           {
             label: "Validation",
             to: "/validations",
-            icon: <i className="bi bi-shield-check" />,
           },
         ],
       },
       {
         title: "Trade",
+        icon: <i className="bi bi-tags" />,
         items: [
           {
             label: "Listings",
             to: "/listings",
-            icon: <i className="bi bi-tags" />,
           },
           {
             label: "Orders",
             to: "/orders",
-            icon: <i className="bi bi-cart-check" />,
           },
         ],
       },
       {
         title: "Data Ops",
+        icon: <i className="bi bi-hdd-network" />,
         items: [
           {
             label: "Scrapers",
             to: "/scrapers",
-            icon: <i className="bi bi-cloud-arrow-down" />,
           },
           {
             label: "Data Sources",
             to: "/data-sources",
-            icon: <i className="bi bi-hdd-network" />,
           },
           {
             label: "Commodities",
             to: "/commodities",
-            icon: <i className="bi bi-basket" />,
             requiredPermission: ["commodities.list", "commodities.categories.list", "commodities.units.list"],
           },
           {
             label: "Markets",
             to: "/markets",
-            icon: <i className="bi bi-shop" />,
           },
           {
             label: "Areas",
             to: "/areas",
-            icon: <i className="bi bi-geo-alt" />,
             requiredPermission: "areas.list",
           },
           {
             label: "USSD",
             to: "/ussd",
-            icon: <i className="bi bi-phone" />,
           },
         ],
       },
       {
         title: "Insights",
+        icon: <i className="bi bi-graph-up-arrow" />,
         items: [
           {
             label: "Forecasting",
             to: "/ai-forecasting",
-            icon: <i className="bi bi-graph-up-arrow" />,
           },
           {
             label: "Reports",
             to: "/reports",
-            icon: <i className="bi bi-file-earmark-bar-graph" />,
           },
         ],
       },
       {
         title: "Admin",
+        icon: <i className="bi bi-people" />,
         items: [
           {
             label: "Access",
-            icon: <i className="bi bi-people" />,
             requiredPermission: ["users.list", "roles.list", "permissions.list"],
             subItems: [
-              { label: "Users", to: "/users", icon: <i className="bi bi-person-lines-fill" />, requiredPermission: "users.list" },
-              { label: "Roles", to: "/rbac", icon: <i className="bi bi-shield-lock" />, requiredPermission: ["roles.list", "roles.create", "roles.update", "roles.delete", "permissions.list", "roles.permissions.update"] },
+              { label: "Users", to: "/users", requiredPermission: "users.list" },
+              { label: "Roles", to: "/rbac", requiredPermission: ["roles.list", "roles.create", "roles.update", "roles.delete", "permissions.list", "roles.permissions.update"] },
             ],
           },
         ],
@@ -213,7 +213,15 @@ export function Sidebar({
         .filter((group) => group.items.length > 0),
     [groups, user],
   );
-  const visibleItems = useMemo(() => visibleGroups.flatMap((group) => group.items), [visibleGroups]);
+  const visibleGroupItems = useMemo<NavItemProps[]>(
+    () =>
+      visibleGroups.map((group) => ({
+        label: group.title,
+        icon: group.icon,
+        subItems: stripNavItemIcons(group.items),
+      })),
+    [visibleGroups],
+  );
 
   return (
     <aside
@@ -233,11 +241,9 @@ export function Sidebar({
       <div className="flex-1 overflow-x-hidden overflow-y-auto">
         <div className="space-y-3 pb-4">
           {effectiveCollapsed ? (
-            <NavItems collapsed items={visibleItems} />
+            <NavItems collapsed items={visibleGroupItems} />
           ) : (
-            visibleGroups.map((group) => (
-              <NavItems key={group.title} title={group.title} items={group.items} />
-            ))
+            <NavItems items={visibleGroupItems} />
           )}
         </div>
       </div>
