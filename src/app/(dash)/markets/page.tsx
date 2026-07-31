@@ -20,6 +20,7 @@ import {
   listMarketPrices,
   listMarkets,
   listPricesForMarket,
+  syncMarketIntegrations,
   updateMarket,
   updateMarketPrice,
   type Market,
@@ -54,6 +55,7 @@ type PriceModalState =
   | { mode: "create"; price: null; marketId?: string }
   | { mode: "edit"; price: MarketPrice; marketId?: string };
 type DetailTab = "details" | "prices" | "latest";
+type SourceFilter = "" | "platform_a" | "platform_b" | "platform_c";
 
 const emptyPagination: PaginationMeta = {
   page: 1,
@@ -84,6 +86,13 @@ const emptyPriceForm: PriceFormState = {
   currency: "UGX",
   price_date: today,
 };
+
+const integrationSources: Array<{ value: SourceFilter; label: string }> = [
+  { value: "", label: "All sources" },
+  { value: "platform_a", label: "Platform A" },
+  { value: "platform_b", label: "Platform B" },
+  { value: "platform_c", label: "Platform C" },
+];
 
 function asNumberOrNull(value: string) {
   if (!value.trim()) return null;
@@ -124,6 +133,11 @@ function formatMoney(price: string | number, currency = "UGX") {
   return `${currency} ${Number(price).toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
 }
 
+function formatOptionalMoney(price: string | number | null | undefined, currency: string) {
+  if (price === null || price === undefined || price === "") return "None";
+  return formatMoney(price, currency);
+}
+
 function marketAreaName(market: Market) {
   return market.admin_area?.name ?? market.admin_area_id ?? "None";
 }
@@ -138,6 +152,10 @@ function priceCommodityName(price: MarketPrice, commodities: Commodity[]) {
 
 function statusBadgeClass(status: string) {
   return status === "active" ? "bg-success-100 text-success-700" : "bg-main-200 text-main-700";
+}
+
+function sourceLabel(price: MarketPrice) {
+  return price.source_name || (price.source_key ? price.source_key.replace(/_/g, " ").replace(/\b\w/g, (char) => char.toUpperCase()) : "Manual");
 }
 
 export default function MarketsPage() {
@@ -166,8 +184,10 @@ export default function MarketsPage() {
   const [priceDateFilter, setPriceDateFilter] = useState("");
   const [dateFromFilter, setDateFromFilter] = useState("");
   const [dateToFilter, setDateToFilter] = useState("");
+  const [priceSourceFilter, setPriceSourceFilter] = useState<SourceFilter>("");
   const [loadingMarkets, setLoadingMarkets] = useState(true);
   const [loadingPrices, setLoadingPrices] = useState(true);
+  const [syncingIntegrations, setSyncingIntegrations] = useState(false);
   const [pageError, setPageError] = useState("");
   const [pageNotice, setPageNotice] = useState("");
   const [marketModal, setMarketModal] = useState<MarketModalState | null>(null);
@@ -224,6 +244,7 @@ export default function MarketsPage() {
         price_date: priceDateFilter,
         date_from: dateFromFilter,
         date_to: dateToFilter,
+        source_key: priceSourceFilter,
       });
       setPrices(result.data);
       setPricePagination(result.pagination);
@@ -232,7 +253,7 @@ export default function MarketsPage() {
     } finally {
       setLoadingPrices(false);
     }
-  }, [dateFromFilter, dateToFilter, priceCommodityFilter, priceDateFilter, priceMarketFilter, pricePage, pricePageSize]);
+  }, [dateFromFilter, dateToFilter, priceCommodityFilter, priceDateFilter, priceMarketFilter, pricePage, pricePageSize, priceSourceFilter]);
 
   useEffect(() => {
     if (authLoading) return;
@@ -439,6 +460,29 @@ export default function MarketsPage() {
     }
   };
 
+  const syncPlatformPrices = async () => {
+    setSyncingIntegrations(true);
+    setPageError("");
+    setPageNotice("");
+    try {
+      const result = await syncMarketIntegrations({
+        source: priceSourceFilter || undefined,
+        limit: 100,
+      });
+      const errors = result.result.errors.length ? ` ${result.result.errors.length} source error(s).` : "";
+      setPageNotice(`${result.message} Created: ${result.result.created}. Updated: ${result.result.updated}.${errors}`);
+      await Promise.all([loadMarkets(), loadLookups(), loadPrices()]);
+      if (selectedMarketId) {
+        setMarketDetailPrices(await listPricesForMarket(selectedMarketId));
+        setLatestPrices(await listLatestPricesForMarket(selectedMarketId));
+      }
+    } catch (error) {
+      setPageError(error instanceof Error ? error.message : "Could not sync market integrations.");
+    } finally {
+      setSyncingIntegrations(false);
+    }
+  };
+
   if (authLoading) {
     return (
       <div className="flex min-h-96 items-center justify-center text-main-600">
@@ -459,6 +503,10 @@ export default function MarketsPage() {
             {canCreatePrices && <button type="button" onClick={() => openCreatePrice()} className="flex items-center gap-2 rounded-md border border-main-300 bg-main-100 px-4 py-2 text-sm font-bold text-main-800 hover:border-primary-300 hover:text-primary-700">
               <i className="bi bi-cash-coin" aria-hidden="true" />
               Add price
+            </button>}
+            {canCreatePrices && <button type="button" onClick={() => void syncPlatformPrices()} disabled={syncingIntegrations} className="flex items-center gap-2 rounded-md border border-main-300 bg-main-100 px-4 py-2 text-sm font-bold text-main-800 hover:border-primary-300 hover:text-primary-700 disabled:cursor-not-allowed disabled:opacity-60">
+              <i className={`bi ${syncingIntegrations ? "bi-arrow-repeat" : "bi-cloud-download"}`} aria-hidden="true" />
+              {syncingIntegrations ? "Syncing..." : "Sync platforms"}
             </button>}
             {canCreateMarkets && <button type="button" onClick={openCreateMarket} className="flex items-center gap-2 rounded-md bg-primary-600 px-4 py-2 text-sm font-bold text-main-0 hover:bg-primary-700">
               <i className="bi bi-plus-circle" aria-hidden="true" />
@@ -593,9 +641,10 @@ export default function MarketsPage() {
             <p className="text-sm font-semibold text-main-500">Price records</p>
             <h2 className="mt-1 text-xl font-bold text-main-950">All market prices</h2>
           </div>
-          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
+          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-6">
             <select value={priceMarketFilter} onChange={(event) => { setPriceMarketFilter(event.target.value); setPricePage(1); }} className="rounded-md border border-main-300 bg-main-100 px-3 py-2 text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-0"><option value="">All markets</option>{markets.map((market) => <option key={market.market_id} value={market.market_id}>{market.name}</option>)}</select>
             <select value={priceCommodityFilter} onChange={(event) => { setPriceCommodityFilter(event.target.value); setPricePage(1); }} className="rounded-md border border-main-300 bg-main-100 px-3 py-2 text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-0"><option value="">All commodities</option>{commodities.map((commodity) => <option key={commodity.commodity_id} value={commodity.commodity_id}>{commodity.name}</option>)}</select>
+            <select value={priceSourceFilter} onChange={(event) => { setPriceSourceFilter(event.target.value as SourceFilter); setPricePage(1); }} className="rounded-md border border-main-300 bg-main-100 px-3 py-2 text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-0">{integrationSources.map((source) => <option key={source.value || "all"} value={source.value}>{source.label}</option>)}</select>
             <input type="date" value={priceDateFilter} onChange={(event) => { setPriceDateFilter(event.target.value); setPricePage(1); }} className="rounded-md border border-main-300 bg-main-100 px-3 py-2 text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-0" />
             <input type="date" value={dateFromFilter} onChange={(event) => { setDateFromFilter(event.target.value); setPricePage(1); }} className="rounded-md border border-main-300 bg-main-100 px-3 py-2 text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-0" />
             <input type="date" value={dateToFilter} onChange={(event) => { setDateToFilter(event.target.value); setPricePage(1); }} className="rounded-md border border-main-300 bg-main-100 px-3 py-2 text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-0" />
@@ -673,19 +722,21 @@ function PriceTable({ prices, markets, commodities, canUpdate, canDelete, onEdit
   const canMutate = canUpdate || canDelete;
   return (
     <div className="mt-5 overflow-x-auto">
-      <table className="w-full min-w-180 text-left text-sm">
-        <thead><tr className="border-b border-main-200 text-xs font-bold uppercase text-main-500"><th className="py-3 pr-4">Market</th><th className="py-3 pr-4">Commodity</th><th className="py-3 pr-4">Price</th><th className="py-3 pr-4">Price date</th><th className="py-3 pr-4">Created</th>{canMutate && <th className="py-3 pr-4 text-right">Actions</th>}</tr></thead>
+      <table className="w-full min-w-220 text-left text-sm">
+        <thead><tr className="border-b border-main-200 text-xs font-bold uppercase text-main-500"><th className="py-3 pr-4">Market</th><th className="py-3 pr-4">Commodity</th><th className="py-3 pr-4">Price TZS</th><th className="py-3 pr-4">Price USD</th><th className="py-3 pr-4">Source</th><th className="py-3 pr-4">Price date</th><th className="py-3 pr-4">Created</th>{canMutate && <th className="py-3 pr-4 text-right">Actions</th>}</tr></thead>
         <tbody className="divide-y divide-main-200">
           {prices.length ? prices.map((price) => (
             <tr key={price.price_id} className="hover:bg-main-50">
               <td className="py-4 pr-4 font-bold text-main-900">{priceMarketName(price, markets)}</td>
               <td className="py-4 pr-4 text-main-700">{priceCommodityName(price, commodities)}</td>
               <td className="py-4 pr-4 font-bold text-primary-700">{formatMoney(price.price, price.currency)}</td>
+              <td className="py-4 pr-4 font-semibold text-main-800">{formatOptionalMoney(price.price_usd, "USD")}</td>
+              <td className="py-4 pr-4"><span className={`inline-flex rounded-md px-2 py-1 text-xs font-bold ${price.source_key ? "bg-primary-100 text-primary-700" : "bg-main-200 text-main-700"}`}>{sourceLabel(price)}</span></td>
               <td className="py-4 pr-4 text-main-700">{formatDate(price.price_date)}</td>
               <td className="py-4 pr-4 text-main-700">{formatDate(price.created_at)}</td>
               {canMutate && <td className="py-4 pr-4"><div className="flex justify-end gap-2">{canUpdate && <button type="button" onClick={() => onEdit(price)} className="flex size-8 items-center justify-center rounded-md border border-main-300 bg-main-100 text-main-700 hover:border-primary-300 hover:text-primary-700" aria-label="Edit price"><i className="bi bi-pencil-square" /></button>}{canDelete && <button type="button" onClick={() => void onDelete(price)} className="flex size-8 items-center justify-center rounded-md border border-danger-300 bg-danger-100 text-danger-700 hover:bg-danger-200" aria-label="Delete price"><i className="bi bi-trash" /></button>}</div></td>}
             </tr>
-          )) : <tr><td colSpan={canMutate ? 6 : 5} className="py-10 text-center text-main-500">{emptyText}</td></tr>}
+          )) : <tr><td colSpan={canMutate ? 8 : 7} className="py-10 text-center text-main-500">{emptyText}</td></tr>}
         </tbody>
       </table>
     </div>
@@ -704,7 +755,10 @@ function CompactPriceList({ title, prices, markets, commodities }: { title: stri
                 <p className="truncate text-sm font-bold text-main-900">{priceMarketName(price, markets)}</p>
                 <p className="mt-1 text-xs text-main-500">{priceCommodityName(price, commodities)} - {formatDate(price.price_date)}</p>
               </div>
-              <p className="shrink-0 text-sm font-bold text-primary-700">{formatMoney(price.price, price.currency)}</p>
+              <div className="shrink-0 text-right">
+                <p className="text-sm font-bold text-primary-700">{formatMoney(price.price, price.currency)}</p>
+                <p className="mt-1 text-xs font-semibold text-main-500">{formatOptionalMoney(price.price_usd, "USD")}</p>
+              </div>
             </div>
           </div>
         )) : <p className="rounded-md border border-main-200 bg-main-0 px-3 py-8 text-center text-sm text-main-500">No prices to show.</p>}

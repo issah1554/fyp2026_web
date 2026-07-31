@@ -146,6 +146,11 @@ export function Sidebar({
             icon: <i className="bi bi-cloud-arrow-down" />,
           },
           {
+            label: "Data Sources",
+            to: "/data-sources",
+            icon: <i className="bi bi-hdd-network" />,
+          },
+          {
             label: "Commodities",
             to: "/commodities",
             icon: <i className="bi bi-basket" />,

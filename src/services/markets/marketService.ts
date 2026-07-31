@@ -56,7 +56,10 @@ export type MarketPrice = {
   market_name?: string;
   commodity_name?: string;
   price: number | string;
+  price_usd?: number | string | null;
   currency: string;
+  source_key?: string;
+  source_name?: string;
   price_date: string;
   created_at: string;
 };
@@ -77,6 +80,28 @@ export type MarketListResult = {
 export type MarketPriceListResult = {
   data: MarketPrice[];
   pagination: PaginationMeta;
+};
+
+export type MarketIntegrationSyncResult = {
+  created: number;
+  updated: number;
+  errors: Array<{ source: string; error: string }>;
+};
+
+export type MarketIntegrationSource = {
+  key: "platform_a" | "platform_b" | "platform_c" | string;
+  name: string;
+  base_url: string;
+  prices_url: string;
+  health_url: string;
+};
+
+export type MarketIntegrationHealth = {
+  source: string;
+  name: string;
+  ok: boolean;
+  payload?: unknown;
+  error?: string;
 };
 
 function getFirstErrorMessage(errors: unknown): string {
@@ -180,7 +205,7 @@ export async function deleteMarket(marketId: string) {
 }
 
 export async function listMarketPrices(
-  params: { market_id?: string; commodity_id?: string; price_date?: string; date_from?: string; date_to?: string; page?: number; page_size?: number } = {},
+  params: { market_id?: string; commodity_id?: string; price_date?: string; date_from?: string; date_to?: string; source_key?: string; page?: number; page_size?: number } = {},
 ): Promise<MarketPriceListResult> {
   const payload = await marketRequest<MarketPrice[]>(
     withQuery("/market-prices", params),
@@ -189,6 +214,39 @@ export async function listMarketPrices(
   );
   const data = payload.data ?? [];
   return { data, pagination: normalizePagination(payload.meta, data.length) };
+}
+
+export async function syncMarketIntegrations(params: { source?: string; commodity?: string; market?: string; limit?: number } = {}) {
+  const payload = await marketRequest<MarketIntegrationSyncResult>(
+    withQuery("/market-integrations/sync", params),
+    { method: "POST" },
+    "Could not sync market integrations.",
+  );
+  return {
+    message: payload.message ?? "Market integrations synced successfully.",
+    result: payload.data ?? { created: 0, updated: 0, errors: [] },
+  };
+}
+
+export async function listMarketIntegrationSources() {
+  const payload = await marketRequest<MarketIntegrationSource[]>(
+    "/market-integrations/sources",
+    {},
+    "Could not load market integration sources.",
+  );
+  return payload.data ?? [];
+}
+
+export async function checkMarketIntegrationHealth() {
+  const payload = await marketRequest<MarketIntegrationHealth[]>(
+    "/market-integrations/health",
+    {},
+    "Could not check market integration health.",
+  );
+  return {
+    data: payload.data ?? [],
+    meta: payload.meta ?? {},
+  };
 }
 
 export async function listPricesForMarket(marketId: string) {
