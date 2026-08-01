@@ -63,7 +63,7 @@ export function NavItem({
   const content = (
     <div
       className={`relative flex cursor-pointer items-center py-2 pr-1 text-sm text-main-600 hover:bg-main-400/60 hover:text-primary-700 ${collapsed ? "pl-0" : depthPadding} ${className ?? ""}
-                ${activeParentChildClass} ${isActive ? "bg-main-400/60 text-primary-700" : ""} ${parentFocusClass}
+                ${activeParentChildClass} ${isActive ? " text-primary-700" : ""} ${parentFocusClass}
                 ${collapsed ? "justify-center" : "justify-between"}
             `}
       onClick={() => {

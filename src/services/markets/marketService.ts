@@ -301,3 +301,35 @@ export async function listCommodityPriceComparison(commodityId: string, priceDat
   );
   return payload.data ?? [];
 }
+
+export type NormalizedMarketPrice = {
+  source: string;
+  commodity: string;
+  price_tzs: number | null;
+  price_usd: number | null;
+  market?: string | null;
+  volume?: number | null;
+  confidence?: number | null;
+  delay_minutes?: number | null;
+  timestamp: string | null;
+  raw?: Record<string, unknown>;
+};
+
+export async function listLivePrices(params: { source?: string; commodity?: string; market?: string; limit?: number } = {}) {
+  const payload = await marketRequest<NormalizedMarketPrice[]>(
+    withQuery("/market-integrations/live-prices", params),
+    {},
+    "Could not load live normalized prices."
+  );
+  return payload.data ?? [];
+}
+
+export async function listStoredIntegrationPrices(params: { source?: string; commodity?: string; market?: string; limit?: number } = {}) {
+  const payload = await marketRequest<MarketPrice[]>(
+    withQuery("/market-integrations/prices", params),
+    {},
+    "Could not load stored integration prices."
+  );
+  return payload.data ?? [];
+}
+

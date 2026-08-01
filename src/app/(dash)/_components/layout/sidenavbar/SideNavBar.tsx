@@ -148,12 +148,8 @@ export function Sidebar({
         icon: <i className="bi bi-hdd-network" />,
         items: [
           {
-            label: "Scrapers",
-            to: "/scrapers",
-          },
-          {
-            label: "Data Sources",
-            to: "/data-sources",
+            label: "Market Integrations",
+            to: "/market-integrations",
           },
           {
             label: "Commodities",
