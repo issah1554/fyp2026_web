@@ -55,7 +55,7 @@ export function AppLayout({
   }
 
   return (
-    <div className="flex min-h-screen surface-0">
+    <div className="flex min-h-screen bg-main-0 text-main-1000 border-main-50">
       {!isMobile && (
         <SideNavBar
           effectiveCollapsed={effectiveCollapsed}
