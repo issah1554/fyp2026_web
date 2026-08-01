@@ -26,7 +26,7 @@ export function HorizontalTabs<T extends string>({
     return (
         <nav
             aria-label="Tabs"
-            className={`flex gap-2 overflow-x-auto border-b border-main-300 ${className}`}
+            className={`flex gap-2 overflow-x-auto border-b border-main-200 ${className}`}
         >
             {tabs.map((tab) => {
                 const active = activeTab === tab.id;

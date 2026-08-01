@@ -75,7 +75,7 @@ export default function RegisterPage() {
             autoComplete="name"
             placeholder="Your full name"
             required
-            className="mt-1.5 w-full rounded-md border border-main-300 bg-main-100 px-4 py-2.5 text-base text-main-900 outline-none placeholder:text-main-500 focus:border-primary-500 focus:bg-main-200"
+            className="mt-1.5 w-full rounded-md border border-main-300 bg-main-100 px-4 py-2.5 text-base text-main-900 outline-none placeholder:text-main-500 focus:border-primary-500 focus:bg-main-100"
           />
         </div>
 
@@ -90,7 +90,7 @@ export default function RegisterPage() {
             autoComplete="username"
             placeholder="Choose a username"
             required
-            className="mt-1.5 w-full rounded-md border border-main-300 bg-main-100 px-4 py-2.5 text-base text-main-900 outline-none placeholder:text-main-500 focus:border-primary-500 focus:bg-main-200"
+            className="mt-1.5 w-full rounded-md border border-main-300 bg-main-100 px-4 py-2.5 text-base text-main-900 outline-none placeholder:text-main-500 focus:border-primary-500 focus:bg-main-100"
           />
         </div>
 
@@ -105,7 +105,7 @@ export default function RegisterPage() {
             autoComplete="email"
             placeholder="name@marketia.test"
             required
-            className="mt-1.5 w-full rounded-md border border-main-300 bg-main-100 px-4 py-2.5 text-base text-main-900 outline-none placeholder:text-main-500 focus:border-primary-500 focus:bg-main-200"
+            className="mt-1.5 w-full rounded-md border border-main-300 bg-main-100 px-4 py-2.5 text-base text-main-900 outline-none placeholder:text-main-500 focus:border-primary-500 focus:bg-main-100"
           />
         </div>
 
@@ -145,7 +145,7 @@ export default function RegisterPage() {
             id="role"
             name="role"
             defaultValue="farmer"
-            className="mt-1.5 w-full rounded-md border border-main-300 bg-main-100 px-4 py-2.5 text-base text-main-900 outline-none focus:border-primary-500 focus:bg-main-200"
+            className="mt-1.5 w-full rounded-md border border-main-300 bg-main-100 px-4 py-2.5 text-base text-main-900 outline-none focus:border-primary-500 focus:bg-main-100"
           >
             <option value="farmer">Farmer</option>
             <option value="entrepreneur">Entrepreneur</option>
@@ -168,7 +168,7 @@ export default function RegisterPage() {
             pattern="^\+[1-9][0-9]{7,14}$"
             inputMode="tel"
             title={PHONE_NUMBER_ERROR}
-            className="mt-1.5 w-full rounded-md border border-main-300 bg-main-100 px-4 py-2.5 text-base text-main-900 outline-none placeholder:text-main-500 focus:border-primary-500 focus:bg-main-200"
+            className="mt-1.5 w-full rounded-md border border-main-300 bg-main-100 px-4 py-2.5 text-base text-main-900 outline-none placeholder:text-main-500 focus:border-primary-500 focus:bg-main-100"
           />
         </div>
 

@@ -69,7 +69,7 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-main-50 text-main-900">
 
-      <header className="sticky top-0 z-50 border-b border-main-300 bg-main-200/90 backdrop-blur-sm">
+      <header className="sticky top-0 z-50 border-b border-main-200 bg-main-100/90 backdrop-blur-sm">
         <nav className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5 lg:px-8">
           <a href="#" className="flex items-center gap-3" aria-label="Marketia home">
             <span className="flex size-12 items-center justify-center hover:bg-primary-100 rounded-full p-1.5">
@@ -104,7 +104,7 @@ export default function Home() {
         </nav>
       </header>
 
-      <section className="border-b border-main-300 bg-main-200">
+      <section className="border-b border-main-200 bg-main-100">
         <div className="mx-auto grid max-w-7xl gap-12 px-6 py-16 lg:grid-cols-[1.05fr_0.95fr] lg:px-8 lg:py-20">
           <div className="flex flex-col justify-center">
             <p className="mb-5 w-fit rounded-full border border-primary-200 bg-primary-50 px-4 py-2 text-sm font-semibold text-primary-800">
@@ -129,7 +129,7 @@ export default function Home() {
             </div>
             <dl className="mt-10 grid max-w-2xl grid-cols-3 gap-3">
               {impactMetrics.map((metric) => (
-                <div key={metric.label} className="border-l border-main-300 pl-4">
+                <div key={metric.label} className="border-l border-main-200 pl-4">
                   <dt className="text-2xl font-bold text-main-950">{metric.value}</dt>
                   <dd className="mt-1 text-sm leading-5 text-main-600">{metric.label}</dd>
                 </div>
@@ -138,9 +138,9 @@ export default function Home() {
           </div>
 
           <div className="flex items-center">
-            <div className="w-full rounded-lg border border-main-300 bg-main-50 p-4 shadow-xl shadow-main-200">
-              <div className="rounded-md border border-main-300 bg-main-200 p-5">
-                <div className="flex items-center justify-between border-b border-main-300 pb-4">
+            <div className="w-full rounded-lg border border-main-200 bg-main-50 p-4 shadow-xl shadow-main-200">
+              <div className="rounded-md border border-main-200 bg-main-100 p-5">
+                <div className="flex items-center justify-between border-b border-main-200 pb-4">
                   <div>
                     <p className="text-sm font-semibold text-main-500">Market intelligence</p>
                     <h2 className="mt-1 flex items-center gap-2 text-xl font-bold text-main-950">
@@ -155,7 +155,7 @@ export default function Home() {
 
                 <div className="mt-5 grid gap-3 sm:grid-cols-2">
                   {dataSources.map((source) => (
-                    <div key={source.label} className="rounded-md border border-main-300 bg-main-50 p-3">
+                    <div key={source.label} className="rounded-md border border-main-200 bg-main-50 p-3">
                       <div className="flex size-9 items-center justify-center rounded-md bg-primary-100 text-primary-700">
                         <i className={`bi ${source.icon}`} aria-hidden="true" />
                       </div>
@@ -164,7 +164,7 @@ export default function Home() {
                   ))}
                 </div>
 
-                <div className="mt-5 rounded-md border border-main-300 bg-main-950 p-4 text-main-0">
+                <div className="mt-5 rounded-md border border-main-200 bg-main-950 p-4 text-main-0">
                   <div className="flex items-center justify-between">
                     <p className="text-sm font-semibold text-main-200">Price forecast</p>
                     <p className="text-xs font-medium text-accent-300">Next cycle</p>
@@ -218,7 +218,7 @@ export default function Home() {
             {featureGroups.map((feature) => (
               <article
                 key={feature.title}
-                className="rounded-lg border border-main-300 bg-main-200 p-6 shadow-sm"
+                className="rounded-lg border border-main-200 bg-main-100 p-6 shadow-sm"
               >
                 <div className="flex size-11 items-center justify-center rounded-lg bg-primary-100 text-xl text-primary-700">
                   <i className={`bi ${feature.icon}`} aria-hidden="true" />
@@ -241,7 +241,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="border-y border-main-300 bg-main-200 py-16">
+      <section className="border-y border-main-200 bg-main-100 py-16">
         <div className="mx-auto grid max-w-7xl gap-10 px-6 lg:grid-cols-[0.8fr_1.2fr] lg:px-8">
           <div>
             <p className="text-sm font-semibold uppercase text-primary-700">
@@ -255,7 +255,7 @@ export default function Home() {
           </div>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {users.map((user) => (
-              <div key={user.label} className="rounded-md border border-main-300 bg-main-50 p-4">
+              <div key={user.label} className="rounded-md border border-main-200 bg-main-50 p-4">
                 <div className="flex size-9 items-center justify-center rounded-md bg-primary-100 text-primary-700">
                   <i className={`bi ${user.icon}`} aria-hidden="true" />
                 </div>
@@ -267,7 +267,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section id="benefits" className="bg-main-200 py-16 lg:py-20">
+      <section id="benefits" className="bg-main-100 py-16 lg:py-20">
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
           <div className="grid gap-10 lg:grid-cols-[1fr_1fr]">
             <div>
@@ -284,7 +284,7 @@ export default function Home() {
             </div>
             <div className="grid gap-3 sm:grid-cols-2">
               {benefits.map((benefit) => (
-                <div key={benefit} className="flex gap-3 rounded-md border border-main-300 bg-main-50 p-4">
+                <div key={benefit} className="flex gap-3 rounded-md border border-main-200 bg-main-50 p-4">
                   <i className="bi bi-check-circle-fill text-primary-600" aria-hidden="true" />
                   <p className="text-sm font-semibold leading-6 text-main-900">{benefit}</p>
                 </div>
@@ -294,11 +294,11 @@ export default function Home() {
         </div>
       </section>
 
-      <footer className="border-t border-main-300 bg-main-950 text-main-0">
+      <footer className="border-t border-main-200 bg-main-950 text-main-0">
         <div className="mx-auto grid max-w-7xl gap-8 px-6 py-10 md:grid-cols-[1.2fr_0.8fr_0.8fr] lg:px-8">
           <div>
             <a href="#" className="flex items-center gap-3" aria-label="Marketia home">
-              <span className="flex size-11 items-center justify-center rounded-lg border border-main-800 bg-main-200 p-1.5">
+              <span className="flex size-11 items-center justify-center rounded-lg border border-main-800 bg-main-100 p-1.5">
                 <Image
                   src="/logo.png"
                   alt=""

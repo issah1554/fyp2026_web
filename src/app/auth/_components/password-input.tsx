@@ -31,7 +31,7 @@ export default function PasswordInput({
         placeholder={placeholder}
         required={required}
         className={[
-          "w-full rounded-md border border-main-300 bg-main-100 px-4 pr-12 text-base text-main-900 outline-none placeholder:text-main-500 focus:border-primary-500 focus:bg-main-200",
+          "w-full rounded-md border border-main-300 bg-main-100 px-4 pr-12 text-base text-main-900 outline-none placeholder:text-main-500 focus:border-primary-500 focus:bg-main-100",
           className,
         ]
           .filter(Boolean)

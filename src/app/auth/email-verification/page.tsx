@@ -97,7 +97,7 @@ function EmailVerificationContent() {
                 placeholder="name@marketia.test"
                 defaultValue={emailFromQuery}
                 required
-                className="mt-2 w-full rounded-md border border-main-300 bg-main-100 px-4 py-3 text-base text-main-900 outline-none placeholder:text-main-500 focus:border-primary-500 focus:bg-main-200"
+                className="mt-2 w-full rounded-md border border-main-300 bg-main-100 px-4 py-3 text-base text-main-900 outline-none placeholder:text-main-500 focus:border-primary-500 focus:bg-main-100"
               />
             </div>
 
@@ -118,7 +118,7 @@ function EmailVerificationContent() {
                 onInput={(event) => {
                   event.currentTarget.value = event.currentTarget.value.replace(/\D/g, "").slice(0, 6);
                 }}
-                className="mt-2 w-full rounded-md border border-main-300 bg-main-100 px-4 py-3 text-center text-xl font-bold tracking-[0.35em] text-main-900 outline-none placeholder:text-main-500 focus:border-primary-500 focus:bg-main-200"
+                className="mt-2 w-full rounded-md border border-main-300 bg-main-100 px-4 py-3 text-center text-xl font-bold tracking-[0.35em] text-main-900 outline-none placeholder:text-main-500 focus:border-primary-500 focus:bg-main-100"
               />
             </div>
 

@@ -81,7 +81,7 @@ export function Button({
         },
         light: {
             solid: "bg-main-50 text-main-950 hover:bg-main-100 focus:ring-main-300",
-            outline: "border border-main-300 text-main-50 bg-transparent hover:bg-main-100 focus:ring-main-300",
+            outline: "border border-main-200 text-main-50 bg-transparent hover:bg-main-100 focus:ring-main-300",
             text: "text-main-50 bg-transparent hover:bg-main-100 focus:ring-main-300",
         },
         dark: {

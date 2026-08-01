@@ -232,7 +232,7 @@ export function Sidebar({
     <aside
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
-      className={`fixed left-0 top-0 z-40 flex h-screen flex-col overflow-hidden border-r bg-main-50 text-main-950 border-main-100 transition-all duration-300 ease-in-out ${effectiveCollapsed ? "w-16" : "w-64"} ${mobile ? "" : ""}`}
+      className={`fixed left-0 top-0 z-40 flex h-screen flex-col overflow-hidden border-r bg-main-50  text-main-950 border-main-200 transition-all duration-300 ease-in-out ${effectiveCollapsed ? "w-16" : "w-64"} ${mobile ? "" : ""}`}
     >
       <div className="sticky top-0 z-10 border-b bg-main-50 text-main-950 border-main-100">
         <SidebarHeader

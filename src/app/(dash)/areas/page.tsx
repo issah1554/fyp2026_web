@@ -375,7 +375,7 @@ export default function AreasPage() {
           ["Districts", stats.districts, "bi-signpost", "bg-accent-100 text-accent-700"],
           ["Wards", stats.wards, "bi-pin-map", "bg-warning-100 text-warning-700"],
         ].map(([label, value, icon, color]) => (
-          <div key={String(label)} className="rounded-lg border border-main-300 bg-main-200 p-4 shadow-none">
+          <div key={String(label)} className="rounded-lg border border-main-200 bg-main-100 p-4 shadow-none">
             <div className="flex items-center justify-between gap-3">
               <div>
                 <p className="text-sm text-main-500">{label}</p>
@@ -391,18 +391,17 @@ export default function AreasPage() {
 
       {(pageError || pageNotice) && (
         <div
-          className={`rounded-md border px-4 py-3 text-sm font-semibold ${
-            pageError
+          className={`rounded-md border px-4 py-3 text-sm font-semibold ${pageError
               ? "border-danger-300 bg-danger-100 text-danger-700"
               : "border-success-300 bg-success-100 text-success-700"
-          }`}
+            }`}
         >
           {pageError || pageNotice}
         </div>
       )}
 
-      <section className="rounded-md border border-main-300 bg-main-200 p-5 shadow-sm">
-        <div className="flex flex-col gap-3 border-b border-main-300 pb-4 lg:flex-row lg:items-center lg:justify-between">
+      <section className="rounded-md border border-main-200 bg-main-100 p-5 shadow-sm">
+        <div className="flex flex-col gap-3 border-b border-main-200 pb-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <p className="text-sm font-semibold text-main-500">Administrative hierarchy</p>
             <h2 className="mt-1 text-xl font-bold text-main-950">Area Registry</h2>
@@ -415,7 +414,7 @@ export default function AreasPage() {
                 setPage(1);
               }}
               placeholder="Search areas"
-              className="rounded-md border border-main-300 bg-main-100 px-3 py-2 text-sm text-main-900 outline-none placeholder:text-main-500 focus:border-primary-500 focus:bg-main-200"
+              className="rounded-md border border-main-300 bg-main-100 px-3 py-2 text-sm text-main-900 outline-none placeholder:text-main-500 focus:border-primary-500 focus:bg-main-100"
             />
             <select
               value={levelFilter}
@@ -423,7 +422,7 @@ export default function AreasPage() {
                 setLevelFilter(event.target.value);
                 setPage(1);
               }}
-              className="rounded-md border border-main-300 bg-main-100 px-3 py-2 text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-200"
+              className="rounded-md border border-main-300 bg-main-100 px-3 py-2 text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-100"
             >
               <option value="">All levels</option>
               <option value="region">Regions</option>
@@ -436,7 +435,7 @@ export default function AreasPage() {
         <div className="mt-5 overflow-x-auto">
           <table className="w-full min-w-180 text-left text-sm">
             <thead>
-              <tr className="border-b border-main-300 text-xs font-bold uppercase text-main-500">
+              <tr className="border-b border-main-200 text-xs font-bold uppercase text-main-500">
                 <th className="py-3 pr-4">Name</th>
                 <th className="py-3 pr-4">Level</th>
                 <th className="py-3 pr-4">Parent</th>
@@ -497,7 +496,7 @@ export default function AreasPage() {
             </tbody>
           </table>
         </div>
-        <div className="mt-4 flex flex-col gap-3 border-t border-main-300 pt-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="mt-4 flex flex-col gap-3 border-t border-main-200 pt-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-2 text-sm text-main-600">
             <span>Rows</span>
             <select
@@ -532,10 +531,10 @@ export default function AreasPage() {
         open={bulkModalOpen}
         onClose={() => setBulkModalOpen(false)}
         size="2xl"
-        className="max-h-[calc(100vh-2rem)] overflow-hidden rounded-md border border-main-300 bg-main-200 p-0 shadow-lg"
+        className="max-h-[calc(100vh-2rem)] overflow-hidden rounded-md border border-main-300 bg-main-100 p-0 shadow-lg"
       >
         <form onSubmit={(event) => void handleBulkImport(event)}>
-          <div className="flex items-center justify-between border-b border-main-300 px-5 py-4">
+          <div className="flex items-center justify-between border-b border-main-200 px-5 py-4">
             <div>
               <p className="text-sm font-semibold text-main-500">Path import</p>
               <h2 className="text-xl font-bold text-main-950">Bulk Import Areas</h2>
@@ -552,7 +551,7 @@ export default function AreasPage() {
 
           <div className="grid max-h-[calc(100vh-8rem)] gap-4 overflow-y-auto px-5 py-5 lg:grid-cols-[1fr_20rem]">
             <div className="space-y-3">
-              <div className="flex flex-col gap-2 rounded-md border border-main-300 bg-main-50 p-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex flex-col gap-2 rounded-md border border-main-200 bg-main-50 p-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <p className="text-sm font-bold text-main-900">JSON input</p>
                   <p className="text-xs text-main-500">Paste JSON or upload a JSON file before importing.</p>
@@ -573,11 +572,11 @@ export default function AreasPage() {
                 }}
                 rows={14}
                 spellCheck={false}
-                className="min-h-80 w-full rounded-md border border-main-300 bg-main-100 px-4 py-3 font-mono text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-200"
+                className="min-h-80 w-full rounded-md border border-main-300 bg-main-100 px-4 py-3 font-mono text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-100"
               />
             </div>
 
-            <div className="rounded-md border border-main-300 bg-main-50 p-4">
+            <div className="rounded-md border border-main-200 bg-main-50 p-4">
               <p className="text-sm font-bold text-main-900">Schema</p>
               <div className="mt-3 space-y-3 text-xs text-main-600">
                 <p><span className="font-bold text-main-800">Region:</span> path has 1 item.</p>
@@ -596,11 +595,10 @@ export default function AreasPage() {
 
               {(bulkError || bulkNotice) && (
                 <div
-                  className={`mt-4 rounded-md border px-3 py-2 text-sm font-semibold ${
-                    bulkError
+                  className={`mt-4 rounded-md border px-3 py-2 text-sm font-semibold ${bulkError
                       ? "border-danger-300 bg-danger-100 text-danger-700"
                       : "border-success-300 bg-success-100 text-success-700"
-                  }`}
+                    }`}
                 >
                   {bulkError || bulkNotice}
                 </div>
@@ -631,10 +629,10 @@ export default function AreasPage() {
         open={Boolean(modal)}
         onClose={() => setModal(null)}
         size="lg"
-        className="rounded-md border border-main-300 bg-main-200 p-0 shadow-lg"
+        className="rounded-md border border-main-300 bg-main-100 p-0 shadow-lg"
       >
         <form onSubmit={(event) => void handleSaveArea(event)}>
-          <div className="flex items-center justify-between border-b border-main-300 px-5 py-4">
+          <div className="flex items-center justify-between border-b border-main-200 px-5 py-4">
             <div>
               <p className="text-sm font-semibold text-main-500">Area details</p>
               <h2 className="text-xl font-bold text-main-950">{modal?.mode === "edit" ? "Edit area" : "Create area"}</h2>
@@ -652,11 +650,10 @@ export default function AreasPage() {
           <div className="grid gap-4 px-5 py-5">
             {(formError || formNotice) && (
               <div
-                className={`rounded-md border px-3 py-2 text-sm font-semibold ${
-                  formError
+                className={`rounded-md border px-3 py-2 text-sm font-semibold ${formError
                     ? "border-danger-300 bg-danger-100 text-danger-700"
                     : "border-success-300 bg-success-100 text-success-700"
-                }`}
+                  }`}
               >
                 {formError || formNotice}
               </div>
@@ -673,7 +670,7 @@ export default function AreasPage() {
                   setFormNotice("");
                 }}
                 required
-                className="mt-2 w-full rounded-md border border-main-300 bg-main-100 px-4 py-2.5 text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-200"
+                className="mt-2 w-full rounded-md border border-main-300 bg-main-100 px-4 py-2.5 text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-100"
               />
             </div>
 
@@ -687,7 +684,7 @@ export default function AreasPage() {
                   setFormError("");
                   setFormNotice("");
                 }}
-                className="mt-2 w-full rounded-md border border-main-300 bg-main-100 px-4 py-2.5 text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-200"
+                className="mt-2 w-full rounded-md border border-main-300 bg-main-100 px-4 py-2.5 text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-100"
               >
                 <option value="region">Region</option>
                 <option value="district">District</option>
@@ -707,7 +704,7 @@ export default function AreasPage() {
                     setFormNotice("");
                   }}
                   required
-                  className="mt-2 w-full rounded-md border border-main-300 bg-main-100 px-4 py-2.5 text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-200"
+                  className="mt-2 w-full rounded-md border border-main-300 bg-main-100 px-4 py-2.5 text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-100"
                 >
                   <option value="">Select parent</option>
                   {parentOptions.map((parent) => (
@@ -720,7 +717,7 @@ export default function AreasPage() {
             )}
           </div>
 
-          <div className="flex justify-end gap-2 border-t border-main-300 px-5 py-4">
+          <div className="flex justify-end gap-2 border-t border-main-200 px-5 py-4">
             <button
               type="button"
               onClick={() => setModal(null)}

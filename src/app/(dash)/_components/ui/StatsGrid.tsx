@@ -26,14 +26,14 @@ export default function StatsGrid({ stats }: StatsGridProps) {
                             href={stat.href}
                             prefetch={false}
                             key={index}
-                            className="block h-full bg-main-200 rounded-lg shadow-none border border-main-300 p-4 hover:shadow-md transition-shadow"
+                            className="block h-full bg-main-100 rounded-lg shadow-none border border-main-200 p-4 hover:shadow-md transition-shadow"
                         >
                             <StatCard stat={stat} />
                         </Link>
                     ) : (
                         <div
                             key={index}
-                            className="h-full bg-main-200 rounded-lg shadow-none border border-main-300 p-4 hover:shadow-md transition-shadow"
+                            className="h-full bg-main-100 rounded-lg shadow-none border border-main-200 p-4 hover:shadow-md transition-shadow"
                         >
                             <StatCard stat={stat} />
                         </div>

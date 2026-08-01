@@ -445,7 +445,7 @@ export default function CommoditiesPage() {
 
       <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {stats.map(([label, value, icon, color]) => (
-          <div key={String(label)} className="rounded-lg border border-main-300 bg-main-200 p-4 shadow-none">
+          <div key={String(label)} className="rounded-lg border border-main-200 bg-main-100 p-4 shadow-none">
             <div className="flex items-center justify-between gap-3">
               <div>
                 <p className="text-sm text-main-500">{label}</p>
@@ -461,289 +461,288 @@ export default function CommoditiesPage() {
 
       {(pageError || pageNotice) && (
         <div
-          className={`rounded-md border px-4 py-3 text-sm font-semibold ${
-            pageError
+          className={`rounded-md border px-4 py-3 text-sm font-semibold ${pageError
               ? "border-danger-300 bg-danger-100 text-danger-700"
               : "border-success-300 bg-success-100 text-success-700"
-          }`}
+            }`}
         >
           {pageError || pageNotice}
         </div>
       )}
 
-      <section className="rounded-md border border-main-300 bg-main-200 shadow-sm">
+      <section className="rounded-md border border-main-200 bg-main-100 shadow-sm">
         <HorizontalTabs tabs={catalogTabs} activeTab={activeTab} basePath="/commodities" className="px-5" />
 
         <div className="p-5">
-        <div className={activeTab === "commodities" ? "" : "hidden"}>
-          <div className="flex flex-col gap-3 border-b border-main-300 pb-4 lg:flex-row lg:items-center lg:justify-between">
-            <div>
-              <p className="text-sm font-semibold text-main-500">Market items</p>
-              <h2 className="mt-1 text-xl font-bold text-main-950">Commodities</h2>
-            </div>
-            <div className="grid gap-2 sm:grid-cols-[minmax(0,16rem)_12rem_auto]">
-              <input
-                value={search}
-                onChange={(event) => {
-                  setSearch(event.target.value);
-                  setPage(1);
-                }}
-                placeholder="Search commodities"
-                className="rounded-md border border-main-300 bg-main-100 px-3 py-2 text-sm text-main-900 outline-none placeholder:text-main-500 focus:border-primary-500 focus:bg-main-200"
-              />
-              <select
-                value={categoryFilter}
-                onChange={(event) => {
-                  setCategoryFilter(event.target.value);
-                  setPage(1);
-                }}
-                className="rounded-md border border-main-300 bg-main-100 px-3 py-2 text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-200"
-              >
-                <option value="">All categories</option>
-                {categories.map((category) => (
-                  <option key={category.category_id} value={category.category_id}>
-                    {category.name}
-                  </option>
-                ))}
-              </select>
-              {canCreateCommodities && (
-                <button
-                  type="button"
-                  onClick={openCreateCommodityModal}
-                  className="flex size-9 items-center justify-center rounded-md border border-main-300 bg-main-100 text-main-700 hover:border-primary-300 hover:text-primary-700"
-                  aria-label="Add commodity"
+          <div className={activeTab === "commodities" ? "" : "hidden"}>
+            <div className="flex flex-col gap-3 border-b border-main-200 pb-4 lg:flex-row lg:items-center lg:justify-between">
+              <div>
+                <p className="text-sm font-semibold text-main-500">Market items</p>
+                <h2 className="mt-1 text-xl font-bold text-main-950">Commodities</h2>
+              </div>
+              <div className="grid gap-2 sm:grid-cols-[minmax(0,16rem)_12rem_auto]">
+                <input
+                  value={search}
+                  onChange={(event) => {
+                    setSearch(event.target.value);
+                    setPage(1);
+                  }}
+                  placeholder="Search commodities"
+                  className="rounded-md border border-main-300 bg-main-100 px-3 py-2 text-sm text-main-900 outline-none placeholder:text-main-500 focus:border-primary-500 focus:bg-main-100"
+                />
+                <select
+                  value={categoryFilter}
+                  onChange={(event) => {
+                    setCategoryFilter(event.target.value);
+                    setPage(1);
+                  }}
+                  className="rounded-md border border-main-300 bg-main-100 px-3 py-2 text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-100"
                 >
-                  <i className="bi bi-plus-lg" aria-hidden="true" />
-                </button>
-              )}
+                  <option value="">All categories</option>
+                  {categories.map((category) => (
+                    <option key={category.category_id} value={category.category_id}>
+                      {category.name}
+                    </option>
+                  ))}
+                </select>
+                {canCreateCommodities && (
+                  <button
+                    type="button"
+                    onClick={openCreateCommodityModal}
+                    className="flex size-9 items-center justify-center rounded-md border border-main-300 bg-main-100 text-main-700 hover:border-primary-300 hover:text-primary-700"
+                    aria-label="Add commodity"
+                  >
+                    <i className="bi bi-plus-lg" aria-hidden="true" />
+                  </button>
+                )}
+              </div>
+            </div>
+
+            <div className="mt-5 overflow-x-auto">
+              <table className="w-full min-w-180 text-left text-sm">
+                <thead>
+                  <tr className="border-b border-main-200 text-xs font-bold uppercase text-main-500">
+                    <th className="py-3 pr-4">Name</th>
+                    <th className="py-3 pr-4">Unit</th>
+                    <th className="py-3 pr-4">Categories</th>
+                    <th className="py-3 pr-4">Commodity ID</th>
+                    {(canUpdateCommodities || canDeleteCommodities) && <th className="py-3 pr-4 text-right">Actions</th>}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-main-200">
+                  {loading ? (
+                    <tr>
+                      <td colSpan={canUpdateCommodities || canDeleteCommodities ? 5 : 4} className="py-10 text-center text-main-500">
+                        <span className="inline-flex items-center gap-2">
+                          <span className="size-4 animate-spin rounded-full border-2 border-primary-700 border-t-transparent" />
+                          Loading commodities...
+                        </span>
+                      </td>
+                    </tr>
+                  ) : commodities.length ? (
+                    commodities.map((commodity) => (
+                      <tr key={commodity.commodity_id} className="hover:bg-main-50">
+                        <td className="py-4 pr-4">
+                          <p className="font-bold text-main-900">{commodity.name}</p>
+                          {commodity.description && (
+                            <p className="mt-1 line-clamp-1 text-xs text-main-500">{commodity.description}</p>
+                          )}
+                        </td>
+                        <td className="py-4 pr-4 text-main-700">{commodity.unit || "None"}</td>
+                        <td className="py-4 pr-4">
+                          <div className="flex max-w-72 flex-wrap gap-1">
+                            {commodity.categories.length ? (
+                              commodity.categories.map((category) => (
+                                <span key={category.category_id} className="rounded-full bg-primary-100 px-2 py-1 text-xs font-bold text-primary-700">
+                                  {category.name}
+                                </span>
+                              ))
+                            ) : (
+                              <span className="text-main-500">Uncategorized</span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="py-4 pr-4 font-mono text-xs text-main-600">{commodity.commodity_id}</td>
+                        {(canUpdateCommodities || canDeleteCommodities) && <td className="py-4 pr-4">
+                          <div className="flex justify-end gap-2">
+                            {canUpdateCommodities && <button
+                              type="button"
+                              onClick={() => openEditCommodityModal(commodity)}
+                              className="flex size-8 items-center justify-center rounded-md border border-main-300 bg-main-100 text-main-700 hover:border-primary-300 hover:text-primary-700"
+                              aria-label={`Edit ${commodity.name}`}
+                            >
+                              <i className="bi bi-pencil-square" aria-hidden="true" />
+                            </button>}
+                            {canDeleteCommodities && <button
+                              type="button"
+                              onClick={() => void handleDeleteCommodity(commodity)}
+                              className="flex size-8 items-center justify-center rounded-md border border-danger-300 bg-danger-100 text-danger-700 hover:bg-danger-200"
+                              aria-label={`Delete ${commodity.name}`}
+                            >
+                              <i className="bi bi-trash" aria-hidden="true" />
+                            </button>}
+                          </div>
+                        </td>}
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={canUpdateCommodities || canDeleteCommodities ? 5 : 4} className="py-10 text-center text-main-500">
+                        No commodities found.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+            <div className="mt-4 flex flex-col gap-3 border-t border-main-200 pt-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-center gap-2 text-sm text-main-600">
+                <span>Rows</span>
+                <select
+                  value={pageSize}
+                  onChange={(event) => {
+                    setPageSize(Number(event.target.value));
+                    setPage(1);
+                  }}
+                  className="rounded-md border border-main-300 bg-main-100 px-2 py-1 text-sm text-main-900 outline-none"
+                >
+                  {[10, 25, 50, 100].map((size) => (
+                    <option key={size} value={size}>
+                      {size}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <Pagination
+                page={pagination.page}
+                pageSize={pagination.page_size}
+                totalItems={pagination.total_items}
+                onChange={setPage}
+                showHelper
+                size="sm"
+                rounded="full"
+                disabled={loading}
+              />
             </div>
           </div>
 
-          <div className="mt-5 overflow-x-auto">
-            <table className="w-full min-w-180 text-left text-sm">
-              <thead>
-                <tr className="border-b border-main-300 text-xs font-bold uppercase text-main-500">
-                  <th className="py-3 pr-4">Name</th>
-                  <th className="py-3 pr-4">Unit</th>
-                  <th className="py-3 pr-4">Categories</th>
-                  <th className="py-3 pr-4">Commodity ID</th>
-                  {(canUpdateCommodities || canDeleteCommodities) && <th className="py-3 pr-4 text-right">Actions</th>}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-main-200">
-                {loading ? (
-                  <tr>
-                    <td colSpan={canUpdateCommodities || canDeleteCommodities ? 5 : 4} className="py-10 text-center text-main-500">
-                      <span className="inline-flex items-center gap-2">
-                        <span className="size-4 animate-spin rounded-full border-2 border-primary-700 border-t-transparent" />
-                        Loading commodities...
-                      </span>
-                    </td>
-                  </tr>
-                ) : commodities.length ? (
-                  commodities.map((commodity) => (
-                    <tr key={commodity.commodity_id} className="hover:bg-main-50">
-                      <td className="py-4 pr-4">
-                        <p className="font-bold text-main-900">{commodity.name}</p>
-                        {commodity.description && (
-                          <p className="mt-1 line-clamp-1 text-xs text-main-500">{commodity.description}</p>
-                        )}
-                      </td>
-                      <td className="py-4 pr-4 text-main-700">{commodity.unit || "None"}</td>
-                      <td className="py-4 pr-4">
-                        <div className="flex max-w-72 flex-wrap gap-1">
-                          {commodity.categories.length ? (
-                            commodity.categories.map((category) => (
-                              <span key={category.category_id} className="rounded-full bg-primary-100 px-2 py-1 text-xs font-bold text-primary-700">
-                                {category.name}
-                              </span>
-                            ))
-                          ) : (
-                            <span className="text-main-500">Uncategorized</span>
-                          )}
+          <div className={activeTab === "categories" ? "" : "hidden"}>
+            <div>
+              <div className="flex items-center justify-between gap-3 border-b border-main-200 pb-4">
+                <div>
+                  <p className="text-sm font-semibold text-main-500">Grouping</p>
+                  <h2 className="mt-1 text-xl font-bold text-main-950">Categories</h2>
+                </div>
+                {canCreateCategories && (
+                  <button
+                    type="button"
+                    onClick={openCreateCategoryModal}
+                    className="flex size-9 items-center justify-center rounded-md border border-main-300 bg-main-100 text-main-700 hover:border-primary-300 hover:text-primary-700"
+                    aria-label="Add category"
+                  >
+                    <i className="bi bi-plus-lg" aria-hidden="true" />
+                  </button>
+                )}
+              </div>
+
+              <div className="mt-4 space-y-2">
+                {categories.length ? (
+                  categories.map((category) => (
+                    <div key={category.category_id} className="rounded-md border border-main-200 bg-main-50 p-3">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="font-bold text-main-900">{category.name}</p>
+                          {category.description && <p className="mt-1 line-clamp-2 text-xs text-main-500">{category.description}</p>}
                         </div>
-                      </td>
-                      <td className="py-4 pr-4 font-mono text-xs text-main-600">{commodity.commodity_id}</td>
-                      {(canUpdateCommodities || canDeleteCommodities) && <td className="py-4 pr-4">
-                        <div className="flex justify-end gap-2">
-                          {canUpdateCommodities && <button
+                        {(canUpdateCategories || canDeleteCategories) && <div className="flex shrink-0 gap-1">
+                          {canUpdateCategories && <button
                             type="button"
-                            onClick={() => openEditCommodityModal(commodity)}
-                            className="flex size-8 items-center justify-center rounded-md border border-main-300 bg-main-100 text-main-700 hover:border-primary-300 hover:text-primary-700"
-                            aria-label={`Edit ${commodity.name}`}
+                            onClick={() => openEditCategoryModal(category)}
+                            className="flex size-8 items-center justify-center rounded-md text-main-600 hover:bg-main-100 hover:text-primary-700"
+                            aria-label={`Edit ${category.name}`}
                           >
-                            <i className="bi bi-pencil-square" aria-hidden="true" />
+                            <i className="bi bi-pencil" aria-hidden="true" />
                           </button>}
-                          {canDeleteCommodities && <button
+                          {canDeleteCategories && <button
                             type="button"
-                            onClick={() => void handleDeleteCommodity(commodity)}
-                            className="flex size-8 items-center justify-center rounded-md border border-danger-300 bg-danger-100 text-danger-700 hover:bg-danger-200"
-                            aria-label={`Delete ${commodity.name}`}
+                            onClick={() => void handleDeleteCategory(category)}
+                            className="flex size-8 items-center justify-center rounded-md text-danger-700 hover:bg-danger-100"
+                            aria-label={`Delete ${category.name}`}
                           >
                             <i className="bi bi-trash" aria-hidden="true" />
                           </button>}
-                        </div>
-                      </td>}
-                    </tr>
+                        </div>}
+                      </div>
+                    </div>
                   ))
                 ) : (
-                  <tr>
-                    <td colSpan={canUpdateCommodities || canDeleteCommodities ? 5 : 4} className="py-10 text-center text-main-500">
-                      No commodities found.
-                    </td>
-                  </tr>
+                  <p className="rounded-md border border-main-200 bg-main-50 px-3 py-6 text-center text-sm text-main-500">
+                    No categories found.
+                  </p>
                 )}
-              </tbody>
-            </table>
-          </div>
-          <div className="mt-4 flex flex-col gap-3 border-t border-main-300 pt-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center gap-2 text-sm text-main-600">
-              <span>Rows</span>
-              <select
-                value={pageSize}
-                onChange={(event) => {
-                  setPageSize(Number(event.target.value));
-                  setPage(1);
-                }}
-                className="rounded-md border border-main-300 bg-main-100 px-2 py-1 text-sm text-main-900 outline-none"
-              >
-                {[10, 25, 50, 100].map((size) => (
-                  <option key={size} value={size}>
-                    {size}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <Pagination
-              page={pagination.page}
-              pageSize={pagination.page_size}
-              totalItems={pagination.total_items}
-              onChange={setPage}
-              showHelper
-              size="sm"
-              rounded="full"
-              disabled={loading}
-            />
-          </div>
-        </div>
-
-        <div className={activeTab === "categories" ? "" : "hidden"}>
-          <div>
-            <div className="flex items-center justify-between gap-3 border-b border-main-300 pb-4">
-              <div>
-                <p className="text-sm font-semibold text-main-500">Grouping</p>
-                <h2 className="mt-1 text-xl font-bold text-main-950">Categories</h2>
               </div>
-              {canCreateCategories && (
-                <button
-                  type="button"
-                  onClick={openCreateCategoryModal}
-                  className="flex size-9 items-center justify-center rounded-md border border-main-300 bg-main-100 text-main-700 hover:border-primary-300 hover:text-primary-700"
-                  aria-label="Add category"
-                >
-                  <i className="bi bi-plus-lg" aria-hidden="true" />
-                </button>
-              )}
             </div>
 
-            <div className="mt-4 space-y-2">
-              {categories.length ? (
-                categories.map((category) => (
-                  <div key={category.category_id} className="rounded-md border border-main-300 bg-main-50 p-3">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <p className="font-bold text-main-900">{category.name}</p>
-                        {category.description && <p className="mt-1 line-clamp-2 text-xs text-main-500">{category.description}</p>}
-                      </div>
-                      {(canUpdateCategories || canDeleteCategories) && <div className="flex shrink-0 gap-1">
-                        {canUpdateCategories && <button
-                          type="button"
-                          onClick={() => openEditCategoryModal(category)}
-                          className="flex size-8 items-center justify-center rounded-md text-main-600 hover:bg-main-100 hover:text-primary-700"
-                          aria-label={`Edit ${category.name}`}
-                        >
-                          <i className="bi bi-pencil" aria-hidden="true" />
-                        </button>}
-                        {canDeleteCategories && <button
-                          type="button"
-                          onClick={() => void handleDeleteCategory(category)}
-                          className="flex size-8 items-center justify-center rounded-md text-danger-700 hover:bg-danger-100"
-                          aria-label={`Delete ${category.name}`}
-                        >
-                          <i className="bi bi-trash" aria-hidden="true" />
-                        </button>}
-                      </div>}
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <p className="rounded-md border border-main-300 bg-main-50 px-3 py-6 text-center text-sm text-main-500">
-                  No categories found.
-                </p>
-              )}
-            </div>
           </div>
 
-        </div>
-
-        <div className={activeTab === "units" ? "" : "hidden"}>
-          <div>
-            <div className="flex items-center justify-between gap-3 border-b border-main-300 pb-4">
-              <div>
-                <p className="text-sm font-semibold text-main-500">Measurements</p>
-                <h2 className="mt-1 text-xl font-bold text-main-950">Units</h2>
+          <div className={activeTab === "units" ? "" : "hidden"}>
+            <div>
+              <div className="flex items-center justify-between gap-3 border-b border-main-200 pb-4">
+                <div>
+                  <p className="text-sm font-semibold text-main-500">Measurements</p>
+                  <h2 className="mt-1 text-xl font-bold text-main-950">Units</h2>
+                </div>
+                {canCreateUnits && (
+                  <button
+                    type="button"
+                    onClick={openCreateUnitModal}
+                    className="flex size-9 items-center justify-center rounded-md border border-main-300 bg-main-100 text-main-700 hover:border-primary-300 hover:text-primary-700"
+                    aria-label="Add unit"
+                  >
+                    <i className="bi bi-plus-lg" aria-hidden="true" />
+                  </button>
+                )}
               </div>
-              {canCreateUnits && (
-                <button
-                  type="button"
-                  onClick={openCreateUnitModal}
-                  className="flex size-9 items-center justify-center rounded-md border border-main-300 bg-main-100 text-main-700 hover:border-primary-300 hover:text-primary-700"
-                  aria-label="Add unit"
-                >
-                  <i className="bi bi-plus-lg" aria-hidden="true" />
-                </button>
-              )}
-            </div>
 
-            <div className="mt-4 space-y-2">
-              {units.length ? (
-                units.map((unit) => (
-                  <div key={unit.unit_id} className="rounded-md border border-main-300 bg-main-50 p-3">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <p className="font-bold text-main-900">{unit.name}</p>
-                        <p className="mt-1 font-mono text-xs font-bold text-accent-700">{unit.symbol}</p>
-                        {unit.description && <p className="mt-1 line-clamp-2 text-xs text-main-500">{unit.description}</p>}
+              <div className="mt-4 space-y-2">
+                {units.length ? (
+                  units.map((unit) => (
+                    <div key={unit.unit_id} className="rounded-md border border-main-200 bg-main-50 p-3">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="font-bold text-main-900">{unit.name}</p>
+                          <p className="mt-1 font-mono text-xs font-bold text-accent-700">{unit.symbol}</p>
+                          {unit.description && <p className="mt-1 line-clamp-2 text-xs text-main-500">{unit.description}</p>}
+                        </div>
+                        {(canUpdateUnits || canDeleteUnits) && <div className="flex shrink-0 gap-1">
+                          {canUpdateUnits && <button
+                            type="button"
+                            onClick={() => openEditUnitModal(unit)}
+                            className="flex size-8 items-center justify-center rounded-md text-main-600 hover:bg-main-100 hover:text-primary-700"
+                            aria-label={`Edit ${unit.name}`}
+                          >
+                            <i className="bi bi-pencil" aria-hidden="true" />
+                          </button>}
+                          {canDeleteUnits && <button
+                            type="button"
+                            onClick={() => void handleDeleteUnit(unit)}
+                            className="flex size-8 items-center justify-center rounded-md text-danger-700 hover:bg-danger-100"
+                            aria-label={`Delete ${unit.name}`}
+                          >
+                            <i className="bi bi-trash" aria-hidden="true" />
+                          </button>}
+                        </div>}
                       </div>
-                      {(canUpdateUnits || canDeleteUnits) && <div className="flex shrink-0 gap-1">
-                        {canUpdateUnits && <button
-                          type="button"
-                          onClick={() => openEditUnitModal(unit)}
-                          className="flex size-8 items-center justify-center rounded-md text-main-600 hover:bg-main-100 hover:text-primary-700"
-                          aria-label={`Edit ${unit.name}`}
-                        >
-                          <i className="bi bi-pencil" aria-hidden="true" />
-                        </button>}
-                        {canDeleteUnits && <button
-                          type="button"
-                          onClick={() => void handleDeleteUnit(unit)}
-                          className="flex size-8 items-center justify-center rounded-md text-danger-700 hover:bg-danger-100"
-                          aria-label={`Delete ${unit.name}`}
-                        >
-                          <i className="bi bi-trash" aria-hidden="true" />
-                        </button>}
-                      </div>}
                     </div>
-                  </div>
-                ))
-              ) : (
-                <p className="rounded-md border border-main-300 bg-main-50 px-3 py-6 text-center text-sm text-main-500">
-                  No units found.
-                </p>
-              )}
+                  ))
+                ) : (
+                  <p className="rounded-md border border-main-200 bg-main-50 px-3 py-6 text-center text-sm text-main-500">
+                    No units found.
+                  </p>
+                )}
+              </div>
             </div>
           </div>
-        </div>
         </div>
       </section>
 
@@ -751,10 +750,10 @@ export default function CommoditiesPage() {
         open={Boolean(commodityModal)}
         onClose={() => setCommodityModal(null)}
         size="lg"
-        className="rounded-md border border-main-300 bg-main-200 p-0 shadow-lg"
+        className="rounded-md border border-main-300 bg-main-100 p-0 shadow-lg"
       >
         <form onSubmit={(event) => void handleSaveCommodity(event)}>
-          <div className="flex items-center justify-between border-b border-main-300 px-5 py-4">
+          <div className="flex items-center justify-between border-b border-main-200 px-5 py-4">
             <div>
               <p className="text-sm font-semibold text-main-500">Commodity details</p>
               <h2 className="text-xl font-bold text-main-950">
@@ -774,11 +773,10 @@ export default function CommoditiesPage() {
           <div className="grid max-h-[calc(100vh-10rem)] gap-4 overflow-y-auto px-5 py-5">
             {(commodityFormError || commodityFormNotice) && (
               <div
-                className={`rounded-md border px-3 py-2 text-sm font-semibold ${
-                  commodityFormError
+                className={`rounded-md border px-3 py-2 text-sm font-semibold ${commodityFormError
                     ? "border-danger-300 bg-danger-100 text-danger-700"
                     : "border-success-300 bg-success-100 text-success-700"
-                }`}
+                  }`}
               >
                 {commodityFormError || commodityFormNotice}
               </div>
@@ -795,7 +793,7 @@ export default function CommoditiesPage() {
                   setCommodityFormNotice("");
                 }}
                 required
-                className="mt-2 w-full rounded-md border border-main-300 bg-main-100 px-4 py-2.5 text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-200"
+                className="mt-2 w-full rounded-md border border-main-300 bg-main-100 px-4 py-2.5 text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-100"
               />
             </div>
 
@@ -814,7 +812,7 @@ export default function CommoditiesPage() {
                   setCommodityFormError("");
                   setCommodityFormNotice("");
                 }}
-                className="mt-2 w-full rounded-md border border-main-300 bg-main-100 px-4 py-2.5 text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-200"
+                className="mt-2 w-full rounded-md border border-main-300 bg-main-100 px-4 py-2.5 text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-100"
               >
                 <option value="">Select unit</option>
                 {units.map((unit) => (
@@ -836,7 +834,7 @@ export default function CommoditiesPage() {
                   setCommodityFormNotice("");
                 }}
                 rows={3}
-                className="mt-2 w-full rounded-md border border-main-300 bg-main-100 px-4 py-2.5 text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-200"
+                className="mt-2 w-full rounded-md border border-main-300 bg-main-100 px-4 py-2.5 text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-100"
               />
             </div>
 
@@ -859,7 +857,7 @@ export default function CommoditiesPage() {
                     </label>
                   ))
                 ) : (
-                  <p className="rounded-md border border-main-300 bg-main-50 px-3 py-3 text-sm text-main-500">
+                  <p className="rounded-md border border-main-200 bg-main-50 px-3 py-3 text-sm text-main-500">
                     Create a category first if this commodity needs one.
                   </p>
                 )}
@@ -867,7 +865,7 @@ export default function CommoditiesPage() {
             </div>
           </div>
 
-          <div className="flex justify-end gap-2 border-t border-main-300 px-5 py-4">
+          <div className="flex justify-end gap-2 border-t border-main-200 px-5 py-4">
             <button
               type="button"
               onClick={() => setCommodityModal(null)}
@@ -890,10 +888,10 @@ export default function CommoditiesPage() {
         open={Boolean(categoryModal)}
         onClose={() => setCategoryModal(null)}
         size="lg"
-        className="rounded-md border border-main-300 bg-main-200 p-0 shadow-lg"
+        className="rounded-md border border-main-300 bg-main-100 p-0 shadow-lg"
       >
         <form onSubmit={(event) => void handleSaveCategory(event)}>
-          <div className="flex items-center justify-between border-b border-main-300 px-5 py-4">
+          <div className="flex items-center justify-between border-b border-main-200 px-5 py-4">
             <div>
               <p className="text-sm font-semibold text-main-500">Category details</p>
               <h2 className="text-xl font-bold text-main-950">
@@ -913,11 +911,10 @@ export default function CommoditiesPage() {
           <div className="grid gap-4 px-5 py-5">
             {(categoryFormError || categoryFormNotice) && (
               <div
-                className={`rounded-md border px-3 py-2 text-sm font-semibold ${
-                  categoryFormError
+                className={`rounded-md border px-3 py-2 text-sm font-semibold ${categoryFormError
                     ? "border-danger-300 bg-danger-100 text-danger-700"
                     : "border-success-300 bg-success-100 text-success-700"
-                }`}
+                  }`}
               >
                 {categoryFormError || categoryFormNotice}
               </div>
@@ -934,7 +931,7 @@ export default function CommoditiesPage() {
                   setCategoryFormNotice("");
                 }}
                 required
-                className="mt-2 w-full rounded-md border border-main-300 bg-main-100 px-4 py-2.5 text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-200"
+                className="mt-2 w-full rounded-md border border-main-300 bg-main-100 px-4 py-2.5 text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-100"
               />
             </div>
 
@@ -949,12 +946,12 @@ export default function CommoditiesPage() {
                   setCategoryFormNotice("");
                 }}
                 rows={3}
-                className="mt-2 w-full rounded-md border border-main-300 bg-main-100 px-4 py-2.5 text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-200"
+                className="mt-2 w-full rounded-md border border-main-300 bg-main-100 px-4 py-2.5 text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-100"
               />
             </div>
           </div>
 
-          <div className="flex justify-end gap-2 border-t border-main-300 px-5 py-4">
+          <div className="flex justify-end gap-2 border-t border-main-200 px-5 py-4">
             <button
               type="button"
               onClick={() => setCategoryModal(null)}
@@ -977,10 +974,10 @@ export default function CommoditiesPage() {
         open={Boolean(unitModal)}
         onClose={() => setUnitModal(null)}
         size="lg"
-        className="rounded-md border border-main-300 bg-main-200 p-0 shadow-lg"
+        className="rounded-md border border-main-300 bg-main-100 p-0 shadow-lg"
       >
         <form onSubmit={(event) => void handleSaveUnit(event)}>
-          <div className="flex items-center justify-between border-b border-main-300 px-5 py-4">
+          <div className="flex items-center justify-between border-b border-main-200 px-5 py-4">
             <div>
               <p className="text-sm font-semibold text-main-500">Unit details</p>
               <h2 className="text-xl font-bold text-main-950">
@@ -1000,11 +997,10 @@ export default function CommoditiesPage() {
           <div className="grid gap-4 px-5 py-5">
             {(unitFormError || unitFormNotice) && (
               <div
-                className={`rounded-md border px-3 py-2 text-sm font-semibold ${
-                  unitFormError
+                className={`rounded-md border px-3 py-2 text-sm font-semibold ${unitFormError
                     ? "border-danger-300 bg-danger-100 text-danger-700"
                     : "border-success-300 bg-success-100 text-success-700"
-                }`}
+                  }`}
               >
                 {unitFormError || unitFormNotice}
               </div>
@@ -1022,7 +1018,7 @@ export default function CommoditiesPage() {
                 }}
                 placeholder="Kilogram"
                 required
-                className="mt-2 w-full rounded-md border border-main-300 bg-main-100 px-4 py-2.5 text-sm text-main-900 outline-none placeholder:text-main-500 focus:border-primary-500 focus:bg-main-200"
+                className="mt-2 w-full rounded-md border border-main-300 bg-main-100 px-4 py-2.5 text-sm text-main-900 outline-none placeholder:text-main-500 focus:border-primary-500 focus:bg-main-100"
               />
             </div>
 
@@ -1038,7 +1034,7 @@ export default function CommoditiesPage() {
                 }}
                 placeholder="Kg"
                 required
-                className="mt-2 w-full rounded-md border border-main-300 bg-main-100 px-4 py-2.5 text-sm text-main-900 outline-none placeholder:text-main-500 focus:border-primary-500 focus:bg-main-200"
+                className="mt-2 w-full rounded-md border border-main-300 bg-main-100 px-4 py-2.5 text-sm text-main-900 outline-none placeholder:text-main-500 focus:border-primary-500 focus:bg-main-100"
               />
             </div>
 
@@ -1053,12 +1049,12 @@ export default function CommoditiesPage() {
                   setUnitFormNotice("");
                 }}
                 rows={3}
-                className="mt-2 w-full rounded-md border border-main-300 bg-main-100 px-4 py-2.5 text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-200"
+                className="mt-2 w-full rounded-md border border-main-300 bg-main-100 px-4 py-2.5 text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-100"
               />
             </div>
           </div>
 
-          <div className="flex justify-end gap-2 border-t border-main-300 px-5 py-4">
+          <div className="flex justify-end gap-2 border-t border-main-200 px-5 py-4">
             <button
               type="button"
               onClick={() => setUnitModal(null)}
