@@ -315,21 +315,28 @@ export type NormalizedMarketPrice = {
   raw?: Record<string, unknown>;
 };
 
-export async function listLivePrices(params: { source?: string; commodity?: string; market?: string; limit?: number } = {}) {
+export type NormalizedMarketPriceListResult = {
+  data: NormalizedMarketPrice[];
+  pagination: PaginationMeta;
+};
+
+export async function listLivePrices(params: { source?: string; commodity?: string; market?: string; page?: number; page_size?: number } = {}): Promise<NormalizedMarketPriceListResult> {
   const payload = await marketRequest<NormalizedMarketPrice[]>(
     withQuery("/market-integrations/live-prices", params),
     {},
     "Could not load live normalized prices."
   );
-  return payload.data ?? [];
+  const data = payload.data ?? [];
+  return { data, pagination: normalizePagination(payload.meta, data.length) };
 }
 
-export async function listStoredIntegrationPrices(params: { source?: string; commodity?: string; market?: string; limit?: number } = {}) {
+export async function listStoredIntegrationPrices(params: { source?: string; commodity?: string; market?: string; page?: number; page_size?: number } = {}): Promise<MarketPriceListResult> {
   const payload = await marketRequest<MarketPrice[]>(
     withQuery("/market-integrations/prices", params),
     {},
     "Could not load stored integration prices."
   );
-  return payload.data ?? [];
+  const data = payload.data ?? [];
+  return { data, pagination: normalizePagination(payload.meta, data.length) };
 }
 

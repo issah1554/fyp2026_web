@@ -11,11 +11,21 @@ import {
   type MarketIntegrationSource,
   type MarketPrice,
   type NormalizedMarketPrice,
+  type PaginationMeta,
 } from "@/src/services/markets/marketService";
 
 type SourceKey = "platform_a" | "platform_b" | "platform_c" | "viwanda";
 
 const sourceKeys: SourceKey[] = ["platform_a", "platform_b", "platform_c", "viwanda"];
+
+const emptyPagination: PaginationMeta = {
+  page: 1,
+  page_size: 10,
+  total_items: 0,
+  total_pages: 1,
+  has_next: false,
+  has_previous: false,
+};
 
 function formatDate(value?: string | null) {
   if (!value) return "None";
@@ -47,6 +57,10 @@ export default function MarketIntegrationsPage() {
   const [filterCommodity, setFilterCommodity] = useState<string>("");
   const [filterMarket, setFilterMarket] = useState<string>("");
   
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [pagination, setPagination] = useState<PaginationMeta>(emptyPagination);
+
   const [loading, setLoading] = useState(true);
   const [checkingHealth, setCheckingHealth] = useState(false);
   const [syncingSource, setSyncingSource] = useState<string>("");
@@ -99,21 +113,25 @@ export default function MarketIntegrationsPage() {
         source: selectedSource || undefined,
         commodity: filterCommodity || undefined,
         market: filterMarket || undefined,
+        page,
+        page_size: pageSize,
       };
 
       if (activeTab === "live") {
-        const live = await listLivePrices(params);
-        setLivePrices(live);
+        const liveResult = await listLivePrices(params);
+        setLivePrices(liveResult.data);
+        setPagination(liveResult.pagination);
       } else {
-        const stored = await listStoredIntegrationPrices(params);
-        setStoredPrices(stored);
+        const storedResult = await listStoredIntegrationPrices(params);
+        setStoredPrices(storedResult.data);
+        setPagination(storedResult.pagination);
       }
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : "Could not load integration data.");
     } finally {
       setLoading(false);
     }
-  }, [activeTab, selectedSource, filterCommodity, filterMarket]);
+  }, [activeTab, selectedSource, filterCommodity, filterMarket, page, pageSize]);
 
   useEffect(() => {
     let mounted = true;
@@ -145,6 +163,7 @@ export default function MarketIntegrationsPage() {
           errorCount ? ` Errors: ${errorCount}.` : ""
         }`
       );
+      setPage(1);
       await loadData();
       await loadHealth();
     } catch (syncError) {
@@ -152,6 +171,16 @@ export default function MarketIntegrationsPage() {
     } finally {
       setSyncingSource("");
     }
+  };
+
+  const handleTabChange = (tab: "live" | "stored") => {
+    setActiveTab(tab);
+    setPage(1);
+  };
+
+  const handleFilterSubmit = () => {
+    setPage(1);
+    void loadData();
   };
 
   return (
@@ -252,7 +281,7 @@ export default function MarketIntegrationsPage() {
                   type="button"
                   onClick={() => {
                     setSelectedSource(source.key);
-                    void loadData();
+                    setPage(1);
                   }}
                   className="flex flex-1 items-center justify-center gap-1.5 rounded border border-main-300 bg-main-100 py-1.5 text-xs font-bold text-main-800 hover:border-primary-300 hover:text-primary-700 transition-all cursor-pointer"
                 >
@@ -280,7 +309,7 @@ export default function MarketIntegrationsPage() {
             <div className="flex gap-2 border-b border-transparent">
               <button
                 type="button"
-                onClick={() => setActiveTab("live")}
+                onClick={() => handleTabChange("live")}
                 className={`pb-2 text-sm font-bold border-b-2 transition-all cursor-pointer ${
                   activeTab === "live" ? "border-primary-600 text-primary-700" : "border-transparent text-main-500 hover:text-main-800"
                 }`}
@@ -289,7 +318,7 @@ export default function MarketIntegrationsPage() {
               </button>
               <button
                 type="button"
-                onClick={() => setActiveTab("stored")}
+                onClick={() => handleTabChange("stored")}
                 className={`pb-2 text-sm font-bold border-b-2 transition-all cursor-pointer ${
                   activeTab === "stored" ? "border-primary-600 text-primary-700" : "border-transparent text-main-500 hover:text-main-800"
                 }`}
@@ -310,7 +339,10 @@ export default function MarketIntegrationsPage() {
               <label className="block text-xs font-bold text-main-600 mb-1">Source Feed</label>
               <select
                 value={selectedSource}
-                onChange={(e) => setSelectedSource(e.target.value)}
+                onChange={(e) => {
+                  setSelectedSource(e.target.value);
+                  setPage(1);
+                }}
                 className="w-full rounded-md border border-main-300 bg-main-100 px-3 py-2 text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-0 transition-all"
               >
                 <option value="">All Integration Sources</option>
@@ -345,7 +377,7 @@ export default function MarketIntegrationsPage() {
             <div className="flex items-end">
               <button
                 type="button"
-                onClick={() => void loadData()}
+                onClick={handleFilterSubmit}
                 className="w-full flex items-center justify-center gap-2 rounded-md bg-main-800 text-main-0 py-2.5 text-sm font-bold hover:bg-main-900 transition-all cursor-pointer"
               >
                 <i className="bi bi-filter" />
@@ -364,6 +396,45 @@ export default function MarketIntegrationsPage() {
           <LivePricesTable prices={livePrices} onViewRaw={setRawPayloadModal} />
         ) : (
           <StoredPricesTable prices={storedPrices} />
+        )}
+
+        {!loading && (
+          <div className="mt-4 flex flex-col gap-3 border-t border-main-200 pt-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-2 text-sm text-main-600">
+              <span>Rows</span>
+              <select
+                value={pageSize}
+                onChange={(event) => {
+                  setPageSize(Number(event.target.value));
+                  setPage(1);
+                }}
+                className="rounded-md border border-main-300 bg-main-100 px-2 py-1 text-sm text-main-900 outline-none"
+              >
+                {[10, 25, 50, 100].map((size) => (
+                  <option key={size} value={size}>{size}</option>
+                ))}
+              </select>
+            </div>
+            <div className="flex items-center gap-2 text-sm font-semibold text-main-600">
+              <button
+                type="button"
+                disabled={!pagination.has_previous}
+                onClick={() => setPage((current) => Math.max(1, current - 1))}
+                className="rounded-md border border-main-300 bg-main-100 px-3 py-1.5 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
+              >
+                Previous
+              </button>
+              <span>Page {pagination.page} of {pagination.total_pages}</span>
+              <button
+                type="button"
+                disabled={!pagination.has_next}
+                onClick={() => setPage((current) => current + 1)}
+                className="rounded-md border border-main-300 bg-main-100 px-3 py-1.5 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
+              >
+                Next
+              </button>
+            </div>
+          </div>
         )}
       </section>
 
