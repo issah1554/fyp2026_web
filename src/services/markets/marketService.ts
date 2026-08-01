@@ -89,7 +89,7 @@ export type MarketIntegrationSyncResult = {
 };
 
 export type MarketIntegrationSource = {
-  key: "platform_a" | "platform_b" | "platform_c" | string;
+  key: "platform_a" | "platform_b" | "market_officers" | string;
   name: string;
   base_url: string;
   prices_url: string;

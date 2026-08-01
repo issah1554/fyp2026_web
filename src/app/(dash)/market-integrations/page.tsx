@@ -14,9 +14,9 @@ import {
   type PaginationMeta,
 } from "@/src/services/markets/marketService";
 
-type SourceKey = "platform_a" | "platform_b" | "platform_c" | "viwanda";
+type SourceKey = "platform_a" | "platform_b" | "market_officers" | "viwanda";
 
-const sourceKeys: SourceKey[] = ["platform_a", "platform_b", "platform_c", "viwanda"];
+const sourceKeys: SourceKey[] = ["platform_a", "platform_b", "market_officers", "viwanda"];
 
 const emptyPagination: PaginationMeta = {
   page: 1,

@@ -17,9 +17,12 @@ import {
   type Role,
   type RoleFormPayload,
 } from "@/src/services/access-control/accessControlService";
+import { formatTimeAgo } from "@/src/utils/date";
 
 type ModalState = { mode: "create"; role: null } | { mode: "edit"; role: Role };
 type RbacTab = "roles" | "permissions";
+type SortField = "code" | "name" | "description" | "permission_id" | "created_at";
+type SortDirection = "asc" | "desc";
 
 const rbacTabs: HorizontalTab<RbacTab>[] = [
   { id: "roles", label: "Roles" },
@@ -60,6 +63,17 @@ export default function RbacPage() {
   const [formError, setFormError] = useState("");
   const [formNotice, setFormNotice] = useState("");
   const [savingRole, setSavingRole] = useState(false);
+  const [sortField, setSortField] = useState<SortField>("code");
+  const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
+
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortDirection((prev) => (prev === "asc" ? "desc" : "asc"));
+    } else {
+      setSortField(field);
+      setSortDirection("asc");
+    }
+  };
 
   useEffect(() => {
     if (!authLoading && !canViewPage) router.replace("/dash");
@@ -97,15 +111,33 @@ export default function RbacPage() {
   );
   const visiblePermissions = useMemo(() => {
     const query = permissionSearch.trim().toLowerCase();
-    if (!query) {
-      return permissions;
+    let filtered = permissions;
+
+    if (query) {
+      filtered = permissions.filter((permission) =>
+        [permission.code, permission.name, permission.description, permission.permission_id]
+          .some((value) => value?.toLowerCase().includes(query)),
+      );
     }
 
-    return permissions.filter((permission) =>
-      [permission.code, permission.name, permission.description, permission.permission_id]
-        .some((value) => value?.toLowerCase().includes(query)),
-    );
-  }, [permissionSearch, permissions]);
+    return [...filtered].sort((a, b) => {
+      let aVal = a[sortField] || "";
+      let bVal = b[sortField] || "";
+
+      if (sortField === "created_at") {
+        const aTime = aVal ? new Date(aVal).getTime() : 0;
+        const bTime = bVal ? new Date(bVal).getTime() : 0;
+        return sortDirection === "asc" ? aTime - bTime : bTime - aTime;
+      }
+
+      aVal = String(aVal).toLowerCase();
+      bVal = String(bVal).toLowerCase();
+
+      if (aVal < bVal) return sortDirection === "asc" ? -1 : 1;
+      if (aVal > bVal) return sortDirection === "asc" ? 1 : -1;
+      return 0;
+    });
+  }, [permissionSearch, permissions, sortField, sortDirection]);
 
   const handleSelectRole = (role: Role) => {
     setSelectedRoleId(role.role_id);
@@ -213,6 +245,25 @@ export default function RbacPage() {
     }));
     setFormError("");
     setFormNotice("");
+  };
+
+  const renderHeader = (field: SortField, label: string) => {
+    const isSorted = sortField === field;
+    return (
+      <th
+        className="cursor-pointer select-none py-3 pr-4 hover:text-main-800"
+        onClick={() => handleSort(field)}
+      >
+        <div className="flex items-center gap-1">
+          <span>{label}</span>
+          {isSorted ? (
+            <i className={`bi ${sortDirection === "asc" ? "bi-arrow-up" : "bi-arrow-down"} text-primary-600`} />
+          ) : (
+            <i className="bi bi-arrow-down-up text-xs opacity-30" />
+          )}
+        </div>
+      </th>
+    );
   };
 
   if (authLoading || (!authLoading && !canViewPage)) {
@@ -348,15 +399,16 @@ export default function RbacPage() {
               <table className="w-full min-w-180 text-left text-sm">
                 <thead>
                   <tr className="border-b border-main-200 text-xs font-bold uppercase text-main-500">
-                    <th className="py-3 pr-4">Code</th>
-                    <th className="py-3 pr-4">Name</th>
-                    <th className="py-3 pr-4">Description</th>
-                    <th className="py-3 pr-4">Permission ID</th>
+                    {renderHeader("code", "Code")}
+                    {renderHeader("name", "Name")}
+                    {renderHeader("description", "Description")}
+                    {renderHeader("permission_id", "Permission ID")}
+                    {renderHeader("created_at", "Created At")}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-main-200">
                   {loading ? (
-                    <tr><td colSpan={4} className="py-10 text-center text-main-500">Loading permissions...</td></tr>
+                    <tr><td colSpan={5} className="py-10 text-center text-main-500">Loading permissions...</td></tr>
                   ) : visiblePermissions.length ? (
                     visiblePermissions.map((permission) => (
                       <tr key={permission.permission_id} className="hover:bg-main-50">
@@ -364,10 +416,13 @@ export default function RbacPage() {
                         <td className="py-4 pr-4 font-bold text-main-900">{permission.name}</td>
                         <td className="py-4 pr-4 text-main-600">{permission.description || "None"}</td>
                         <td className="py-4 pr-4 font-mono text-xs text-main-600">{permission.permission_id}</td>
+                        <td className="py-4 pr-4 text-main-600">
+                          {formatTimeAgo(permission.created_at)}
+                        </td>
                       </tr>
                     ))
                   ) : (
-                    <tr><td colSpan={4} className="py-10 text-center text-main-500">No permissions found.</td></tr>
+                    <tr><td colSpan={5} className="py-10 text-center text-main-500">No permissions found.</td></tr>
                   )}
                 </tbody>
               </table>
