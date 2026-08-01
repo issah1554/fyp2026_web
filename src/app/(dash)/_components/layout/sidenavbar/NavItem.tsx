@@ -54,15 +54,15 @@ export function NavItem({
   const isAccordionControlled = depth === 0 && onOpen !== undefined && itemKey !== undefined;
   const isAccordionOpen = isAccordionControlled ? (openKey === itemKey || isChildActive) : manualOpen;
   const isOpen = !collapsed && (isAccordionOpen || (!isAccordionControlled && manualOpen) || isChildActive);
-  const openParentClasses = ["bg-main-400 text-main-0 hover:text-primary-400", "bg-main-300 text-primary-700 hover:bg-main-400", "bg-main-200 text-primary-700 hover:bg-main-300"][depth] ?? "bg-main-200 text-primary-700 hover:bg-main-300";
+  const openParentClasses = ["bg-main-300 text-main-0 hover:text-primary-400", "bg-main-300 text-primary-700 hover:bg-main-400", "bg-main-200 text-primary-700 hover:bg-main-300"][depth] ?? "bg-main-200 text-primary-700 hover:bg-main-300";
   const parentFocusClass = hasSubItems && (isChildActive || isOpen) ? openParentClasses : "";
-  const activeParentChildClass = parentActive && isSubItem ? "bg-main-300 hover:bg-main-300" : "";
+  const activeParentChildClass = parentActive && isSubItem ? "bg-main-200 hover:bg-main-300" : "";
 
   const depthPadding = ["pl-3", "pl-8", "pl-12", "pl-16"][depth] ?? "pl-16";
 
   const content = (
     <div
-      className={`relative flex cursor-pointer items-center py-2 pr-1 text-sm text-main-600 hover:bg-main-400/60 hover:text-primary-700 ${collapsed ? "pl-0" : depthPadding} ${className ?? ""}
+      className={`relative flex cursor-pointer items-center py-2 pr-1 text-sm text-main-600 hover:bg-main-300 hover:text-primary-700 ${collapsed ? "pl-0" : depthPadding} ${className ?? ""}
                 ${activeParentChildClass} ${isActive ? " text-primary-700" : ""} ${parentFocusClass}
                 ${collapsed ? "justify-center" : "justify-between"}
             `}

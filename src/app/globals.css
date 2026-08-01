@@ -374,55 +374,23 @@
 
 @layer components {
   .surface-0 {
-    @apply bg-main-0 text-main-1000 border border-main-50;
+    @apply bg-main-0 text-main-1000 border-main-50;
   }
 
-  .surface-50 {
-    @apply bg-main-50 text-main-1000 border border-main-100;
+  .surface-1 {
+    @apply bg-main-50 text-main-950 border-main-100;
   }
 
-  .surface-100 {
-    @apply bg-main-100 text-main-1000 border border-main-200;
+  .surface-2 {
+    @apply bg-main-100 text-main-900 border-main-200;
   }
 
-  .surface-200 {
-    @apply bg-main-200 text-main-1000 border border-main-300;
+  .surface-3 {
+    @apply bg-main-200 text-main-1000 border-main-300;
   }
 
-  .surface-300 {
-    @apply bg-main-300 text-main-1000 border border-main-400;
-  }
-
-  .surface-400 {
-    @apply bg-main-400 text-main-1000 border border-main-500;
-  }
-
-  .surface-500 {
-    @apply bg-main-500 text-main-1000 border border-main-600;
-  }
-
-  .surface-600 {
-    @apply bg-main-600 text-main-1000 border border-main-700;
-  }
-
-  .surface-700 {
-    @apply bg-main-700 text-main-1000 border border-main-800;
-  }
-
-  .surface-800 {
-    @apply bg-main-800 text-main-2000 border border-main-900;
-  }
-
-  .surface-900 {
-    @apply bg-main-900 text-main-200 border border-main-950;
-  }
-
-  .surface-950 {
-    @apply bg-main-950 text-main-50 border border-main-1000;
-  }
-
-  .surface-1000 {
-    @apply bg-main-1000 text-main-0 border border-main-950;
+  .surface-4 {
+    @apply bg-main-300 text-main-1000 border-main-400;
   }
 }
 

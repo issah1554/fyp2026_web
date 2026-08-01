@@ -232,9 +232,9 @@ export function Sidebar({
     <aside
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
-      className={`fixed left-0 top-0 z-40 flex h-screen flex-col overflow-hidden border-r surface-200 transition-all duration-300 ease-in-out ${effectiveCollapsed ? "w-16" : "w-64"} ${mobile ? "" : ""}`}
+      className={`fixed left-0 top-0 z-40 flex h-screen flex-col overflow-hidden border-r surface-1 transition-all duration-300 ease-in-out ${effectiveCollapsed ? "w-16" : "w-64"} ${mobile ? "" : ""}`}
     >
-      <div className="sticky top-0 z-10 border-b border-main-300 bg-main-200">
+      <div className="sticky top-0 z-10 border-b surface-1">
         <SidebarHeader
           effectiveCollapsed={effectiveCollapsed}
           isPinned={isPinned}
@@ -253,7 +253,7 @@ export function Sidebar({
         </div>
       </div>
 
-      <div className="sticky bottom-0 z-10 border-t border-main-300 bg-main-200">
+      <div className="sticky bottom-0 z-10 border-t surface-1">
         <SidebarFooter effectiveCollapsed={effectiveCollapsed} />
       </div>
     </aside>

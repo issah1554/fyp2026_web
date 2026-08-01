@@ -40,7 +40,7 @@ export default function TopNavBar({ isMobile, onToggleSidebar }: TopNavBarProps)
   const displayName = [user?.firstName, user?.lastName].filter(Boolean).join(" ") || "Marketia";
 
   return (
-    <nav ref={navRef} className="sticky top-0 z-30 h-14 border-none border-main-300 bg-main-100 sm:h-16">
+    <nav ref={navRef} className="sticky top-0 z-30 h-14 bg-main-0/60 backdrop-blur-md sm:h-16">
       <div className="flex h-full items-center justify-between gap-2 px-2 sm:px-4">
         <div className="flex min-w-0 items-center gap-2">
           <button
