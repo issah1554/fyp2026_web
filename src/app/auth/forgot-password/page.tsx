@@ -43,7 +43,7 @@ export default function ForgotPasswordPage() {
             autoComplete="email"
             placeholder="name@marketia.test"
             required
-            className="mt-2 w-full rounded-md border border-main-300 bg-main-100 px-4 py-3 text-base text-main-900 outline-none placeholder:text-main-500 focus:border-primary-500 focus:bg-main-0"
+            className="mt-2 w-full rounded-md border border-main-300 bg-main-100 px-4 py-3 text-base text-main-900 outline-none placeholder:text-main-500 focus:border-primary-500 focus:bg-main-200"
           />
         </div>
 

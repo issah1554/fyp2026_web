@@ -63,8 +63,8 @@ export default function DashboardPage() {
       <StatsGrid stats={metrics} />
 
       <section className="grid gap-6 xl:grid-cols-[1.25fr_0.75fr]">
-        <div className="rounded-md border border-main-200 bg-main-0 p-5 shadow-sm">
-          <div className="flex flex-col gap-3 border-b border-main-200 pb-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="rounded-md border border-main-300 bg-main-200 p-5 shadow-sm">
+          <div className="flex flex-col gap-3 border-b border-main-300 pb-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <p className="text-sm font-semibold text-main-500">Today&apos;s submissions</p>
               <h2 className="mt-1 text-xl font-bold text-main-950">Market Price Records</h2>
@@ -78,7 +78,7 @@ export default function DashboardPage() {
           <div className="mt-5 overflow-x-auto">
             <table className="w-full min-w-160 text-left text-sm">
               <thead>
-                <tr className="border-b border-main-200 text-xs font-bold uppercase text-main-500">
+                <tr className="border-b border-main-300 text-xs font-bold uppercase text-main-500">
                   <th className="py-3 pr-4">Market</th>
                   <th className="py-3 pr-4">Commodity</th>
                   <th className="py-3 pr-4">Price</th>
@@ -103,12 +103,12 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        <div className="rounded-md border border-main-200 bg-main-0 p-5 shadow-sm">
+        <div className="rounded-md border border-main-300 bg-main-200 p-5 shadow-sm">
           <p className="text-sm font-semibold text-main-500">Prediction pipeline</p>
           <h2 className="mt-1 text-xl font-bold text-main-950">Analytics Health</h2>
           <div className="mt-6 space-y-3">
             {["Ingest market data", "Clean outliers", "Generate forecasts"].map((step, index) => (
-              <div key={step} className="flex items-center gap-3 rounded-md border border-main-200 bg-main-50 p-4">
+              <div key={step} className="flex items-center gap-3 rounded-md border border-main-300 bg-main-50 p-4">
                 <span className="flex size-9 items-center justify-center rounded-md bg-accent-100 text-sm font-bold text-accent-700">
                   {index + 1}
                 </span>

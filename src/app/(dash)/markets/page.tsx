@@ -538,20 +538,20 @@ export default function MarketsPage() {
         </div>
       )}
 
-      <section className="rounded-md border border-main-200 bg-main-0 p-5 shadow-sm">
-        <div className="flex flex-col gap-3 border-b border-main-200 pb-4 lg:flex-row lg:items-center lg:justify-between">
+      <section className="rounded-md border border-main-300 bg-main-200 p-5 shadow-sm">
+        <div className="flex flex-col gap-3 border-b border-main-300 pb-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <p className="text-sm font-semibold text-main-500">Registry</p>
             <h2 className="mt-1 text-xl font-bold text-main-950">Markets list</h2>
           </div>
           <div className="grid gap-2 sm:grid-cols-[minmax(0,14rem)_10rem_12rem]">
-            <input value={search} onChange={(event) => { setSearch(event.target.value); setPage(1); }} placeholder="Search markets" className="rounded-md border border-main-300 bg-main-100 px-3 py-2 text-sm text-main-900 outline-none placeholder:text-main-500 focus:border-primary-500 focus:bg-main-0" />
-            <select value={statusFilter} onChange={(event) => { setStatusFilter(event.target.value); setPage(1); }} className="rounded-md border border-main-300 bg-main-100 px-3 py-2 text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-0">
+            <input value={search} onChange={(event) => { setSearch(event.target.value); setPage(1); }} placeholder="Search markets" className="rounded-md border border-main-300 bg-main-100 px-3 py-2 text-sm text-main-900 outline-none placeholder:text-main-500 focus:border-primary-500 focus:bg-main-200" />
+            <select value={statusFilter} onChange={(event) => { setStatusFilter(event.target.value); setPage(1); }} className="rounded-md border border-main-300 bg-main-100 px-3 py-2 text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-200">
               <option value="">All status</option>
               <option value="active">Active</option>
               <option value="inactive">Inactive</option>
             </select>
-            <select value={areaFilter} onChange={(event) => { setAreaFilter(event.target.value); setPage(1); }} className="rounded-md border border-main-300 bg-main-100 px-3 py-2 text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-0">
+            <select value={areaFilter} onChange={(event) => { setAreaFilter(event.target.value); setPage(1); }} className="rounded-md border border-main-300 bg-main-100 px-3 py-2 text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-200">
               <option value="">All areas</option>
               {areas.map((area) => <option key={area.area_id} value={area.area_id}>{area.name}</option>)}
             </select>
@@ -560,7 +560,7 @@ export default function MarketsPage() {
         <div className="mt-5 overflow-x-auto">
           <table className="w-full min-w-220 text-left text-sm">
             <thead>
-              <tr className="border-b border-main-200 text-xs font-bold uppercase text-main-500">
+              <tr className="border-b border-main-300 text-xs font-bold uppercase text-main-500">
                 <th className="py-3 pr-4">Market</th><th className="py-3 pr-4">Admin area</th><th className="py-3 pr-4">Address</th><th className="py-3 pr-4">Status</th><th className="py-3 pr-4">Created</th><th className="py-3 pr-4 text-right">Actions</th>
               </tr>
             </thead>
@@ -593,7 +593,7 @@ export default function MarketsPage() {
             </tbody>
           </table>
         </div>
-        <div className="mt-4 flex flex-col gap-3 border-t border-main-200 pt-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="mt-4 flex flex-col gap-3 border-t border-main-300 pt-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-2 text-sm text-main-600">
             <span>Rows</span>
             <select value={pageSize} onChange={(event) => { setPageSize(Number(event.target.value)); setPage(1); }} className="rounded-md border border-main-300 bg-main-100 px-2 py-1 text-sm text-main-900 outline-none">
@@ -605,15 +605,15 @@ export default function MarketsPage() {
       </section>
 
       {selectedMarket && (
-        <section className="rounded-md border border-main-200 bg-main-0 p-5 shadow-sm">
-          <div className="flex flex-col gap-3 border-b border-main-200 pb-4 sm:flex-row sm:items-center sm:justify-between">
+        <section className="rounded-md border border-main-300 bg-main-200 p-5 shadow-sm">
+          <div className="flex flex-col gap-3 border-b border-main-300 pb-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <p className="text-sm font-semibold text-main-500">Market detail</p>
               <h2 className="mt-1 text-xl font-bold text-main-950">{selectedMarket.name}</h2>
             </div>
             {canCreatePrices && <button type="button" onClick={() => openCreatePrice(selectedMarket.market_id)} className="flex w-fit items-center gap-2 rounded-md bg-primary-600 px-4 py-2 text-sm font-bold text-main-0 hover:bg-primary-700"><i className="bi bi-plus-circle" />Add price</button>}
           </div>
-          <div className="mt-4 flex gap-2 overflow-x-auto border-b border-main-200">
+          <div className="mt-4 flex gap-2 overflow-x-auto border-b border-main-300">
             {(["details", "prices", "latest"] as DetailTab[]).map((tab) => (
               <button key={tab} type="button" onClick={() => setDetailTab(tab)} className={`shrink-0 border-b-2 px-4 py-3 text-sm font-bold ${detailTab === tab ? "border-primary-600 text-primary-700" : "border-transparent text-main-600 hover:text-main-950"}`}>
                 {tab === "details" ? "Market details" : tab === "prices" ? "Price records" : "Latest prices"}
@@ -623,7 +623,7 @@ export default function MarketsPage() {
           {detailTab === "details" && (
             <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {[["Code", selectedMarket.code], ["Admin area", marketAreaName(selectedMarket)], ["Address", selectedMarket.address], ["Latitude", selectedMarket.latitude ?? "None"], ["Longitude", selectedMarket.longitude ?? "None"], ["Status", selectedMarket.status], ["Created", formatDate(selectedMarket.created_at)], ["Description", selectedMarket.description || "None"]].map(([label, value]) => (
-                <div key={String(label)} className="rounded-md border border-main-200 bg-main-50 p-3">
+                <div key={String(label)} className="rounded-md border border-main-300 bg-main-50 p-3">
                   <p className="text-xs font-bold uppercase text-main-500">{label}</p>
                   <p className="mt-1 text-sm font-semibold text-main-900">{String(value)}</p>
                 </div>
@@ -635,30 +635,30 @@ export default function MarketsPage() {
         </section>
       )}
 
-      <section className="rounded-md border border-main-200 bg-main-0 p-5 shadow-sm">
-        <div className="flex flex-col gap-3 border-b border-main-200 pb-4">
+      <section className="rounded-md border border-main-300 bg-main-200 p-5 shadow-sm">
+        <div className="flex flex-col gap-3 border-b border-main-300 pb-4">
           <div>
             <p className="text-sm font-semibold text-main-500">Price records</p>
             <h2 className="mt-1 text-xl font-bold text-main-950">All market prices</h2>
           </div>
           <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-6">
-            <select value={priceMarketFilter} onChange={(event) => { setPriceMarketFilter(event.target.value); setPricePage(1); }} className="rounded-md border border-main-300 bg-main-100 px-3 py-2 text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-0"><option value="">All markets</option>{markets.map((market) => <option key={market.market_id} value={market.market_id}>{market.name}</option>)}</select>
-            <select value={priceCommodityFilter} onChange={(event) => { setPriceCommodityFilter(event.target.value); setPricePage(1); }} className="rounded-md border border-main-300 bg-main-100 px-3 py-2 text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-0"><option value="">All commodities</option>{commodities.map((commodity) => <option key={commodity.commodity_id} value={commodity.commodity_id}>{commodity.name}</option>)}</select>
-            <select value={priceSourceFilter} onChange={(event) => { setPriceSourceFilter(event.target.value as SourceFilter); setPricePage(1); }} className="rounded-md border border-main-300 bg-main-100 px-3 py-2 text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-0">{integrationSources.map((source) => <option key={source.value || "all"} value={source.value}>{source.label}</option>)}</select>
-            <input type="date" value={priceDateFilter} onChange={(event) => { setPriceDateFilter(event.target.value); setPricePage(1); }} className="rounded-md border border-main-300 bg-main-100 px-3 py-2 text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-0" />
-            <input type="date" value={dateFromFilter} onChange={(event) => { setDateFromFilter(event.target.value); setPricePage(1); }} className="rounded-md border border-main-300 bg-main-100 px-3 py-2 text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-0" />
-            <input type="date" value={dateToFilter} onChange={(event) => { setDateToFilter(event.target.value); setPricePage(1); }} className="rounded-md border border-main-300 bg-main-100 px-3 py-2 text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-0" />
+            <select value={priceMarketFilter} onChange={(event) => { setPriceMarketFilter(event.target.value); setPricePage(1); }} className="rounded-md border border-main-300 bg-main-100 px-3 py-2 text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-200"><option value="">All markets</option>{markets.map((market) => <option key={market.market_id} value={market.market_id}>{market.name}</option>)}</select>
+            <select value={priceCommodityFilter} onChange={(event) => { setPriceCommodityFilter(event.target.value); setPricePage(1); }} className="rounded-md border border-main-300 bg-main-100 px-3 py-2 text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-200"><option value="">All commodities</option>{commodities.map((commodity) => <option key={commodity.commodity_id} value={commodity.commodity_id}>{commodity.name}</option>)}</select>
+            <select value={priceSourceFilter} onChange={(event) => { setPriceSourceFilter(event.target.value as SourceFilter); setPricePage(1); }} className="rounded-md border border-main-300 bg-main-100 px-3 py-2 text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-200">{integrationSources.map((source) => <option key={source.value || "all"} value={source.value}>{source.label}</option>)}</select>
+            <input type="date" value={priceDateFilter} onChange={(event) => { setPriceDateFilter(event.target.value); setPricePage(1); }} className="rounded-md border border-main-300 bg-main-100 px-3 py-2 text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-200" />
+            <input type="date" value={dateFromFilter} onChange={(event) => { setDateFromFilter(event.target.value); setPricePage(1); }} className="rounded-md border border-main-300 bg-main-100 px-3 py-2 text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-200" />
+            <input type="date" value={dateToFilter} onChange={(event) => { setDateToFilter(event.target.value); setPricePage(1); }} className="rounded-md border border-main-300 bg-main-100 px-3 py-2 text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-200" />
           </div>
         </div>
         {loadingPrices ? <p className="py-10 text-center text-main-500">Loading prices...</p> : <PriceTable prices={prices} markets={markets} commodities={commodities} canUpdate={canUpdatePrices} canDelete={canDeletePrices} onEdit={(price) => openEditPrice(price)} onDelete={removePrice} emptyText="No market prices found." />}
-        <div className="mt-4 flex flex-col gap-3 border-t border-main-200 pt-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="mt-4 flex flex-col gap-3 border-t border-main-300 pt-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-2 text-sm text-main-600"><span>Rows</span><select value={pricePageSize} onChange={(event) => { setPricePageSize(Number(event.target.value)); setPricePage(1); }} className="rounded-md border border-main-300 bg-main-100 px-2 py-1 text-sm text-main-900 outline-none">{[10, 25, 50, 100].map((size) => <option key={size} value={size}>{size}</option>)}</select></div>
           <Pagination page={pricePagination.page} pageSize={pricePagination.page_size} totalItems={pricePagination.total_items} onChange={setPricePage} showHelper size="sm" rounded="full" disabled={loadingPrices} />
         </div>
       </section>
 
-      <section className="rounded-md border border-main-200 bg-main-0 p-5 shadow-sm">
-        <div className="flex flex-col gap-3 border-b border-main-200 pb-4 lg:flex-row lg:items-center lg:justify-between">
+      <section className="rounded-md border border-main-300 bg-main-200 p-5 shadow-sm">
+        <div className="flex flex-col gap-3 border-b border-main-300 pb-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <p className="text-sm font-semibold text-main-500">Commodity price views</p>
             <h2 className="mt-1 text-xl font-bold text-main-950">Compare across markets</h2>
@@ -671,8 +671,8 @@ export default function MarketsPage() {
                 setCommodityHistory([]);
                 setCommodityComparison([]);
               }
-            }} className="rounded-md border border-main-300 bg-main-100 px-3 py-2 text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-0"><option value="">Select commodity</option>{commodities.map((commodity) => <option key={commodity.commodity_id} value={commodity.commodity_id}>{commodity.name}</option>)}</select>
-            <input type="date" value={comparisonDate} onChange={(event) => setComparisonDate(event.target.value)} className="rounded-md border border-main-300 bg-main-100 px-3 py-2 text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-0" />
+            }} className="rounded-md border border-main-300 bg-main-100 px-3 py-2 text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-200"><option value="">Select commodity</option>{commodities.map((commodity) => <option key={commodity.commodity_id} value={commodity.commodity_id}>{commodity.name}</option>)}</select>
+            <input type="date" value={comparisonDate} onChange={(event) => setComparisonDate(event.target.value)} className="rounded-md border border-main-300 bg-main-100 px-3 py-2 text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-200" />
           </div>
         </div>
         <div className="mt-5 grid gap-4 lg:grid-cols-3">
@@ -682,34 +682,34 @@ export default function MarketsPage() {
         </div>
       </section>
 
-      <Modal open={Boolean(marketModal)} onClose={() => setMarketModal(null)} size="lg" className="rounded-md border border-main-300 bg-main-0 p-0 shadow-lg">
+      <Modal open={Boolean(marketModal)} onClose={() => setMarketModal(null)} size="lg" className="rounded-md border border-main-300 bg-main-200 p-0 shadow-lg">
         <form onSubmit={(event) => void saveMarket(event)}>
           <ModalHeader title={marketModal?.mode === "edit" ? "Edit market" : "Create market"} eyebrow="Market details" onClose={() => setMarketModal(null)} />
           <div className="grid max-h-[calc(100vh-10rem)] gap-4 overflow-y-auto px-5 py-5 sm:grid-cols-2">
             <FormAlert error={formError} notice={formNotice} />
-            <Field label="Name"><input required value={marketForm.name} onChange={(event) => setMarketForm((current) => ({ ...current, name: event.target.value }))} className="mt-2 w-full rounded-md border border-main-300 bg-main-100 px-4 py-2.5 text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-0" /></Field>
-            <Field label="Code"><input required value={marketForm.code} onChange={(event) => setMarketForm((current) => ({ ...current, code: event.target.value }))} className="mt-2 w-full rounded-md border border-main-300 bg-main-100 px-4 py-2.5 text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-0" /></Field>
-            <Field label="Admin area"><select required value={marketForm.admin_area_id} onChange={(event) => setMarketForm((current) => ({ ...current, admin_area_id: event.target.value }))} className="mt-2 w-full rounded-md border border-main-300 bg-main-100 px-4 py-2.5 text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-0"><option value="">Select admin area</option>{areas.map((area) => <option key={area.area_id} value={area.area_id}>{area.name}</option>)}</select></Field>
-            <Field label="Status"><select value={marketForm.status} onChange={(event) => setMarketForm((current) => ({ ...current, status: event.target.value as MarketStatus }))} className="mt-2 w-full rounded-md border border-main-300 bg-main-100 px-4 py-2.5 text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-0"><option value="active">Active</option><option value="inactive">Inactive</option></select></Field>
-            <Field label="Address"><input value={marketForm.address} onChange={(event) => setMarketForm((current) => ({ ...current, address: event.target.value }))} className="mt-2 w-full rounded-md border border-main-300 bg-main-100 px-4 py-2.5 text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-0" /></Field>
-            <Field label="Latitude"><input type="number" step="any" value={marketForm.latitude} onChange={(event) => setMarketForm((current) => ({ ...current, latitude: event.target.value }))} className="mt-2 w-full rounded-md border border-main-300 bg-main-100 px-4 py-2.5 text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-0" /></Field>
-            <Field label="Longitude"><input type="number" step="any" value={marketForm.longitude} onChange={(event) => setMarketForm((current) => ({ ...current, longitude: event.target.value }))} className="mt-2 w-full rounded-md border border-main-300 bg-main-100 px-4 py-2.5 text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-0" /></Field>
-            <div className="sm:col-span-2"><Field label="Description"><textarea rows={3} value={marketForm.description} onChange={(event) => setMarketForm((current) => ({ ...current, description: event.target.value }))} className="mt-2 w-full rounded-md border border-main-300 bg-main-100 px-4 py-2.5 text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-0" /></Field></div>
+            <Field label="Name"><input required value={marketForm.name} onChange={(event) => setMarketForm((current) => ({ ...current, name: event.target.value }))} className="mt-2 w-full rounded-md border border-main-300 bg-main-100 px-4 py-2.5 text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-200" /></Field>
+            <Field label="Code"><input required value={marketForm.code} onChange={(event) => setMarketForm((current) => ({ ...current, code: event.target.value }))} className="mt-2 w-full rounded-md border border-main-300 bg-main-100 px-4 py-2.5 text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-200" /></Field>
+            <Field label="Admin area"><select required value={marketForm.admin_area_id} onChange={(event) => setMarketForm((current) => ({ ...current, admin_area_id: event.target.value }))} className="mt-2 w-full rounded-md border border-main-300 bg-main-100 px-4 py-2.5 text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-200"><option value="">Select admin area</option>{areas.map((area) => <option key={area.area_id} value={area.area_id}>{area.name}</option>)}</select></Field>
+            <Field label="Status"><select value={marketForm.status} onChange={(event) => setMarketForm((current) => ({ ...current, status: event.target.value as MarketStatus }))} className="mt-2 w-full rounded-md border border-main-300 bg-main-100 px-4 py-2.5 text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-200"><option value="active">Active</option><option value="inactive">Inactive</option></select></Field>
+            <Field label="Address"><input value={marketForm.address} onChange={(event) => setMarketForm((current) => ({ ...current, address: event.target.value }))} className="mt-2 w-full rounded-md border border-main-300 bg-main-100 px-4 py-2.5 text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-200" /></Field>
+            <Field label="Latitude"><input type="number" step="any" value={marketForm.latitude} onChange={(event) => setMarketForm((current) => ({ ...current, latitude: event.target.value }))} className="mt-2 w-full rounded-md border border-main-300 bg-main-100 px-4 py-2.5 text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-200" /></Field>
+            <Field label="Longitude"><input type="number" step="any" value={marketForm.longitude} onChange={(event) => setMarketForm((current) => ({ ...current, longitude: event.target.value }))} className="mt-2 w-full rounded-md border border-main-300 bg-main-100 px-4 py-2.5 text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-200" /></Field>
+            <div className="sm:col-span-2"><Field label="Description"><textarea rows={3} value={marketForm.description} onChange={(event) => setMarketForm((current) => ({ ...current, description: event.target.value }))} className="mt-2 w-full rounded-md border border-main-300 bg-main-100 px-4 py-2.5 text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-200" /></Field></div>
           </div>
           <ModalActions saving={saving} saveText="Save market" onCancel={() => setMarketModal(null)} />
         </form>
       </Modal>
 
-      <Modal open={Boolean(priceModal)} onClose={() => setPriceModal(null)} size="lg" className="rounded-md border border-main-300 bg-main-0 p-0 shadow-lg">
+      <Modal open={Boolean(priceModal)} onClose={() => setPriceModal(null)} size="lg" className="rounded-md border border-main-300 bg-main-200 p-0 shadow-lg">
         <form onSubmit={(event) => void savePrice(event)}>
           <ModalHeader title={priceModal?.mode === "edit" ? "Edit price" : "Add price"} eyebrow="Market price" onClose={() => setPriceModal(null)} />
           <div className="grid gap-4 px-5 py-5 sm:grid-cols-2">
             <FormAlert error={formError} notice={formNotice} />
-            <Field label="Market"><select required disabled={Boolean(priceModal?.marketId && priceModal.mode === "create")} value={priceForm.market_id} onChange={(event) => setPriceForm((current) => ({ ...current, market_id: event.target.value }))} className="mt-2 w-full rounded-md border border-main-300 bg-main-100 px-4 py-2.5 text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-0 disabled:opacity-70"><option value="">Select market</option>{markets.map((market) => <option key={market.market_id} value={market.market_id}>{market.name}</option>)}</select></Field>
-            <Field label="Commodity"><select required value={priceForm.commodity_id} onChange={(event) => setPriceForm((current) => ({ ...current, commodity_id: event.target.value }))} className="mt-2 w-full rounded-md border border-main-300 bg-main-100 px-4 py-2.5 text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-0"><option value="">Select commodity</option>{commodities.map((commodity) => <option key={commodity.commodity_id} value={commodity.commodity_id}>{commodity.name}</option>)}</select></Field>
-            <Field label="Price"><input required type="number" min="0" step="0.01" value={priceForm.price} onChange={(event) => setPriceForm((current) => ({ ...current, price: event.target.value }))} className="mt-2 w-full rounded-md border border-main-300 bg-main-100 px-4 py-2.5 text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-0" /></Field>
-            <Field label="Currency"><input required value={priceForm.currency} onChange={(event) => setPriceForm((current) => ({ ...current, currency: event.target.value.toUpperCase() }))} className="mt-2 w-full rounded-md border border-main-300 bg-main-100 px-4 py-2.5 text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-0" /></Field>
-            <Field label="Price date"><input required type="date" value={priceForm.price_date} onChange={(event) => setPriceForm((current) => ({ ...current, price_date: event.target.value }))} className="mt-2 w-full rounded-md border border-main-300 bg-main-100 px-4 py-2.5 text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-0" /></Field>
+            <Field label="Market"><select required disabled={Boolean(priceModal?.marketId && priceModal.mode === "create")} value={priceForm.market_id} onChange={(event) => setPriceForm((current) => ({ ...current, market_id: event.target.value }))} className="mt-2 w-full rounded-md border border-main-300 bg-main-100 px-4 py-2.5 text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-200 disabled:opacity-70"><option value="">Select market</option>{markets.map((market) => <option key={market.market_id} value={market.market_id}>{market.name}</option>)}</select></Field>
+            <Field label="Commodity"><select required value={priceForm.commodity_id} onChange={(event) => setPriceForm((current) => ({ ...current, commodity_id: event.target.value }))} className="mt-2 w-full rounded-md border border-main-300 bg-main-100 px-4 py-2.5 text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-200"><option value="">Select commodity</option>{commodities.map((commodity) => <option key={commodity.commodity_id} value={commodity.commodity_id}>{commodity.name}</option>)}</select></Field>
+            <Field label="Price"><input required type="number" min="0" step="0.01" value={priceForm.price} onChange={(event) => setPriceForm((current) => ({ ...current, price: event.target.value }))} className="mt-2 w-full rounded-md border border-main-300 bg-main-100 px-4 py-2.5 text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-200" /></Field>
+            <Field label="Currency"><input required value={priceForm.currency} onChange={(event) => setPriceForm((current) => ({ ...current, currency: event.target.value.toUpperCase() }))} className="mt-2 w-full rounded-md border border-main-300 bg-main-100 px-4 py-2.5 text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-200" /></Field>
+            <Field label="Price date"><input required type="date" value={priceForm.price_date} onChange={(event) => setPriceForm((current) => ({ ...current, price_date: event.target.value }))} className="mt-2 w-full rounded-md border border-main-300 bg-main-100 px-4 py-2.5 text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-200" /></Field>
           </div>
           <ModalActions saving={saving} saveText="Save price" onCancel={() => setPriceModal(null)} />
         </form>
@@ -723,7 +723,7 @@ function PriceTable({ prices, markets, commodities, canUpdate, canDelete, onEdit
   return (
     <div className="mt-5 overflow-x-auto">
       <table className="w-full min-w-220 text-left text-sm">
-        <thead><tr className="border-b border-main-200 text-xs font-bold uppercase text-main-500"><th className="py-3 pr-4">Market</th><th className="py-3 pr-4">Commodity</th><th className="py-3 pr-4">Price TZS</th><th className="py-3 pr-4">Price USD</th><th className="py-3 pr-4">Source</th><th className="py-3 pr-4">Price date</th><th className="py-3 pr-4">Created</th>{canMutate && <th className="py-3 pr-4 text-right">Actions</th>}</tr></thead>
+        <thead><tr className="border-b border-main-300 text-xs font-bold uppercase text-main-500"><th className="py-3 pr-4">Market</th><th className="py-3 pr-4">Commodity</th><th className="py-3 pr-4">Price TZS</th><th className="py-3 pr-4">Price USD</th><th className="py-3 pr-4">Source</th><th className="py-3 pr-4">Price date</th><th className="py-3 pr-4">Created</th>{canMutate && <th className="py-3 pr-4 text-right">Actions</th>}</tr></thead>
         <tbody className="divide-y divide-main-200">
           {prices.length ? prices.map((price) => (
             <tr key={price.price_id} className="hover:bg-main-50">
@@ -745,11 +745,11 @@ function PriceTable({ prices, markets, commodities, canUpdate, canDelete, onEdit
 
 function CompactPriceList({ title, prices, markets, commodities }: { title: string; prices: MarketPrice[]; markets: Market[]; commodities: Commodity[] }) {
   return (
-    <div className="rounded-md border border-main-200 bg-main-50 p-4">
+    <div className="rounded-md border border-main-300 bg-main-50 p-4">
       <h3 className="text-sm font-bold text-main-950">{title}</h3>
       <div className="mt-3 space-y-2">
         {prices.length ? prices.map((price) => (
-          <div key={`${title}-${price.price_id}`} className="rounded-md border border-main-200 bg-main-0 p-3">
+          <div key={`${title}-${price.price_id}`} className="rounded-md border border-main-300 bg-main-200 p-3">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
                 <p className="truncate text-sm font-bold text-main-900">{priceMarketName(price, markets)}</p>
@@ -761,7 +761,7 @@ function CompactPriceList({ title, prices, markets, commodities }: { title: stri
               </div>
             </div>
           </div>
-        )) : <p className="rounded-md border border-main-200 bg-main-0 px-3 py-8 text-center text-sm text-main-500">No prices to show.</p>}
+        )) : <p className="rounded-md border border-main-300 bg-main-200 px-3 py-8 text-center text-sm text-main-500">No prices to show.</p>}
       </div>
     </div>
   );
@@ -769,7 +769,7 @@ function CompactPriceList({ title, prices, markets, commodities }: { title: stri
 
 function ModalHeader({ title, eyebrow, onClose }: { title: string; eyebrow: string; onClose: () => void }) {
   return (
-    <div className="flex items-center justify-between border-b border-main-200 px-5 py-4">
+    <div className="flex items-center justify-between border-b border-main-300 px-5 py-4">
       <div><p className="text-sm font-semibold text-main-500">{eyebrow}</p><h2 className="text-xl font-bold text-main-950">{title}</h2></div>
       <button type="button" onClick={onClose} className="flex size-9 items-center justify-center rounded-md text-main-500 hover:bg-main-100 hover:text-main-900" aria-label="Close"><i className="bi bi-x-lg" /></button>
     </div>
@@ -778,7 +778,7 @@ function ModalHeader({ title, eyebrow, onClose }: { title: string; eyebrow: stri
 
 function ModalActions({ saving, saveText, onCancel }: { saving: boolean; saveText: string; onCancel: () => void }) {
   return (
-    <div className="flex justify-end gap-2 border-t border-main-200 px-5 py-4">
+    <div className="flex justify-end gap-2 border-t border-main-300 px-5 py-4">
       <button type="button" onClick={onCancel} className="rounded-md border border-main-300 bg-main-100 px-4 py-2 text-sm font-bold text-main-700 hover:bg-main-200">Cancel</button>
       <button type="submit" disabled={saving} className="rounded-md bg-primary-600 px-4 py-2 text-sm font-bold text-main-0 hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-60">{saving ? "Saving..." : saveText}</button>
     </div>

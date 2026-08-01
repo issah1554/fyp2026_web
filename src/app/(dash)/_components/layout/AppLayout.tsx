@@ -46,7 +46,7 @@ export function AppLayout({
   if (loading || !user) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-main-100 text-main-700">
-        <div className="flex items-center gap-3 rounded border border-main-200 bg-main-0 px-4 py-3 shadow-sm">
+        <div className="flex items-center gap-3 rounded border border-main-300 bg-main-200 px-4 py-3 shadow-sm">
           <span className="size-4 animate-spin rounded-full border-2 border-primary-700 border-t-transparent" />
           <span className="text-sm font-medium">Loading workspace...</span>
         </div>

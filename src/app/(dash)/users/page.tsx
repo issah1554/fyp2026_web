@@ -300,8 +300,8 @@ export default function UsersPage() {
         </div>
       )}
 
-      <section className="rounded-md border border-main-200 bg-main-0 p-5 shadow-sm">
-        <div className="flex flex-col gap-3 border-b border-main-200 pb-4 lg:flex-row lg:items-center lg:justify-between">
+      <section className="rounded-md border border-main-300 bg-main-200 p-5 shadow-sm">
+        <div className="flex flex-col gap-3 border-b border-main-300 pb-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <p className="text-sm font-semibold text-main-500">Access registry</p>
             <h2 className="mt-1 text-xl font-bold text-main-950">Managed Users</h2>
@@ -314,7 +314,7 @@ export default function UsersPage() {
                 setPage(1);
               }}
               placeholder="Search users"
-              className="rounded-md border border-main-300 bg-main-100 px-3 py-2 text-sm text-main-900 outline-none placeholder:text-main-500 focus:border-primary-500 focus:bg-main-0"
+              className="rounded-md border border-main-300 bg-main-100 px-3 py-2 text-sm text-main-900 outline-none placeholder:text-main-500 focus:border-primary-500 focus:bg-main-200"
             />
             <select
               value={roleFilter}
@@ -322,7 +322,7 @@ export default function UsersPage() {
                 setRoleFilter(event.target.value);
                 setPage(1);
               }}
-              className="rounded-md border border-main-300 bg-main-100 px-3 py-2 text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-0"
+              className="rounded-md border border-main-300 bg-main-100 px-3 py-2 text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-200"
             >
               <option value="">All roles</option>
               {roles.map((role) => (
@@ -335,7 +335,7 @@ export default function UsersPage() {
                 setActiveFilter(event.target.value);
                 setPage(1);
               }}
-              className="rounded-md border border-main-300 bg-main-100 px-3 py-2 text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-0"
+              className="rounded-md border border-main-300 bg-main-100 px-3 py-2 text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-200"
             >
               <option value="">All status</option>
               <option value="true">Active</option>
@@ -347,7 +347,7 @@ export default function UsersPage() {
         <div className="mt-5 overflow-x-auto">
           <table className="w-full min-w-220 text-left text-sm">
             <thead>
-              <tr className="border-b border-main-200 text-xs font-bold uppercase text-main-500">
+              <tr className="border-b border-main-300 text-xs font-bold uppercase text-main-500">
                 <th className="py-3 pr-4">User</th>
                 <th className="py-3 pr-4">Role</th>
                 <th className="py-3 pr-4">Status</th>
@@ -427,7 +427,7 @@ export default function UsersPage() {
           </table>
         </div>
 
-        <div className="mt-4 flex flex-col gap-3 border-t border-main-200 pt-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="mt-4 flex flex-col gap-3 border-t border-main-300 pt-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-2 text-sm text-main-600">
             <span>Rows</span>
             <select
@@ -445,9 +445,9 @@ export default function UsersPage() {
         </div>
       </section>
 
-      <Modal open={Boolean(modal)} onClose={() => setModal(null)} size="xl" className="rounded-md border border-main-300 bg-main-0 p-0 shadow-lg">
+      <Modal open={Boolean(modal)} onClose={() => setModal(null)} size="xl" className="rounded-md border border-main-300 bg-main-200 p-0 shadow-lg">
         <form onSubmit={(event) => void handleSave(event)}>
-          <div className="flex items-center justify-between border-b border-main-200 px-5 py-4">
+          <div className="flex items-center justify-between border-b border-main-300 px-5 py-4">
             <div>
               <p className="text-sm font-semibold text-main-500">User details</p>
               <h2 className="text-xl font-bold text-main-950">{modal?.mode === "edit" ? "Edit user" : "Create user"}</h2>
@@ -488,7 +488,7 @@ export default function UsersPage() {
                     setFormNotice("");
                   }}
                   required={key === "username" || key === "email"}
-                  className="mt-2 w-full rounded-md border border-main-300 bg-main-100 px-4 py-2.5 text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-0"
+                  className="mt-2 w-full rounded-md border border-main-300 bg-main-100 px-4 py-2.5 text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-200"
                 />
               </div>
             ))}
@@ -507,7 +507,7 @@ export default function UsersPage() {
                   }}
                   required
                   minLength={8}
-                  className="mt-2 w-full rounded-md border border-main-300 bg-main-100 px-4 py-2.5 text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-0"
+                  className="mt-2 w-full rounded-md border border-main-300 bg-main-100 px-4 py-2.5 text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-200"
                 />
               </div>
             )}
@@ -522,13 +522,13 @@ export default function UsersPage() {
                   setFormError("");
                   setFormNotice("");
                 }}
-                className="mt-2 w-full rounded-md border border-main-300 bg-main-100 px-4 py-2.5 text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-0"
+                className="mt-2 w-full rounded-md border border-main-300 bg-main-100 px-4 py-2.5 text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-200"
               >
                 {roles.map((role) => <option key={role.role_id} value={role.code}>{role.name}</option>)}
               </select>
             </div>
 
-            <div className="grid gap-3 rounded-md border border-main-200 bg-main-50 p-3 lg:col-span-2 sm:grid-cols-3">
+            <div className="grid gap-3 rounded-md border border-main-300 bg-main-50 p-3 lg:col-span-2 sm:grid-cols-3">
               {[
                 ["is_active", "Active"],
                 ["is_staff", "Staff"],
@@ -551,7 +551,7 @@ export default function UsersPage() {
             </div>
           </div>
 
-          <div className="flex justify-end gap-2 border-t border-main-200 px-5 py-4">
+          <div className="flex justify-end gap-2 border-t border-main-300 px-5 py-4">
             <button type="button" onClick={() => setModal(null)} className="rounded-md border border-main-300 bg-main-100 px-4 py-2 text-sm font-bold text-main-700 hover:bg-main-200">Cancel</button>
             <button type="submit" disabled={saving} className="rounded-md bg-primary-600 px-4 py-2 text-sm font-bold text-main-0 hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-60">
               {saving ? "Saving..." : "Save user"}

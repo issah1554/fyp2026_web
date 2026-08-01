@@ -158,7 +158,7 @@ export default function DataSourcesPage() {
           const isHealthy = sourceHealth?.ok === true;
           const isUnhealthy = sourceHealth?.ok === false;
           return (
-            <div key={source.key} className="rounded-md border border-main-200 bg-main-0 p-5 shadow-sm">
+            <div key={source.key} className="rounded-md border border-main-300 bg-main-200 p-5 shadow-sm">
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <p className="text-sm font-semibold text-main-500">{source.key}</p>
@@ -180,19 +180,19 @@ export default function DataSourcesPage() {
         })}
       </section>
 
-      <section className="rounded-md border border-main-200 bg-main-0 p-5 shadow-sm">
-        <div className="flex flex-col gap-3 border-b border-main-200 pb-4 lg:flex-row lg:items-center lg:justify-between">
+      <section className="rounded-md border border-main-300 bg-main-200 p-5 shadow-sm">
+        <div className="flex flex-col gap-3 border-b border-main-300 pb-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <p className="text-sm font-semibold text-main-500">Stored data</p>
             <h2 className="mt-1 text-xl font-bold text-main-950">Imported market prices</h2>
           </div>
-          <select value={selectedSource} onChange={(event) => { setSelectedSource(event.target.value as SourceKey | ""); setPage(1); }} className="w-full rounded-md border border-main-300 bg-main-100 px-3 py-2 text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-0 sm:w-60">
+          <select value={selectedSource} onChange={(event) => { setSelectedSource(event.target.value as SourceKey | ""); setPage(1); }} className="w-full rounded-md border border-main-300 bg-main-100 px-3 py-2 text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-200 sm:w-60">
             <option value="">All source rows</option>
             {sourceCards.map((source) => <option key={source.key} value={source.key}>{source.name}</option>)}
           </select>
         </div>
         {loading ? <p className="py-10 text-center text-main-500">Loading source data...</p> : <SourcePriceTable prices={prices} />}
-        <div className="mt-4 flex flex-col gap-3 border-t border-main-200 pt-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="mt-4 flex flex-col gap-3 border-t border-main-300 pt-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-2 text-sm text-main-600"><span>Rows</span><select value={pageSize} onChange={(event) => { setPageSize(Number(event.target.value)); setPage(1); }} className="rounded-md border border-main-300 bg-main-100 px-2 py-1 text-sm text-main-900 outline-none">{[10, 25, 50, 100].map((size) => <option key={size} value={size}>{size}</option>)}</select></div>
           <div className="flex items-center gap-2 text-sm font-semibold text-main-600"><button type="button" disabled={!pagination.has_previous} onClick={() => setPage((current) => Math.max(1, current - 1))} className="rounded-md border border-main-300 bg-main-100 px-3 py-1.5 disabled:cursor-not-allowed disabled:opacity-50">Previous</button><span>Page {pagination.page} of {pagination.total_pages}</span><button type="button" disabled={!pagination.has_next} onClick={() => setPage((current) => current + 1)} className="rounded-md border border-main-300 bg-main-100 px-3 py-1.5 disabled:cursor-not-allowed disabled:opacity-50">Next</button></div>
         </div>
@@ -205,7 +205,7 @@ function SourcePriceTable({ prices }: { prices: MarketPrice[] }) {
   return (
     <div className="mt-5 overflow-x-auto">
       <table className="w-full min-w-220 text-left text-sm">
-        <thead><tr className="border-b border-main-200 text-xs font-bold uppercase text-main-500"><th className="py-3 pr-4">Source</th><th className="py-3 pr-4">Market</th><th className="py-3 pr-4">Commodity</th><th className="py-3 pr-4">Price TZS</th><th className="py-3 pr-4">Price USD</th><th className="py-3 pr-4">Price date</th><th className="py-3 pr-4">Imported</th></tr></thead>
+        <thead><tr className="border-b border-main-300 text-xs font-bold uppercase text-main-500"><th className="py-3 pr-4">Source</th><th className="py-3 pr-4">Market</th><th className="py-3 pr-4">Commodity</th><th className="py-3 pr-4">Price TZS</th><th className="py-3 pr-4">Price USD</th><th className="py-3 pr-4">Price date</th><th className="py-3 pr-4">Imported</th></tr></thead>
         <tbody className="divide-y divide-main-200">
           {prices.length ? prices.map((price) => (
             <tr key={price.price_id} className="hover:bg-main-50">

@@ -289,13 +289,13 @@ export default function RbacPage() {
         </div>
       )}
 
-      <section className="rounded-md border border-main-200 bg-main-0 shadow-sm">
+      <section className="rounded-md border border-main-300 bg-main-200 shadow-sm">
         <HorizontalTabs tabs={rbacTabs} activeTab={activeTab} basePath="/rbac" className="px-5" />
 
         <div className="p-5">
           <div className={activeTab === "roles" ? "grid gap-6 lg:grid-cols-[18rem_minmax(0,1fr)]" : "hidden"}>
-            <aside className="rounded-md border border-main-200 bg-main-0 p-4 shadow-sm">
-              <div className="border-b border-main-200 pb-3">
+            <aside className="rounded-md border border-main-300 bg-main-200 p-4 shadow-sm">
+              <div className="border-b border-main-300 pb-3">
                 <p className="text-sm font-semibold text-main-500">Role catalog</p>
                 <h2 className="mt-1 text-xl font-bold text-main-950">Roles</h2>
               </div>
@@ -304,7 +304,7 @@ export default function RbacPage() {
                   <p className="py-8 text-center text-sm text-main-500">Loading roles...</p>
                 ) : (
                   roles.map((role) => (
-                    <div key={role.role_id} className={`rounded-md border ${selectedRoleId === role.role_id ? "border-primary-300 bg-primary-100" : "border-main-200 bg-main-50"}`}>
+                    <div key={role.role_id} className={`rounded-md border ${selectedRoleId === role.role_id ? "border-primary-300 bg-primary-100" : "border-main-300 bg-main-50"}`}>
                       <button
                         type="button"
                         onClick={() => handleSelectRole(role)}
@@ -315,7 +315,7 @@ export default function RbacPage() {
                         <span className="mt-1 block text-xs opacity-80">{role.permission_ids.length} permission(s){role.is_system ? " - system" : ""}</span>
                       </button>
                       {(canUpdateRoles || canDeleteRoles) && (
-                      <div className="flex justify-end gap-1 border-t border-main-200 px-2 py-2">
+                      <div className="flex justify-end gap-1 border-t border-main-300 px-2 py-2">
                         {canUpdateRoles && (
                           <button type="button" onClick={() => openEditModal(role)} className="flex size-8 items-center justify-center rounded-md text-main-600 hover:bg-main-100 hover:text-primary-700" aria-label={`Edit ${role.name}`}>
                             <i className="bi bi-pencil" aria-hidden="true" />
@@ -334,8 +334,8 @@ export default function RbacPage() {
               </div>
             </aside>
 
-            <div className="rounded-md border border-main-200 bg-main-0 p-5 shadow-sm">
-              <div className="flex flex-col gap-3 border-b border-main-200 pb-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="rounded-md border border-main-300 bg-main-200 p-5 shadow-sm">
+              <div className="flex flex-col gap-3 border-b border-main-300 pb-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <p className="text-sm font-semibold text-main-500">Permission assignment</p>
                   <h2 className="mt-1 text-xl font-bold text-main-950">{selectedRole?.name ?? "Select role"}</h2>
@@ -356,7 +356,7 @@ export default function RbacPage() {
                   permissions.map((permission) => (
                     <label
                       key={permission.permission_id}
-                      className="flex cursor-pointer gap-3 rounded-md border border-main-200 bg-main-50 p-3 hover:border-primary-300"
+                      className="flex cursor-pointer gap-3 rounded-md border border-main-300 bg-main-50 p-3 hover:border-primary-300"
                     >
                       <input
                         type="checkbox"
@@ -373,7 +373,7 @@ export default function RbacPage() {
                     </label>
                   ))
                 ) : (
-                  <p className="rounded-md border border-main-200 bg-main-50 px-3 py-8 text-center text-sm text-main-500 md:col-span-2 xl:col-span-3">
+                  <p className="rounded-md border border-main-300 bg-main-50 px-3 py-8 text-center text-sm text-main-500 md:col-span-2 xl:col-span-3">
                     No permissions found.
                   </p>
                 )}
@@ -382,7 +382,7 @@ export default function RbacPage() {
           </div>
 
           <div className={activeTab === "permissions" ? "" : "hidden"}>
-            <div className="flex flex-col gap-3 border-b border-main-200 pb-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-col gap-3 border-b border-main-300 pb-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <p className="text-sm font-semibold text-main-500">System-defined capability catalog</p>
                 <h2 className="mt-1 text-xl font-bold text-main-950">Permission Registry</h2>
@@ -391,14 +391,14 @@ export default function RbacPage() {
                 value={permissionSearch}
                 onChange={(event) => setPermissionSearch(event.target.value)}
                 placeholder="Search permissions"
-                className="rounded-md border border-main-300 bg-main-100 px-3 py-2 text-sm text-main-900 outline-none placeholder:text-main-500 focus:border-primary-500 focus:bg-main-0 sm:w-72"
+                className="rounded-md border border-main-300 bg-main-100 px-3 py-2 text-sm text-main-900 outline-none placeholder:text-main-500 focus:border-primary-500 focus:bg-main-200 sm:w-72"
               />
             </div>
 
             <div className="mt-5 overflow-x-auto">
               <table className="w-full min-w-180 text-left text-sm">
                 <thead>
-                  <tr className="border-b border-main-200 text-xs font-bold uppercase text-main-500">
+                  <tr className="border-b border-main-300 text-xs font-bold uppercase text-main-500">
                     {renderHeader("code", "Code")}
                     {renderHeader("name", "Name")}
                     {renderHeader("description", "Description")}
@@ -431,9 +431,9 @@ export default function RbacPage() {
         </div>
       </section>
 
-      <Modal open={Boolean(modal)} onClose={() => setModal(null)} size="xl" className="rounded-md border border-main-300 bg-main-0 p-0 shadow-lg">
+      <Modal open={Boolean(modal)} onClose={() => setModal(null)} size="xl" className="rounded-md border border-main-300 bg-main-200 p-0 shadow-lg">
         <form onSubmit={(event) => void handleSaveRole(event)}>
-          <div className="flex items-center justify-between border-b border-main-200 px-5 py-4">
+          <div className="flex items-center justify-between border-b border-main-300 px-5 py-4">
             <div>
               <p className="text-sm font-semibold text-main-500">Role details</p>
               <h2 className="text-xl font-bold text-main-950">{modal?.mode === "edit" ? "Edit role" : "Create role"}</h2>
@@ -453,24 +453,24 @@ export default function RbacPage() {
             <div className="grid gap-4 md:grid-cols-2">
               <div>
                 <label htmlFor="role-code" className="text-sm font-bold text-main-900">Code</label>
-                <input id="role-code" value={form.code} disabled={modal?.mode === "edit" && modal.role.is_system} onChange={(event) => { setForm((current) => ({ ...current, code: event.target.value })); setFormError(""); setFormNotice(""); }} required className="mt-2 w-full rounded-md border border-main-300 bg-main-100 px-4 py-2.5 text-sm text-main-900 outline-none disabled:opacity-60 focus:border-primary-500 focus:bg-main-0" />
+                <input id="role-code" value={form.code} disabled={modal?.mode === "edit" && modal.role.is_system} onChange={(event) => { setForm((current) => ({ ...current, code: event.target.value })); setFormError(""); setFormNotice(""); }} required className="mt-2 w-full rounded-md border border-main-300 bg-main-100 px-4 py-2.5 text-sm text-main-900 outline-none disabled:opacity-60 focus:border-primary-500 focus:bg-main-200" />
               </div>
               <div>
                 <label htmlFor="role-name" className="text-sm font-bold text-main-900">Name</label>
-                <input id="role-name" value={form.name} onChange={(event) => { setForm((current) => ({ ...current, name: event.target.value })); setFormError(""); setFormNotice(""); }} required className="mt-2 w-full rounded-md border border-main-300 bg-main-100 px-4 py-2.5 text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-0" />
+                <input id="role-name" value={form.name} onChange={(event) => { setForm((current) => ({ ...current, name: event.target.value })); setFormError(""); setFormNotice(""); }} required className="mt-2 w-full rounded-md border border-main-300 bg-main-100 px-4 py-2.5 text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-200" />
               </div>
             </div>
 
             <div>
               <label htmlFor="role-description" className="text-sm font-bold text-main-900">Description</label>
-              <textarea id="role-description" value={form.description} onChange={(event) => { setForm((current) => ({ ...current, description: event.target.value })); setFormError(""); setFormNotice(""); }} rows={3} className="mt-2 w-full rounded-md border border-main-300 bg-main-100 px-4 py-2.5 text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-0" />
+              <textarea id="role-description" value={form.description} onChange={(event) => { setForm((current) => ({ ...current, description: event.target.value })); setFormError(""); setFormNotice(""); }} rows={3} className="mt-2 w-full rounded-md border border-main-300 bg-main-100 px-4 py-2.5 text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-200" />
             </div>
 
             <div>
               <p className="text-sm font-bold text-main-900">Default permissions</p>
               <div className="mt-2 grid gap-2 md:grid-cols-2">
                 {permissions.map((permission) => (
-                  <label key={permission.permission_id} className="flex cursor-pointer gap-3 rounded-md border border-main-200 bg-main-50 p-3 hover:border-primary-300">
+                  <label key={permission.permission_id} className="flex cursor-pointer gap-3 rounded-md border border-main-300 bg-main-50 p-3 hover:border-primary-300">
                     <input type="checkbox" checked={form.permission_ids.includes(permission.permission_id)} onChange={() => toggleFormPermission(permission.permission_id)} className="mt-1 size-4 accent-primary-600" />
                     <span>
                       <span className="block font-mono text-xs font-bold text-main-950">{permission.code}</span>
@@ -482,7 +482,7 @@ export default function RbacPage() {
             </div>
           </div>
 
-          <div className="flex justify-end gap-2 border-t border-main-200 px-5 py-4">
+          <div className="flex justify-end gap-2 border-t border-main-300 px-5 py-4">
             <button type="button" onClick={() => setModal(null)} className="rounded-md border border-main-300 bg-main-100 px-4 py-2 text-sm font-bold text-main-700 hover:bg-main-200">Cancel</button>
             <button type="submit" disabled={savingRole} className="rounded-md bg-primary-600 px-4 py-2 text-sm font-bold text-main-0 hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-60">
               {savingRole ? "Saving..." : "Save role"}

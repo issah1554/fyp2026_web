@@ -471,12 +471,12 @@ export default function CommoditiesPage() {
         </div>
       )}
 
-      <section className="rounded-md border border-main-200 bg-main-0 shadow-sm">
+      <section className="rounded-md border border-main-300 bg-main-200 shadow-sm">
         <HorizontalTabs tabs={catalogTabs} activeTab={activeTab} basePath="/commodities" className="px-5" />
 
         <div className="p-5">
         <div className={activeTab === "commodities" ? "" : "hidden"}>
-          <div className="flex flex-col gap-3 border-b border-main-200 pb-4 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex flex-col gap-3 border-b border-main-300 pb-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
               <p className="text-sm font-semibold text-main-500">Market items</p>
               <h2 className="mt-1 text-xl font-bold text-main-950">Commodities</h2>
@@ -489,7 +489,7 @@ export default function CommoditiesPage() {
                   setPage(1);
                 }}
                 placeholder="Search commodities"
-                className="rounded-md border border-main-300 bg-main-100 px-3 py-2 text-sm text-main-900 outline-none placeholder:text-main-500 focus:border-primary-500 focus:bg-main-0"
+                className="rounded-md border border-main-300 bg-main-100 px-3 py-2 text-sm text-main-900 outline-none placeholder:text-main-500 focus:border-primary-500 focus:bg-main-200"
               />
               <select
                 value={categoryFilter}
@@ -497,7 +497,7 @@ export default function CommoditiesPage() {
                   setCategoryFilter(event.target.value);
                   setPage(1);
                 }}
-                className="rounded-md border border-main-300 bg-main-100 px-3 py-2 text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-0"
+                className="rounded-md border border-main-300 bg-main-100 px-3 py-2 text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-200"
               >
                 <option value="">All categories</option>
                 {categories.map((category) => (
@@ -522,7 +522,7 @@ export default function CommoditiesPage() {
           <div className="mt-5 overflow-x-auto">
             <table className="w-full min-w-180 text-left text-sm">
               <thead>
-                <tr className="border-b border-main-200 text-xs font-bold uppercase text-main-500">
+                <tr className="border-b border-main-300 text-xs font-bold uppercase text-main-500">
                   <th className="py-3 pr-4">Name</th>
                   <th className="py-3 pr-4">Unit</th>
                   <th className="py-3 pr-4">Categories</th>
@@ -596,7 +596,7 @@ export default function CommoditiesPage() {
               </tbody>
             </table>
           </div>
-          <div className="mt-4 flex flex-col gap-3 border-t border-main-200 pt-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="mt-4 flex flex-col gap-3 border-t border-main-300 pt-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-2 text-sm text-main-600">
               <span>Rows</span>
               <select
@@ -629,7 +629,7 @@ export default function CommoditiesPage() {
 
         <div className={activeTab === "categories" ? "" : "hidden"}>
           <div>
-            <div className="flex items-center justify-between gap-3 border-b border-main-200 pb-4">
+            <div className="flex items-center justify-between gap-3 border-b border-main-300 pb-4">
               <div>
                 <p className="text-sm font-semibold text-main-500">Grouping</p>
                 <h2 className="mt-1 text-xl font-bold text-main-950">Categories</h2>
@@ -649,7 +649,7 @@ export default function CommoditiesPage() {
             <div className="mt-4 space-y-2">
               {categories.length ? (
                 categories.map((category) => (
-                  <div key={category.category_id} className="rounded-md border border-main-200 bg-main-50 p-3">
+                  <div key={category.category_id} className="rounded-md border border-main-300 bg-main-50 p-3">
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
                         <p className="font-bold text-main-900">{category.name}</p>
@@ -677,7 +677,7 @@ export default function CommoditiesPage() {
                   </div>
                 ))
               ) : (
-                <p className="rounded-md border border-main-200 bg-main-50 px-3 py-6 text-center text-sm text-main-500">
+                <p className="rounded-md border border-main-300 bg-main-50 px-3 py-6 text-center text-sm text-main-500">
                   No categories found.
                 </p>
               )}
@@ -688,7 +688,7 @@ export default function CommoditiesPage() {
 
         <div className={activeTab === "units" ? "" : "hidden"}>
           <div>
-            <div className="flex items-center justify-between gap-3 border-b border-main-200 pb-4">
+            <div className="flex items-center justify-between gap-3 border-b border-main-300 pb-4">
               <div>
                 <p className="text-sm font-semibold text-main-500">Measurements</p>
                 <h2 className="mt-1 text-xl font-bold text-main-950">Units</h2>
@@ -708,7 +708,7 @@ export default function CommoditiesPage() {
             <div className="mt-4 space-y-2">
               {units.length ? (
                 units.map((unit) => (
-                  <div key={unit.unit_id} className="rounded-md border border-main-200 bg-main-50 p-3">
+                  <div key={unit.unit_id} className="rounded-md border border-main-300 bg-main-50 p-3">
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
                         <p className="font-bold text-main-900">{unit.name}</p>
@@ -737,7 +737,7 @@ export default function CommoditiesPage() {
                   </div>
                 ))
               ) : (
-                <p className="rounded-md border border-main-200 bg-main-50 px-3 py-6 text-center text-sm text-main-500">
+                <p className="rounded-md border border-main-300 bg-main-50 px-3 py-6 text-center text-sm text-main-500">
                   No units found.
                 </p>
               )}
@@ -751,10 +751,10 @@ export default function CommoditiesPage() {
         open={Boolean(commodityModal)}
         onClose={() => setCommodityModal(null)}
         size="lg"
-        className="rounded-md border border-main-300 bg-main-0 p-0 shadow-lg"
+        className="rounded-md border border-main-300 bg-main-200 p-0 shadow-lg"
       >
         <form onSubmit={(event) => void handleSaveCommodity(event)}>
-          <div className="flex items-center justify-between border-b border-main-200 px-5 py-4">
+          <div className="flex items-center justify-between border-b border-main-300 px-5 py-4">
             <div>
               <p className="text-sm font-semibold text-main-500">Commodity details</p>
               <h2 className="text-xl font-bold text-main-950">
@@ -795,7 +795,7 @@ export default function CommoditiesPage() {
                   setCommodityFormNotice("");
                 }}
                 required
-                className="mt-2 w-full rounded-md border border-main-300 bg-main-100 px-4 py-2.5 text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-0"
+                className="mt-2 w-full rounded-md border border-main-300 bg-main-100 px-4 py-2.5 text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-200"
               />
             </div>
 
@@ -814,7 +814,7 @@ export default function CommoditiesPage() {
                   setCommodityFormError("");
                   setCommodityFormNotice("");
                 }}
-                className="mt-2 w-full rounded-md border border-main-300 bg-main-100 px-4 py-2.5 text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-0"
+                className="mt-2 w-full rounded-md border border-main-300 bg-main-100 px-4 py-2.5 text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-200"
               >
                 <option value="">Select unit</option>
                 {units.map((unit) => (
@@ -836,7 +836,7 @@ export default function CommoditiesPage() {
                   setCommodityFormNotice("");
                 }}
                 rows={3}
-                className="mt-2 w-full rounded-md border border-main-300 bg-main-100 px-4 py-2.5 text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-0"
+                className="mt-2 w-full rounded-md border border-main-300 bg-main-100 px-4 py-2.5 text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-200"
               />
             </div>
 
@@ -859,7 +859,7 @@ export default function CommoditiesPage() {
                     </label>
                   ))
                 ) : (
-                  <p className="rounded-md border border-main-200 bg-main-50 px-3 py-3 text-sm text-main-500">
+                  <p className="rounded-md border border-main-300 bg-main-50 px-3 py-3 text-sm text-main-500">
                     Create a category first if this commodity needs one.
                   </p>
                 )}
@@ -867,7 +867,7 @@ export default function CommoditiesPage() {
             </div>
           </div>
 
-          <div className="flex justify-end gap-2 border-t border-main-200 px-5 py-4">
+          <div className="flex justify-end gap-2 border-t border-main-300 px-5 py-4">
             <button
               type="button"
               onClick={() => setCommodityModal(null)}
@@ -890,10 +890,10 @@ export default function CommoditiesPage() {
         open={Boolean(categoryModal)}
         onClose={() => setCategoryModal(null)}
         size="lg"
-        className="rounded-md border border-main-300 bg-main-0 p-0 shadow-lg"
+        className="rounded-md border border-main-300 bg-main-200 p-0 shadow-lg"
       >
         <form onSubmit={(event) => void handleSaveCategory(event)}>
-          <div className="flex items-center justify-between border-b border-main-200 px-5 py-4">
+          <div className="flex items-center justify-between border-b border-main-300 px-5 py-4">
             <div>
               <p className="text-sm font-semibold text-main-500">Category details</p>
               <h2 className="text-xl font-bold text-main-950">
@@ -934,7 +934,7 @@ export default function CommoditiesPage() {
                   setCategoryFormNotice("");
                 }}
                 required
-                className="mt-2 w-full rounded-md border border-main-300 bg-main-100 px-4 py-2.5 text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-0"
+                className="mt-2 w-full rounded-md border border-main-300 bg-main-100 px-4 py-2.5 text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-200"
               />
             </div>
 
@@ -949,12 +949,12 @@ export default function CommoditiesPage() {
                   setCategoryFormNotice("");
                 }}
                 rows={3}
-                className="mt-2 w-full rounded-md border border-main-300 bg-main-100 px-4 py-2.5 text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-0"
+                className="mt-2 w-full rounded-md border border-main-300 bg-main-100 px-4 py-2.5 text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-200"
               />
             </div>
           </div>
 
-          <div className="flex justify-end gap-2 border-t border-main-200 px-5 py-4">
+          <div className="flex justify-end gap-2 border-t border-main-300 px-5 py-4">
             <button
               type="button"
               onClick={() => setCategoryModal(null)}
@@ -977,10 +977,10 @@ export default function CommoditiesPage() {
         open={Boolean(unitModal)}
         onClose={() => setUnitModal(null)}
         size="lg"
-        className="rounded-md border border-main-300 bg-main-0 p-0 shadow-lg"
+        className="rounded-md border border-main-300 bg-main-200 p-0 shadow-lg"
       >
         <form onSubmit={(event) => void handleSaveUnit(event)}>
-          <div className="flex items-center justify-between border-b border-main-200 px-5 py-4">
+          <div className="flex items-center justify-between border-b border-main-300 px-5 py-4">
             <div>
               <p className="text-sm font-semibold text-main-500">Unit details</p>
               <h2 className="text-xl font-bold text-main-950">
@@ -1022,7 +1022,7 @@ export default function CommoditiesPage() {
                 }}
                 placeholder="Kilogram"
                 required
-                className="mt-2 w-full rounded-md border border-main-300 bg-main-100 px-4 py-2.5 text-sm text-main-900 outline-none placeholder:text-main-500 focus:border-primary-500 focus:bg-main-0"
+                className="mt-2 w-full rounded-md border border-main-300 bg-main-100 px-4 py-2.5 text-sm text-main-900 outline-none placeholder:text-main-500 focus:border-primary-500 focus:bg-main-200"
               />
             </div>
 
@@ -1038,7 +1038,7 @@ export default function CommoditiesPage() {
                 }}
                 placeholder="Kg"
                 required
-                className="mt-2 w-full rounded-md border border-main-300 bg-main-100 px-4 py-2.5 text-sm text-main-900 outline-none placeholder:text-main-500 focus:border-primary-500 focus:bg-main-0"
+                className="mt-2 w-full rounded-md border border-main-300 bg-main-100 px-4 py-2.5 text-sm text-main-900 outline-none placeholder:text-main-500 focus:border-primary-500 focus:bg-main-200"
               />
             </div>
 
@@ -1053,12 +1053,12 @@ export default function CommoditiesPage() {
                   setUnitFormNotice("");
                 }}
                 rows={3}
-                className="mt-2 w-full rounded-md border border-main-300 bg-main-100 px-4 py-2.5 text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-0"
+                className="mt-2 w-full rounded-md border border-main-300 bg-main-100 px-4 py-2.5 text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-200"
               />
             </div>
           </div>
 
-          <div className="flex justify-end gap-2 border-t border-main-200 px-5 py-4">
+          <div className="flex justify-end gap-2 border-t border-main-300 px-5 py-4">
             <button
               type="button"
               onClick={() => setUnitModal(null)}

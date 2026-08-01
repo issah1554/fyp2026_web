@@ -102,7 +102,7 @@ export default function AdminDashboardPage() {
 
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {summaryCards.map((card) => (
-          <article key={card.label} className="rounded-lg border border-main-200 bg-main-0 p-5 shadow-sm">
+          <article key={card.label} className="rounded-lg border border-main-300 bg-main-200 p-5 shadow-sm">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="text-sm font-semibold text-main-500">{card.label}</p>
@@ -118,8 +118,8 @@ export default function AdminDashboardPage() {
       </section>
 
       <section className="grid gap-6 xl:grid-cols-[1.35fr_0.65fr]">
-        <div className="rounded-lg border border-main-200 bg-main-0 p-5 shadow-sm">
-          <div className="flex flex-col gap-3 border-b border-main-200 pb-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="rounded-lg border border-main-300 bg-main-200 p-5 shadow-sm">
+          <div className="flex flex-col gap-3 border-b border-main-300 pb-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <p className="text-sm font-semibold text-main-500">Today&apos;s collection</p>
               <h2 className="mt-1 text-xl font-bold text-main-950">Market Data Progress</h2>
@@ -136,7 +136,7 @@ export default function AdminDashboardPage() {
           <div className="mt-5 overflow-x-auto">
             <table className="w-full min-w-160 text-left text-sm">
               <thead>
-                <tr className="border-b border-main-200 text-xs font-bold uppercase text-main-500">
+                <tr className="border-b border-main-300 text-xs font-bold uppercase text-main-500">
                   <th className="py-3 pr-4">Market</th>
                   <th className="py-3 pr-4">Commodity</th>
                   <th className="py-3 pr-4">Completion</th>
@@ -178,12 +178,12 @@ export default function AdminDashboardPage() {
           </div>
         </div>
 
-        <div className="rounded-lg border border-main-200 bg-main-0 p-5 shadow-sm">
+        <div className="rounded-lg border border-main-300 bg-main-200 p-5 shadow-sm">
           <p className="text-sm font-semibold text-main-500">Operational alerts</p>
           <h2 className="mt-1 text-xl font-bold text-main-950">Needs Attention</h2>
           <div className="mt-5 space-y-4">
             {alerts.map((alert) => (
-              <article key={alert.title} className="rounded-md border border-main-200 bg-main-50 p-4">
+              <article key={alert.title} className="rounded-md border border-main-300 bg-main-50 p-4">
                 <div className="flex gap-3">
                   <div className="flex size-10 shrink-0 items-center justify-center rounded-md bg-warning-100 text-warning-700">
                     <i className={`bi ${alert.icon}`} aria-hidden="true" />
@@ -200,7 +200,7 @@ export default function AdminDashboardPage() {
       </section>
 
       <section className="grid gap-6 xl:grid-cols-[0.8fr_1.2fr]">
-        <div className="rounded-lg border border-main-200 bg-main-950 p-5 text-main-0 shadow-sm">
+        <div className="rounded-lg border border-main-300 bg-main-950 p-5 text-main-0 shadow-sm">
           <div className="flex items-center justify-between gap-4">
             <div>
               <p className="text-sm font-semibold text-main-300">Analytics health</p>
@@ -227,14 +227,14 @@ export default function AdminDashboardPage() {
           </div>
         </div>
 
-        <div className="rounded-lg border border-main-200 bg-main-0 p-5 shadow-sm">
-          <div className="border-b border-main-200 pb-4">
+        <div className="rounded-lg border border-main-300 bg-main-200 p-5 shadow-sm">
+          <div className="border-b border-main-300 pb-4">
             <p className="text-sm font-semibold text-main-500">Forecast snapshot</p>
             <h2 className="mt-1 text-xl font-bold text-main-950">Commodity Outlook</h2>
           </div>
           <div className="mt-5 grid gap-3 sm:grid-cols-2">
             {forecastRows.map((row) => (
-              <article key={row.commodity} className="rounded-md border border-main-200 bg-main-50 p-4">
+              <article key={row.commodity} className="rounded-md border border-main-300 bg-main-50 p-4">
                 <div className="flex items-start justify-between gap-4">
                   <div>
                     <h3 className="font-bold text-main-950">{row.commodity}</h3>

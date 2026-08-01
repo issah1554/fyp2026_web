@@ -69,7 +69,7 @@ export default function MultiSelect({
       </button>
 
       {open && !disabled ? (
-        <div className="absolute left-0 right-0 z-20 mt-2 max-h-64 overflow-y-auto border border-main-200 bg-main-50 p-2 shadow-xl">
+        <div className="absolute left-0 right-0 z-20 mt-2 max-h-64 overflow-y-auto border border-main-300 bg-main-50 p-2 shadow-xl">
           {options.map((option) => (
             <label
               key={option.value}

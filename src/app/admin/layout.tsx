@@ -18,8 +18,8 @@ export default function AdminLayout({
   return (
     <main className="min-h-screen bg-main-100 text-main-900">
       <div className="flex min-h-screen">
-        <aside className="hidden w-72 border-r border-main-200 bg-main-0 lg:flex lg:flex-col">
-          <div className="flex h-20 items-center gap-3 border-b border-main-200 px-6">
+        <aside className="hidden w-72 border-r border-main-300 bg-main-200 lg:flex lg:flex-col">
+          <div className="flex h-20 items-center gap-3 border-b border-main-300 px-6">
             <span className="flex size-12 items-center justify-center rounded-md bg-primary-100 p-1.5">
               <Image
                 src="/logo.png"
@@ -56,7 +56,7 @@ export default function AdminLayout({
             ))}
           </nav>
 
-          <div className="border-t border-main-200 p-4">
+          <div className="border-t border-main-300 p-4">
             <div className="rounded-md bg-main-100 p-4">
               <p className="text-sm font-bold text-main-950">Data coverage</p>
               <p className="mt-2 text-sm leading-6 text-main-600">
@@ -67,7 +67,7 @@ export default function AdminLayout({
         </aside>
 
         <div className="flex min-w-0 flex-1 flex-col">
-          <header className="sticky top-0 z-40 border-b border-main-200 bg-main-0/95 backdrop-blur-sm">
+          <header className="sticky top-0 z-40 border-b border-main-300 bg-main-200/95 backdrop-blur-sm">
             <div className="flex min-h-20 flex-col gap-4 px-4 py-4 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8">
               <div className="flex items-center justify-between gap-4">
                 <Link href="/admin" className="flex items-center gap-3 lg:hidden">
@@ -98,12 +98,12 @@ export default function AdminLayout({
                   <input
                     type="search"
                     placeholder="Search records"
-                    className="w-full rounded-md border border-main-300 bg-main-50 px-10 py-2.5 text-sm font-medium text-main-900 outline-none placeholder:text-main-500 focus:border-primary-500 focus:bg-main-0"
+                    className="w-full rounded-md border border-main-300 bg-main-50 px-10 py-2.5 text-sm font-medium text-main-900 outline-none placeholder:text-main-500 focus:border-primary-500 focus:bg-main-200"
                   />
                 </div>
                 <button
                   type="button"
-                  className="flex size-11 items-center justify-center rounded-md border border-main-300 bg-main-0 text-main-700 hover:border-primary-400 hover:text-primary-700"
+                  className="flex size-11 items-center justify-center rounded-md border border-main-300 bg-main-200 text-main-700 hover:border-primary-400 hover:text-primary-700"
                   aria-label="Notifications"
                 >
                   <i className="bi bi-bell" aria-hidden="true" />
@@ -114,7 +114,7 @@ export default function AdminLayout({
               </div>
             </div>
 
-            <nav className="flex gap-2 overflow-x-auto border-t border-main-200 px-4 py-3 lg:hidden">
+            <nav className="flex gap-2 overflow-x-auto border-t border-main-300 px-4 py-3 lg:hidden">
               {navigation.map((item) => (
                 <Link
                   key={item.label}

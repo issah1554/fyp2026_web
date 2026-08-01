@@ -230,7 +230,7 @@ export default function MarketIntegrationsPage() {
           const isScraper = source.key === "viwanda";
 
           return (
-            <div key={source.key} className="rounded-md border border-main-200 bg-main-0 p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between">
+            <div key={source.key} className="rounded-md border border-main-300 bg-main-200 p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between">
               <div>
                 <div className="flex items-start justify-between gap-3">
                   <div>
@@ -264,7 +264,7 @@ export default function MarketIntegrationsPage() {
                     </div>
                   )}
                   {isScraper && (
-                    <p className="text-xs text-main-600 bg-main-50 p-2 rounded border border-main-200">
+                    <p className="text-xs text-main-600 bg-main-50 p-2 rounded border border-main-300">
                       Local PDF scraping module for Ministry of Industry and Trade reports.
                     </p>
                   )}
@@ -303,8 +303,8 @@ export default function MarketIntegrationsPage() {
         })}
       </section>
 
-      <section className="rounded-md border border-main-200 bg-main-0 p-5 shadow-sm">
-        <div className="flex flex-col gap-4 border-b border-main-200 pb-5">
+      <section className="rounded-md border border-main-300 bg-main-200 p-5 shadow-sm">
+        <div className="flex flex-col gap-4 border-b border-main-300 pb-5">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex gap-2 border-b border-transparent">
               <button
@@ -343,7 +343,7 @@ export default function MarketIntegrationsPage() {
                   setSelectedSource(e.target.value);
                   setPage(1);
                 }}
-                className="w-full rounded-md border border-main-300 bg-main-100 px-3 py-2 text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-0 transition-all"
+                className="w-full rounded-md border border-main-300 bg-main-100 px-3 py-2 text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-200 transition-all"
               >
                 <option value="">All Integration Sources</option>
                 {sourceCards.map((src) => (
@@ -359,7 +359,7 @@ export default function MarketIntegrationsPage() {
                 value={filterCommodity}
                 onChange={(e) => setFilterCommodity(e.target.value)}
                 placeholder="e.g. Maize, Coffee"
-                className="w-full rounded-md border border-main-300 bg-main-100 px-3 py-2 text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-0 transition-all"
+                className="w-full rounded-md border border-main-300 bg-main-100 px-3 py-2 text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-200 transition-all"
               />
             </div>
 
@@ -370,7 +370,7 @@ export default function MarketIntegrationsPage() {
                 value={filterMarket}
                 onChange={(e) => setFilterMarket(e.target.value)}
                 placeholder="e.g. Dar es Salaam"
-                className="w-full rounded-md border border-main-300 bg-main-100 px-3 py-2 text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-0 transition-all"
+                className="w-full rounded-md border border-main-300 bg-main-100 px-3 py-2 text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-200 transition-all"
               />
             </div>
 
@@ -399,7 +399,7 @@ export default function MarketIntegrationsPage() {
         )}
 
         {!loading && (
-          <div className="mt-4 flex flex-col gap-3 border-t border-main-200 pt-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="mt-4 flex flex-col gap-3 border-t border-main-300 pt-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-2 text-sm text-main-600">
               <span>Rows</span>
               <select
@@ -441,8 +441,8 @@ export default function MarketIntegrationsPage() {
       {/* Raw Payload Modal */}
       {rawPayloadModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-main-950/60 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-2xl rounded-lg border border-main-200 bg-main-0 p-6 shadow-xl flex flex-col max-h-[85vh]">
-            <div className="flex items-center justify-between border-b border-main-200 pb-3">
+          <div className="w-full max-w-2xl rounded-lg border border-main-300 bg-main-200 p-6 shadow-xl flex flex-col max-h-[85vh]">
+            <div className="flex items-center justify-between border-b border-main-300 pb-3">
               <div>
                 <h3 className="text-lg font-bold text-main-950">Raw JSON Payload</h3>
                 <p className="text-xs text-main-500 mt-0.5">
@@ -491,7 +491,7 @@ function LivePricesTable({
     <div className="mt-5 overflow-x-auto">
       <table className="w-full min-w-220 text-left text-sm">
         <thead>
-          <tr className="border-b border-main-200 text-xs font-bold uppercase text-main-500">
+          <tr className="border-b border-main-300 text-xs font-bold uppercase text-main-500">
             <th className="py-3 pr-4">Source</th>
             <th className="py-3 pr-4">Commodity</th>
             <th className="py-3 pr-4">Market</th>
@@ -570,7 +570,7 @@ function StoredPricesTable({ prices }: { prices: MarketPrice[] }) {
     <div className="mt-5 overflow-x-auto">
       <table className="w-full min-w-220 text-left text-sm">
         <thead>
-          <tr className="border-b border-main-200 text-xs font-bold uppercase text-main-500">
+          <tr className="border-b border-main-300 text-xs font-bold uppercase text-main-500">
             <th className="py-3 pr-4">Source</th>
             <th className="py-3 pr-4">Commodity</th>
             <th className="py-3 pr-4">Market</th>
