@@ -272,17 +272,6 @@ export default function RbacPage() {
 
   return (
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 py-4">
-      <section className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <p className="text-sm font-semibold text-main-500">User access</p>
-          <h1 className="text-2xl font-bold text-main-950 sm:text-3xl">RBAC</h1>
-        </div>
-        {activeTab === "roles" && canCreateRoles && <button type="button" onClick={openCreateModal} className="flex w-fit items-center gap-2 rounded-md bg-primary-600 px-4 py-2 text-sm font-bold text-main-0 hover:bg-primary-700">
-          <i className="bi bi-plus-circle" aria-hidden="true" />
-          Add role
-        </button>}
-      </section>
-
       {(pageError || pageNotice) && (
         <div className={`rounded-md border px-4 py-3 text-sm font-semibold ${pageError ? "border-danger-300 bg-danger-100 text-danger-700" : "border-success-300 bg-success-100 text-success-700"}`}>
           {pageError || pageNotice}
@@ -294,9 +283,21 @@ export default function RbacPage() {
       <div className="mt-2">
         <div className={activeTab === "roles" ? "grid gap-6 lg:grid-cols-[18rem_minmax(0,1fr)]" : "hidden"}>
           <aside className="rounded-md border border-main-200 bg-main-100 p-4 shadow-sm">
-            <div className="border-b border-main-200 pb-3">
-              <p className="text-sm font-semibold text-main-500">Role catalog</p>
-              <h2 className="mt-1 text-xl font-bold text-main-950">Roles</h2>
+            <div className="flex items-center justify-between border-b border-main-200 pb-3">
+              <div>
+                <p className="text-sm font-semibold text-main-500">Role catalog</p>
+                <h2 className="mt-1 text-xl font-bold text-main-950">Roles</h2>
+              </div>
+              {canCreateRoles && (
+                <button
+                  type="button"
+                  onClick={openCreateModal}
+                  className="flex items-center gap-2 rounded-md bg-primary-600 px-3 py-1.5 text-xs font-bold text-main-0 hover:bg-primary-700"
+                >
+                  <i className="bi bi-plus-circle" aria-hidden="true" />
+                  Add role
+                </button>
+              )}
             </div>
             <div className="mt-4 space-y-2">
               {loading ? (
