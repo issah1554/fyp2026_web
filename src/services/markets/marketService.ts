@@ -52,11 +52,16 @@ export type MarketPrice = {
   market_id?: string;
   commodity_id?: string;
   market?: Pick<Market, "market_id" | "name" | "code"> | null;
-  commodity?: Pick<Commodity, "commodity_id" | "name" | "unit"> | null;
+  commodity?: Pick<Commodity, "commodity_id" | "name" | "unit" | "unit_detail"> | null;
+  unit?: { unit_id: string; name: string; symbol: string } | null;
+  price_type?: string;
   market_name?: string;
   commodity_name?: string;
   price: number | string;
   price_usd?: number | string | null;
+  quantity?: number | string | null;
+  min_price?: number | string | null;
+  max_price?: number | string | null;
   currency: string;
   source_key?: string;
   source_name?: string;
@@ -67,6 +72,7 @@ export type MarketPrice = {
 export type MarketPriceFormPayload = {
   market_id?: string;
   commodity_id: string;
+  unit_id: string;
   price: number;
   currency: string;
   price_date: string;
@@ -83,17 +89,37 @@ export type MarketPriceListResult = {
 };
 
 export type MarketIntegrationSyncResult = {
+  fetched: number;
+  selected: number;
   created: number;
   updated: number;
   errors: Array<{ source: string; error: string }>;
 };
 
+export type MarketIntegrationUpdateStatus = {
+  source: string;
+  latest_stored_at: string | null;
+  fetched: number;
+  new: number;
+  has_updates: boolean;
+};
+
+export type MarketIntegrationUpdateResult = {
+  sources: MarketIntegrationUpdateStatus[];
+  errors: Array<{ source: string; error: string }>;
+};
+
 export type MarketIntegrationSource = {
-  key: "platform_a" | "platform_b" | "market_officers" | string;
+  key: "platform_a" | "platform_b" | "internal" | string;
   name: string;
+  source_type?: "internal" | "api" | "scraper" | "file" | string;
   base_url: string;
   prices_url: string;
   health_url: string;
+  is_active?: boolean;
+  last_checked_at?: string | null;
+  last_imported_at?: string | null;
+  last_seen_record_at?: string | null;
 };
 
 export type MarketIntegrationHealth = {
@@ -161,7 +187,7 @@ function normalizePagination(meta: Record<string, unknown> | undefined, fallback
   };
 }
 
-function withQuery(path: string, params: Record<string, string | number | undefined>) {
+function withQuery(path: string, params: Record<string, string | number | boolean | undefined>) {
   const query = new URLSearchParams();
   Object.entries(params).forEach(([key, value]) => {
     if (value !== undefined && value !== "") {
@@ -216,7 +242,7 @@ export async function listMarketPrices(
   return { data, pagination: normalizePagination(payload.meta, data.length) };
 }
 
-export async function syncMarketIntegrations(params: { source?: string; commodity?: string; market?: string; limit?: number } = {}) {
+export async function syncMarketIntegrations(params: { source?: string; commodity?: string; market?: string; limit?: number; new_only?: boolean } = {}) {
   const payload = await marketRequest<MarketIntegrationSyncResult>(
     withQuery("/market-integrations/sync", params),
     { method: "POST" },
@@ -224,8 +250,17 @@ export async function syncMarketIntegrations(params: { source?: string; commodit
   );
   return {
     message: payload.message ?? "Market integrations synced successfully.",
-    result: payload.data ?? { created: 0, updated: 0, errors: [] },
+    result: payload.data ?? { fetched: 0, selected: 0, created: 0, updated: 0, errors: [] },
   };
+}
+
+export async function checkMarketIntegrationUpdates(params: { source?: string; commodity?: string; market?: string; limit?: number } = {}) {
+  const payload = await marketRequest<MarketIntegrationUpdateResult>(
+    withQuery("/market-integrations/updates", params),
+    {},
+    "Could not check source updates.",
+  );
+  return payload.data ?? { sources: [], errors: [] };
 }
 
 export async function listMarketIntegrationSources() {
@@ -339,4 +374,3 @@ export async function listStoredIntegrationPrices(params: { source?: string; com
   const data = payload.data ?? [];
   return { data, pagination: normalizePagination(payload.meta, data.length) };
 }
-

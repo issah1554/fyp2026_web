@@ -45,6 +45,7 @@ type MarketFormState = {
 type PriceFormState = {
   market_id: string;
   commodity_id: string;
+  unit_id: string;
   price: string;
   currency: string;
   price_date: string;
@@ -55,7 +56,7 @@ type PriceModalState =
   | { mode: "create"; price: null; marketId?: string }
   | { mode: "edit"; price: MarketPrice; marketId?: string };
 type DetailTab = "details" | "prices" | "latest";
-type SourceFilter = "" | "platform_a" | "platform_b" | "platform_c";
+type SourceFilter = "" | "platform_a" | "platform_b" | "internal" | "viwanda";
 
 const emptyPagination: PaginationMeta = {
   page: 1,
@@ -82,8 +83,9 @@ const today = new Date().toISOString().slice(0, 10);
 const emptyPriceForm: PriceFormState = {
   market_id: "",
   commodity_id: "",
+  unit_id: "",
   price: "",
-  currency: "UGX",
+  currency: "TZS",
   price_date: today,
 };
 
@@ -91,7 +93,8 @@ const integrationSources: Array<{ value: SourceFilter; label: string }> = [
   { value: "", label: "All sources" },
   { value: "platform_a", label: "Platform A" },
   { value: "platform_b", label: "Platform B" },
-  { value: "platform_c", label: "Platform C" },
+  { value: "internal", label: "Internal System" },
+  { value: "viwanda", label: "Viwanda Scraper" },
 ];
 
 function asNumberOrNull(value: string) {
@@ -117,8 +120,9 @@ function normalizePriceForm(form: PriceFormState): MarketPriceFormPayload {
   return {
     market_id: form.market_id,
     commodity_id: form.commodity_id,
+    unit_id: form.unit_id,
     price: Number(form.price),
-    currency: form.currency.trim() || "UGX",
+    currency: form.currency.trim() || "TZS",
     price_date: form.price_date,
   };
 }
@@ -129,7 +133,7 @@ function formatDate(value?: string) {
   return Number.isNaN(date.getTime()) ? value : date.toLocaleDateString();
 }
 
-function formatMoney(price: string | number, currency = "UGX") {
+function formatMoney(price: string | number, currency = "TZS") {
   return `${currency} ${Number(price).toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
 }
 
@@ -355,8 +359,9 @@ export default function MarketsPage() {
     setPriceForm({
       market_id: price.market_id ?? price.market?.market_id ?? marketId ?? "",
       commodity_id: price.commodity_id ?? price.commodity?.commodity_id ?? "",
+      unit_id: price.unit?.unit_id ?? price.commodity?.unit_detail?.unit_id ?? "",
       price: String(price.price ?? ""),
-      currency: price.currency ?? "UGX",
+      currency: price.currency ?? "TZS",
       price_date: price.price_date?.slice(0, 10) ?? today,
     });
     setPriceModal({ mode: "edit", price, marketId });
@@ -406,6 +411,7 @@ export default function MarketsPage() {
         priceModal.mode === "create" && priceModal.marketId
           ? await createNestedMarketPrice(priceModal.marketId, {
             commodity_id: payload.commodity_id,
+            unit_id: payload.unit_id,
             price: payload.price,
             currency: payload.currency,
             price_date: payload.price_date,
@@ -413,6 +419,7 @@ export default function MarketsPage() {
           : priceModal.mode === "create"
             ? await createNestedMarketPrice(payload.market_id ?? "", {
               commodity_id: payload.commodity_id,
+              unit_id: payload.unit_id,
               price: payload.price,
               currency: payload.currency,
               price_date: payload.price_date,
@@ -490,6 +497,13 @@ export default function MarketsPage() {
       </div>
     );
   }
+
+  const selectedPriceCommodity = commodities.find((commodity) => commodity.commodity_id === priceForm.commodity_id);
+  const selectedPriceUnits = selectedPriceCommodity?.units?.length
+    ? selectedPriceCommodity.units
+    : selectedPriceCommodity?.unit_detail
+      ? [selectedPriceCommodity.unit_detail]
+      : [];
 
   return (
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 py-4">
@@ -706,7 +720,12 @@ export default function MarketsPage() {
           <div className="grid gap-4 px-5 py-5 sm:grid-cols-2">
             <FormAlert error={formError} notice={formNotice} />
             <Field label="Market"><select required disabled={Boolean(priceModal?.marketId && priceModal.mode === "create")} value={priceForm.market_id} onChange={(event) => setPriceForm((current) => ({ ...current, market_id: event.target.value }))} className="mt-2 w-full rounded-md border border-main-300 bg-main-100 px-4 py-2.5 text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-100 disabled:opacity-70"><option value="">Select market</option>{markets.map((market) => <option key={market.market_id} value={market.market_id}>{market.name}</option>)}</select></Field>
-            <Field label="Commodity"><select required value={priceForm.commodity_id} onChange={(event) => setPriceForm((current) => ({ ...current, commodity_id: event.target.value }))} className="mt-2 w-full rounded-md border border-main-300 bg-main-100 px-4 py-2.5 text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-100"><option value="">Select commodity</option>{commodities.map((commodity) => <option key={commodity.commodity_id} value={commodity.commodity_id}>{commodity.name}</option>)}</select></Field>
+            <Field label="Commodity"><select required value={priceForm.commodity_id} onChange={(event) => {
+              const commodity = commodities.find((item) => item.commodity_id === event.target.value);
+              const defaultUnitId = commodity?.unit_detail?.unit_id ?? commodity?.units?.[0]?.unit_id ?? "";
+              setPriceForm((current) => ({ ...current, commodity_id: event.target.value, unit_id: defaultUnitId }));
+            }} className="mt-2 w-full rounded-md border border-main-300 bg-main-100 px-4 py-2.5 text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-100"><option value="">Select commodity</option>{commodities.map((commodity) => <option key={commodity.commodity_id} value={commodity.commodity_id}>{commodity.name}</option>)}</select></Field>
+            <Field label="Unit"><select required value={priceForm.unit_id} onChange={(event) => setPriceForm((current) => ({ ...current, unit_id: event.target.value }))} disabled={!selectedPriceUnits.length} className="mt-2 w-full rounded-md border border-main-300 bg-main-100 px-4 py-2.5 text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-100 disabled:opacity-70"><option value="">{selectedPriceCommodity ? "Select unit" : "Select commodity first"}</option>{selectedPriceUnits.map((unit) => <option key={unit.unit_id} value={unit.unit_id}>{unit.name} - {unit.symbol}</option>)}</select></Field>
             <Field label="Price"><input required type="number" min="0" step="0.01" value={priceForm.price} onChange={(event) => setPriceForm((current) => ({ ...current, price: event.target.value }))} className="mt-2 w-full rounded-md border border-main-300 bg-main-100 px-4 py-2.5 text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-100" /></Field>
             <Field label="Currency"><input required value={priceForm.currency} onChange={(event) => setPriceForm((current) => ({ ...current, currency: event.target.value.toUpperCase() }))} className="mt-2 w-full rounded-md border border-main-300 bg-main-100 px-4 py-2.5 text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-100" /></Field>
             <Field label="Price date"><input required type="date" value={priceForm.price_date} onChange={(event) => setPriceForm((current) => ({ ...current, price_date: event.target.value }))} className="mt-2 w-full rounded-md border border-main-300 bg-main-100 px-4 py-2.5 text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-100" /></Field>

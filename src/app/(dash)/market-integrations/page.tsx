@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
+  checkMarketIntegrationUpdates,
   checkMarketIntegrationHealth,
   listMarketIntegrationSources,
   listLivePrices,
@@ -9,14 +10,15 @@ import {
   syncMarketIntegrations,
   type MarketIntegrationHealth,
   type MarketIntegrationSource,
+  type MarketIntegrationUpdateStatus,
   type MarketPrice,
   type NormalizedMarketPrice,
   type PaginationMeta,
 } from "@/src/services/markets/marketService";
 
-type SourceKey = "platform_a" | "platform_b" | "market_officers" | "viwanda";
+type SourceKey = "platform_a" | "platform_b" | "internal" | "viwanda";
 
-const sourceKeys: SourceKey[] = ["platform_a", "platform_b", "market_officers", "viwanda"];
+const sourceKeys: SourceKey[] = ["platform_a", "platform_b", "internal", "viwanda"];
 
 const emptyPagination: PaginationMeta = {
   page: 1,
@@ -46,6 +48,20 @@ function healthFor(source: MarketIntegrationSource, health: MarketIntegrationHea
   return health.find((item) => item.source === source.key);
 }
 
+function isLocalSource(sourceKey: string) {
+  return sourceKey === "internal";
+}
+
+function serviceLabel(source: MarketIntegrationSource) {
+  if (source.base_url) return source.base_url;
+  if (source.key === "internal") return "Local database";
+  return "Not configured";
+}
+
+function updateFor(source: MarketIntegrationSource, updates: MarketIntegrationUpdateStatus[]) {
+  return updates.find((item) => item.source === source.key);
+}
+
 export default function MarketIntegrationsPage() {
   const [sources, setSources] = useState<MarketIntegrationSource[]>([]);
   const [health, setHealth] = useState<MarketIntegrationHealth[]>([]);
@@ -63,7 +79,9 @@ export default function MarketIntegrationsPage() {
 
   const [loading, setLoading] = useState(true);
   const [checkingHealth, setCheckingHealth] = useState(false);
+  const [checkingUpdates, setCheckingUpdates] = useState<string>("");
   const [syncingSource, setSyncingSource] = useState<string>("");
+  const [updates, setUpdates] = useState<MarketIntegrationUpdateStatus[]>([]);
   
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
@@ -105,6 +123,26 @@ export default function MarketIntegrationsPage() {
     }
   }, []);
 
+  const loadUpdates = useCallback(async (source?: string) => {
+    setCheckingUpdates(source ?? "all");
+    setError("");
+    try {
+      const result = await checkMarketIntegrationUpdates({ source, limit: 500 });
+      setUpdates((current) => {
+        if (!source) return result.sources;
+        const remaining = current.filter((item) => item.source !== source);
+        return [...remaining, ...result.sources];
+      });
+      if (result.errors.length) {
+        setError(result.errors.map((item) => `${sourceLabel(item.source)}: ${item.error}`).join(" "));
+      }
+    } catch (updateError) {
+      setError(updateError instanceof Error ? updateError.message : "Could not check source updates.");
+    } finally {
+      setCheckingUpdates("");
+    }
+  }, []);
+
   const loadData = useCallback(async () => {
     setLoading(true);
     setError("");
@@ -137,7 +175,7 @@ export default function MarketIntegrationsPage() {
     let mounted = true;
     const timeout = window.setTimeout(() => {
       setLoading(true);
-      Promise.all([loadSources(), loadHealth(), loadData()])
+      Promise.all([loadSources(), loadHealth(), loadUpdates(), loadData()])
         .catch((loadError) => {
           if (mounted) setError(loadError instanceof Error ? loadError.message : "Could not load data.");
         })
@@ -149,23 +187,24 @@ export default function MarketIntegrationsPage() {
       mounted = false;
       window.clearTimeout(timeout);
     };
-  }, [loadSources, loadHealth, loadData]);
+  }, [loadSources, loadHealth, loadUpdates, loadData]);
 
   const syncSource = async (source?: string) => {
     setSyncingSource(source ?? "all");
     setNotice("");
     setError("");
     try {
-      const response = await syncMarketIntegrations({ source, limit: 200 });
+      const response = await syncMarketIntegrations({ source, limit: 500, new_only: true });
       const errorCount = response.result.errors.length;
       setNotice(
-        `${response.message} Created: ${response.result.created}. Updated: ${response.result.updated}.${
+        `${response.message} Fetched: ${response.result.fetched}. New selected: ${response.result.selected}. Created: ${response.result.created}. Updated: ${response.result.updated}.${
           errorCount ? ` Errors: ${errorCount}.` : ""
         }`
       );
       setPage(1);
       await loadData();
       await loadHealth();
+      await loadUpdates(source);
     } catch (syncError) {
       setError(syncError instanceof Error ? syncError.message : "Could not sync source data.");
     } finally {
@@ -202,12 +241,21 @@ export default function MarketIntegrationsPage() {
           </button>
           <button
             type="button"
+            onClick={() => void loadUpdates()}
+            disabled={Boolean(checkingUpdates)}
+            className="flex items-center gap-2 rounded-md border border-main-300 bg-main-100 px-4 py-2 text-sm font-bold text-main-800 hover:border-primary-300 hover:text-primary-700 disabled:cursor-not-allowed disabled:opacity-60 transition-all cursor-pointer"
+          >
+            <i className={`bi ${checkingUpdates === "all" ? "bi-arrow-repeat animate-spin" : "bi-radar"}`} />
+            {checkingUpdates === "all" ? "Checking..." : "Check Updates"}
+          </button>
+          <button
+            type="button"
             onClick={() => void syncSource()}
             disabled={Boolean(syncingSource)}
             className="flex items-center gap-2 rounded-md bg-primary-600 px-4 py-2 text-sm font-bold text-main-0 hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-60 transition-all cursor-pointer"
           >
             <i className={`bi ${syncingSource === "all" ? "bi-arrow-repeat animate-spin" : "bi-cloud-download"}`} />
-            {syncingSource === "all" ? "Syncing..." : "Sync All Sources"}
+            {syncingSource === "all" ? "Importing..." : "Import New"}
           </button>
         </div>
       </section>
@@ -225,9 +273,11 @@ export default function MarketIntegrationsPage() {
       <section className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {sourceCards.map((source) => {
           const sourceHealth = healthFor(source, health);
-          const isHealthy = sourceHealth?.ok === true;
+          const isLocal = isLocalSource(source.key);
+          const isHealthy = sourceHealth?.ok === true || (!sourceHealth && isLocal);
           const isUnhealthy = sourceHealth?.ok === false;
           const isScraper = source.key === "viwanda";
+          const sourceUpdate = updateFor(source, updates);
 
           return (
             <div key={source.key} className="rounded-md border border-main-200 bg-main-100 p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between">
@@ -246,7 +296,7 @@ export default function MarketIntegrationsPage() {
                         : "bg-main-200 text-main-700"
                     }`}
                   >
-                    {isHealthy ? "Online" : isUnhealthy ? "Offline" : "Unknown"}
+                    {isHealthy ? (isLocal ? "Local" : "Online") : isUnhealthy ? "Offline" : "Unknown"}
                   </span>
                 </div>
                 
@@ -254,7 +304,7 @@ export default function MarketIntegrationsPage() {
                   <div>
                     <p className="font-bold text-main-500">Service URL</p>
                     <p className="break-all text-main-800 font-mono mt-0.5">
-                      {source.base_url || "Not configured"}
+                      {serviceLabel(source)}
                     </p>
                   </div>
                   {!isScraper && source.prices_url && (
@@ -265,7 +315,7 @@ export default function MarketIntegrationsPage() {
                   )}
                   {isScraper && (
                     <p className="text-xs text-main-600 bg-main-50 p-2 rounded border border-main-200">
-                      Local PDF scraping module for Ministry of Industry and Trade reports.
+                      External PDF scraping source for Ministry of Industry and Trade reports.
                     </p>
                   )}
                   {sourceHealth?.error && (
@@ -273,29 +323,52 @@ export default function MarketIntegrationsPage() {
                       {sourceHealth.error}
                     </p>
                   )}
+                  {sourceUpdate && (
+                    <div className="grid grid-cols-2 gap-2 rounded-md border border-main-200 bg-main-50 p-2">
+                      <div>
+                        <p className="font-bold text-main-500">Latest stored</p>
+                        <p className="mt-0.5 text-main-800">{formatDate(sourceUpdate.latest_stored_at)}</p>
+                      </div>
+                      <div>
+                        <p className="font-bold text-main-500">New rows</p>
+                        <p className={`mt-0.5 font-bold ${sourceUpdate.has_updates ? "text-success-700" : "text-main-800"}`}>
+                          {sourceUpdate.new} / {sourceUpdate.fetched}
+                        </p>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 
-              <div className="mt-5 flex gap-2">
+              <div className="mt-5 grid grid-cols-3 gap-2">
                 <button
                   type="button"
                   onClick={() => {
                     setSelectedSource(source.key);
                     setPage(1);
                   }}
-                  className="flex flex-1 items-center justify-center gap-1.5 rounded border border-main-300 bg-main-100 py-1.5 text-xs font-bold text-main-800 hover:border-primary-300 hover:text-primary-700 transition-all cursor-pointer"
+                  className="flex items-center justify-center gap-1.5 rounded border border-main-300 bg-main-100 py-1.5 text-xs font-bold text-main-800 hover:border-primary-300 hover:text-primary-700 transition-all cursor-pointer"
                 >
                   <i className="bi bi-search" />
                   Feed
                 </button>
                 <button
                   type="button"
+                  onClick={() => void loadUpdates(source.key)}
+                  disabled={Boolean(checkingUpdates)}
+                  className="flex items-center justify-center gap-1.5 rounded border border-main-300 bg-main-100 py-1.5 text-xs font-bold text-main-800 hover:border-primary-300 hover:text-primary-700 disabled:cursor-not-allowed disabled:opacity-60 transition-all cursor-pointer"
+                >
+                  <i className={`bi ${checkingUpdates === source.key ? "bi-arrow-repeat animate-spin" : "bi-radar"}`} />
+                  Check
+                </button>
+                <button
+                  type="button"
                   onClick={() => void syncSource(source.key)}
                   disabled={Boolean(syncingSource)}
-                  className="flex flex-1 items-center justify-center gap-1.5 rounded bg-primary-600 py-1.5 text-xs font-bold text-main-0 hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-60 transition-all cursor-pointer"
+                  className="flex items-center justify-center gap-1.5 rounded bg-primary-600 py-1.5 text-xs font-bold text-main-0 hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-60 transition-all cursor-pointer"
                 >
                   <i className={`bi ${syncingSource === source.key ? "bi-arrow-repeat animate-spin" : "bi-cloud-download"}`} />
-                  Sync
+                  Import
                 </button>
               </div>
             </div>

@@ -29,7 +29,6 @@ export type CommodityUnit = {
   unit_id: string;
   name: string;
   symbol: string;
-  description: string;
   created_at: string;
 };
 
@@ -38,16 +37,14 @@ export type Commodity = {
   name: string;
   unit: string;
   unit_detail: CommodityUnit | null;
-  description: string;
+  units: CommodityUnit[];
   categories: CommodityCategory[];
   created_at: string;
 };
 
 export type CommodityFormPayload = {
   name: string;
-  unit: string;
   unit_id?: string | null;
-  description: string;
   category_ids: string[];
 };
 
@@ -59,7 +56,6 @@ export type CategoryFormPayload = {
 export type UnitFormPayload = {
   name: string;
   symbol: string;
-  description: string;
 };
 
 export type CommodityTotals = {

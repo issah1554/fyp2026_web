@@ -2,19 +2,21 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
+  checkMarketIntegrationUpdates,
   checkMarketIntegrationHealth,
   listMarketIntegrationSources,
   listMarketPrices,
   syncMarketIntegrations,
   type MarketIntegrationHealth,
   type MarketIntegrationSource,
+  type MarketIntegrationUpdateStatus,
   type MarketPrice,
   type PaginationMeta,
 } from "@/src/services/markets/marketService";
 
-type SourceKey = "platform_a" | "platform_b" | "platform_c";
+type SourceKey = "platform_a" | "platform_b" | "internal" | "viwanda";
 
-const sourceKeys: SourceKey[] = ["platform_a", "platform_b", "platform_c"];
+const sourceKeys: SourceKey[] = ["platform_a", "platform_b", "internal", "viwanda"];
 
 const emptyPagination: PaginationMeta = {
   page: 1,
@@ -44,6 +46,20 @@ function healthFor(source: MarketIntegrationSource, health: MarketIntegrationHea
   return health.find((item) => item.source === source.key);
 }
 
+function isLocalSource(sourceKey: string) {
+  return sourceKey === "internal";
+}
+
+function serviceLabel(source: MarketIntegrationSource) {
+  if (source.base_url) return source.base_url;
+  if (source.key === "internal") return "Local database";
+  return "Not configured";
+}
+
+function updateFor(source: MarketIntegrationSource, updates: MarketIntegrationUpdateStatus[]) {
+  return updates.find((item) => item.source === source.key);
+}
+
 export default function DataSourcesPage() {
   const [sources, setSources] = useState<MarketIntegrationSource[]>([]);
   const [health, setHealth] = useState<MarketIntegrationHealth[]>([]);
@@ -54,7 +70,9 @@ export default function DataSourcesPage() {
   const [pageSize, setPageSize] = useState(10);
   const [loading, setLoading] = useState(true);
   const [checkingHealth, setCheckingHealth] = useState(false);
+  const [checkingUpdates, setCheckingUpdates] = useState<string>("");
   const [syncingSource, setSyncingSource] = useState<string>("");
+  const [updates, setUpdates] = useState<MarketIntegrationUpdateStatus[]>([]);
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
 
@@ -86,6 +104,25 @@ export default function DataSourcesPage() {
     }
   }, []);
 
+  const loadUpdates = useCallback(async (source?: string) => {
+    setCheckingUpdates(source ?? "all");
+    setError("");
+    try {
+      const result = await checkMarketIntegrationUpdates({ source, limit: 500 });
+      setUpdates((current) => {
+        if (!source) return result.sources;
+        return [...current.filter((item) => item.source !== source), ...result.sources];
+      });
+      if (result.errors.length) {
+        setError(result.errors.map((item) => `${sourceLabel(item.source)}: ${item.error}`).join(" "));
+      }
+    } catch (updateError) {
+      setError(updateError instanceof Error ? updateError.message : "Could not check source updates.");
+    } finally {
+      setCheckingUpdates("");
+    }
+  }, []);
+
   const loadPrices = useCallback(async () => {
     const result = await listMarketPrices({
       source_key: selectedSource,
@@ -101,7 +138,7 @@ export default function DataSourcesPage() {
     const timeout = window.setTimeout(() => {
       setLoading(true);
       setError("");
-      Promise.all([loadSources(), loadHealth(), loadPrices()])
+      Promise.all([loadSources(), loadHealth(), loadUpdates(), loadPrices()])
         .catch((loadError) => {
           if (mounted) setError(loadError instanceof Error ? loadError.message : "Could not load source data.");
         })
@@ -113,17 +150,17 @@ export default function DataSourcesPage() {
       mounted = false;
       window.clearTimeout(timeout);
     };
-  }, [loadHealth, loadPrices, loadSources]);
+  }, [loadHealth, loadPrices, loadSources, loadUpdates]);
 
   const syncSource = async (source?: string) => {
     setSyncingSource(source ?? "all");
     setNotice("");
     setError("");
     try {
-      const response = await syncMarketIntegrations({ source, limit: 100 });
+      const response = await syncMarketIntegrations({ source, limit: 500, new_only: true });
       const errorCount = response.result.errors.length;
-      setNotice(`${response.message} Created: ${response.result.created}. Updated: ${response.result.updated}.${errorCount ? ` Errors: ${errorCount}.` : ""}`);
-      await Promise.all([loadPrices(), loadHealth()]);
+      setNotice(`${response.message} Fetched: ${response.result.fetched}. New selected: ${response.result.selected}. Created: ${response.result.created}. Updated: ${response.result.updated}.${errorCount ? ` Errors: ${errorCount}.` : ""}`);
+      await Promise.all([loadPrices(), loadHealth(), loadUpdates(source)]);
     } catch (syncError) {
       setError(syncError instanceof Error ? syncError.message : "Could not sync source data.");
     } finally {
@@ -143,9 +180,13 @@ export default function DataSourcesPage() {
             <i className={`bi ${checkingHealth ? "bi-arrow-repeat" : "bi-heart-pulse"}`} />
             {checkingHealth ? "Checking..." : "Check health"}
           </button>
+          <button type="button" onClick={() => void loadUpdates()} disabled={Boolean(checkingUpdates)} className="flex items-center gap-2 rounded-md border border-main-300 bg-main-100 px-4 py-2 text-sm font-bold text-main-800 hover:border-primary-300 hover:text-primary-700 disabled:cursor-not-allowed disabled:opacity-60">
+            <i className={`bi ${checkingUpdates === "all" ? "bi-arrow-repeat" : "bi-radar"}`} />
+            {checkingUpdates === "all" ? "Checking..." : "Check updates"}
+          </button>
           <button type="button" onClick={() => void syncSource()} disabled={Boolean(syncingSource)} className="flex items-center gap-2 rounded-md bg-primary-600 px-4 py-2 text-sm font-bold text-main-0 hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-60">
             <i className={`bi ${syncingSource === "all" ? "bi-arrow-repeat" : "bi-cloud-download"}`} />
-            {syncingSource === "all" ? "Syncing..." : "Sync all"}
+            {syncingSource === "all" ? "Importing..." : "Import new"}
           </button>
         </div>
       </section>
@@ -155,8 +196,10 @@ export default function DataSourcesPage() {
       <section className="grid gap-4 lg:grid-cols-3">
         {sourceCards.map((source) => {
           const sourceHealth = healthFor(source, health);
-          const isHealthy = sourceHealth?.ok === true;
+          const isLocal = isLocalSource(source.key);
+          const isHealthy = sourceHealth?.ok === true || (!sourceHealth && isLocal);
           const isUnhealthy = sourceHealth?.ok === false;
+          const sourceUpdate = updateFor(source, updates);
           return (
             <div key={source.key} className="rounded-md border border-main-200 bg-main-100 p-5 shadow-sm">
               <div className="flex items-start justify-between gap-3">
@@ -164,16 +207,18 @@ export default function DataSourcesPage() {
                   <p className="text-sm font-semibold text-main-500">{source.key}</p>
                   <h2 className="mt-1 text-xl font-bold text-main-950">{source.name}</h2>
                 </div>
-                <span className={`rounded-md px-2 py-1 text-xs font-bold ${isHealthy ? "bg-success-100 text-success-700" : isUnhealthy ? "bg-danger-100 text-danger-700" : "bg-main-200 text-main-700"}`}>{isHealthy ? "Online" : isUnhealthy ? "Offline" : "Unknown"}</span>
+                <span className={`rounded-md px-2 py-1 text-xs font-bold ${isHealthy ? "bg-success-100 text-success-700" : isUnhealthy ? "bg-danger-100 text-danger-700" : "bg-main-200 text-main-700"}`}>{isHealthy ? (isLocal ? "Local" : "Online") : isUnhealthy ? "Offline" : "Unknown"}</span>
               </div>
               <div className="mt-4 space-y-2 text-sm">
-                <div><p className="font-bold text-main-600">Base URL</p><p className="break-all text-main-900">{source.base_url || "Not configured"}</p></div>
+                <div><p className="font-bold text-main-600">Base URL</p><p className="break-all text-main-900">{serviceLabel(source)}</p></div>
                 <div><p className="font-bold text-main-600">Prices endpoint</p><p className="break-all text-main-900">{source.prices_url || "Not configured"}</p></div>
                 {sourceHealth?.error && <p className="rounded-md border border-danger-200 bg-danger-100 px-3 py-2 text-danger-700">{sourceHealth.error}</p>}
+                {sourceUpdate && <div className="grid grid-cols-2 gap-2 rounded-md border border-main-200 bg-main-50 p-2 text-xs"><div><p className="font-bold text-main-600">Latest stored</p><p className="mt-1 text-main-800">{formatDate(sourceUpdate.latest_stored_at ?? undefined)}</p></div><div><p className="font-bold text-main-600">New rows</p><p className={`mt-1 font-bold ${sourceUpdate.has_updates ? "text-success-700" : "text-main-800"}`}>{sourceUpdate.new} / {sourceUpdate.fetched}</p></div></div>}
               </div>
-              <div className="mt-5 flex gap-2">
+              <div className="mt-5 grid grid-cols-3 gap-2">
                 <button type="button" onClick={() => { setSelectedSource(source.key as SourceKey); setPage(1); }} className="flex flex-1 items-center justify-center gap-2 rounded-md border border-main-300 bg-main-100 px-3 py-2 text-sm font-bold text-main-800 hover:border-primary-300 hover:text-primary-700"><i className="bi bi-table" />View rows</button>
-                <button type="button" onClick={() => void syncSource(source.key)} disabled={Boolean(syncingSource)} className="flex flex-1 items-center justify-center gap-2 rounded-md bg-primary-600 px-3 py-2 text-sm font-bold text-main-0 hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-60"><i className={`bi ${syncingSource === source.key ? "bi-arrow-repeat" : "bi-cloud-download"}`} />{syncingSource === source.key ? "Syncing" : "Sync"}</button>
+                <button type="button" onClick={() => void loadUpdates(source.key)} disabled={Boolean(checkingUpdates)} className="flex items-center justify-center gap-2 rounded-md border border-main-300 bg-main-100 px-3 py-2 text-sm font-bold text-main-800 hover:border-primary-300 hover:text-primary-700 disabled:cursor-not-allowed disabled:opacity-60"><i className={`bi ${checkingUpdates === source.key ? "bi-arrow-repeat" : "bi-radar"}`} />Check</button>
+                <button type="button" onClick={() => void syncSource(source.key)} disabled={Boolean(syncingSource)} className="flex items-center justify-center gap-2 rounded-md bg-primary-600 px-3 py-2 text-sm font-bold text-main-0 hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-60"><i className={`bi ${syncingSource === source.key ? "bi-arrow-repeat" : "bi-cloud-download"}`} />{syncingSource === source.key ? "Importing" : "Import"}</button>
               </div>
             </div>
           );

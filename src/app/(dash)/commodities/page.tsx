@@ -30,9 +30,7 @@ import {
 
 type CommodityFormState = {
   name: string;
-  unit: string;
   unit_id: string;
-  description: string;
   category_ids: string[];
 };
 
@@ -44,7 +42,6 @@ type CategoryFormState = {
 type UnitFormState = {
   name: string;
   symbol: string;
-  description: string;
 };
 
 type CommodityModalState =
@@ -69,9 +66,7 @@ const catalogTabs: HorizontalTab<CatalogTab>[] = [
 
 const emptyCommodityForm: CommodityFormState = {
   name: "",
-  unit: "",
   unit_id: "",
-  description: "",
   category_ids: [],
 };
 
@@ -83,15 +78,12 @@ const emptyCategoryForm: CategoryFormState = {
 const emptyUnitForm: UnitFormState = {
   name: "",
   symbol: "",
-  description: "",
 };
 
 function normalizeCommodityForm(form: CommodityFormState): CommodityFormPayload {
   return {
     name: form.name.trim(),
-    unit: form.unit.trim(),
     unit_id: form.unit_id || null,
-    description: form.description.trim(),
     category_ids: form.category_ids,
   };
 }
@@ -243,9 +235,7 @@ export default function CommoditiesPage() {
   const openEditCommodityModal = (commodity: Commodity) => {
     setCommodityForm({
       name: commodity.name,
-      unit: commodity.unit,
       unit_id: commodity.unit_detail?.unit_id ?? "",
-      description: commodity.description,
       category_ids: commodity.categories.map((category) => category.category_id),
     });
     setCommodityModal({ mode: "edit", commodity });
@@ -271,7 +261,6 @@ export default function CommoditiesPage() {
     setUnitForm({
       name: unit.name,
       symbol: unit.symbol,
-      description: unit.description,
     });
     setUnitModal({ mode: "edit", unit });
     setUnitFormError("");
@@ -353,7 +342,6 @@ export default function CommoditiesPage() {
       const payload = {
         name: unitForm.name.trim(),
         symbol: unitForm.symbol.trim(),
-        description: unitForm.description.trim(),
       };
       const result =
         unitModal.mode === "create"
@@ -544,9 +532,6 @@ export default function CommoditiesPage() {
                       <tr key={commodity.commodity_id} className="hover:bg-main-50">
                         <td className="py-4 pr-4">
                           <p className="font-bold text-main-900">{commodity.name}</p>
-                          {commodity.description && (
-                            <p className="mt-1 line-clamp-1 text-xs text-main-500">{commodity.description}</p>
-                          )}
                         </td>
                         <td className="py-4 pr-4 text-main-700">{commodity.unit || "None"}</td>
                         <td className="py-4 pr-4">
@@ -712,7 +697,6 @@ export default function CommoditiesPage() {
                         <div className="min-w-0">
                           <p className="font-bold text-main-900">{unit.name}</p>
                           <p className="mt-1 font-mono text-xs font-bold text-accent-700">{unit.symbol}</p>
-                          {unit.description && <p className="mt-1 line-clamp-2 text-xs text-main-500">{unit.description}</p>}
                         </div>
                         {(canUpdateUnits || canDeleteUnits) && <div className="flex shrink-0 gap-1">
                           {canUpdateUnits && <button
@@ -803,11 +787,9 @@ export default function CommoditiesPage() {
                 id="commodity-unit"
                 value={commodityForm.unit_id}
                 onChange={(event) => {
-                  const selectedUnit = units.find((unit) => unit.unit_id === event.target.value);
                   setCommodityForm((current) => ({
                     ...current,
                     unit_id: event.target.value,
-                    unit: selectedUnit?.symbol ?? "",
                   }));
                   setCommodityFormError("");
                   setCommodityFormNotice("");
@@ -821,21 +803,6 @@ export default function CommoditiesPage() {
                   </option>
                 ))}
               </select>
-            </div>
-
-            <div>
-              <label htmlFor="commodity-description" className="text-sm font-bold text-main-900">Description</label>
-              <textarea
-                id="commodity-description"
-                value={commodityForm.description}
-                onChange={(event) => {
-                  setCommodityForm((current) => ({ ...current, description: event.target.value }));
-                  setCommodityFormError("");
-                  setCommodityFormNotice("");
-                }}
-                rows={3}
-                className="mt-2 w-full rounded-md border border-main-300 bg-main-100 px-4 py-2.5 text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-100"
-              />
             </div>
 
             <div>
@@ -1038,20 +1005,6 @@ export default function CommoditiesPage() {
               />
             </div>
 
-            <div>
-              <label htmlFor="unit-description" className="text-sm font-bold text-main-900">Description</label>
-              <textarea
-                id="unit-description"
-                value={unitForm.description}
-                onChange={(event) => {
-                  setUnitForm((current) => ({ ...current, description: event.target.value }));
-                  setUnitFormError("");
-                  setUnitFormNotice("");
-                }}
-                rows={3}
-                className="mt-2 w-full rounded-md border border-main-300 bg-main-100 px-4 py-2.5 text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-100"
-              />
-            </div>
           </div>
 
           <div className="flex justify-end gap-2 border-t border-main-200 px-5 py-4">
