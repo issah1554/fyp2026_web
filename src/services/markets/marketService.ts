@@ -65,6 +65,7 @@ export type MarketPrice = {
   currency: string;
   source_key?: string;
   source_name?: string;
+  raw_prices_count?: number;
   price_date: string;
   created_at: string;
 };
@@ -85,6 +86,34 @@ export type MarketListResult = {
 
 export type MarketPriceListResult = {
   data: MarketPrice[];
+  pagination: PaginationMeta;
+};
+
+export type RawCommodityPrice = {
+  raw_price_id: string;
+  source_id?: string | null;
+  source_key: string;
+  source_name: string;
+  source_label?: string | null;
+  source_reference: string;
+  market_name: string;
+  commodity_name: string;
+  unit_symbol: string;
+  price_type?: string | null;
+  price: number | string;
+  quantity: number | string;
+  min_price?: number | string | null;
+  max_price?: number | string | null;
+  currency: string;
+  price_date: string;
+  observed_at: string;
+  raw_payload: Record<string, unknown>;
+  normalized_price_id?: string | null;
+  created_at: string;
+};
+
+export type RawCommodityPriceListResult = {
+  data: RawCommodityPrice[];
   pagination: PaginationMeta;
 };
 
@@ -370,6 +399,16 @@ export async function listStoredIntegrationPrices(params: { source?: string; com
     withQuery("/market-integrations/prices", params),
     {},
     "Could not load stored integration prices."
+  );
+  const data = payload.data ?? [];
+  return { data, pagination: normalizePagination(payload.meta, data.length) };
+}
+
+export async function listRawIntegrationPrices(params: { source?: string; commodity?: string; market?: string; page?: number; page_size?: number } = {}): Promise<RawCommodityPriceListResult> {
+  const payload = await marketRequest<RawCommodityPrice[]>(
+    withQuery("/market-integrations/raw-prices", params),
+    {},
+    "Could not load raw integration prices."
   );
   const data = payload.data ?? [];
   return { data, pagination: normalizePagination(payload.meta, data.length) };

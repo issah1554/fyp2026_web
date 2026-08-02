@@ -5,15 +5,15 @@ import {
   checkMarketIntegrationUpdates,
   checkMarketIntegrationHealth,
   listMarketIntegrationSources,
-  listLivePrices,
+  listRawIntegrationPrices,
   listStoredIntegrationPrices,
   syncMarketIntegrations,
   type MarketIntegrationHealth,
   type MarketIntegrationSource,
   type MarketIntegrationUpdateStatus,
   type MarketPrice,
-  type NormalizedMarketPrice,
   type PaginationMeta,
+  type RawCommodityPrice,
 } from "@/src/services/markets/marketService";
 
 type SourceKey = "platform_a" | "platform_b" | "internal" | "viwanda";
@@ -52,24 +52,27 @@ function isLocalSource(sourceKey: string) {
   return sourceKey === "internal";
 }
 
-function serviceLabel(source: MarketIntegrationSource) {
-  if (source.base_url) return source.base_url;
-  if (source.key === "internal") return "Local database";
-  return "Not configured";
-}
-
 function updateFor(source: MarketIntegrationSource, updates: MarketIntegrationUpdateStatus[]) {
   return updates.find((item) => item.source === source.key);
+}
+
+function sourceStatus(source: MarketIntegrationSource, health: MarketIntegrationHealth[]) {
+  const sourceHealth = healthFor(source, health);
+  const isLocal = isLocalSource(source.key);
+  if (sourceHealth?.ok === true || (!sourceHealth && isLocal)) return { label: isLocal ? "Local" : "Online", className: "bg-success-100 text-success-700" };
+  if (sourceHealth?.ok === false) return { label: "Offline", className: "bg-danger-100 text-danger-700" };
+  return { label: "Unknown", className: "bg-main-200 text-main-700" };
 }
 
 export default function MarketIntegrationsPage() {
   const [sources, setSources] = useState<MarketIntegrationSource[]>([]);
   const [health, setHealth] = useState<MarketIntegrationHealth[]>([]);
-  const [livePrices, setLivePrices] = useState<NormalizedMarketPrice[]>([]);
-  const [storedPrices, setStoredPrices] = useState<MarketPrice[]>([]);
+  const [rawPrices, setRawPrices] = useState<RawCommodityPrice[]>([]);
+  const [normalizedPrices, setNormalizedPrices] = useState<MarketPrice[]>([]);
   
-  const [activeTab, setActiveTab] = useState<"live" | "stored">("live");
+  const [activeTab, setActiveTab] = useState<"raw" | "normalized">("raw");
   const [selectedSource, setSelectedSource] = useState<string>("");
+  const [selectedAggregationSources, setSelectedAggregationSources] = useState<string[]>([]);
   const [filterCommodity, setFilterCommodity] = useState<string>("");
   const [filterMarket, setFilterMarket] = useState<string>("");
   
@@ -86,7 +89,7 @@ export default function MarketIntegrationsPage() {
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
   
-  const [rawPayloadModal, setRawPayloadModal] = useState<NormalizedMarketPrice | null>(null);
+  const [rawPayloadModal, setRawPayloadModal] = useState<RawCommodityPrice | null>(null);
 
   const sourceCards = useMemo(() => {
     const configured = new Map(sources.map((source) => [source.key, source]));
@@ -155,13 +158,13 @@ export default function MarketIntegrationsPage() {
         page_size: pageSize,
       };
 
-      if (activeTab === "live") {
-        const liveResult = await listLivePrices(params);
-        setLivePrices(liveResult.data);
-        setPagination(liveResult.pagination);
+      if (activeTab === "raw") {
+        const rawResult = await listRawIntegrationPrices(params);
+        setRawPrices(rawResult.data);
+        setPagination(rawResult.pagination);
       } else {
         const storedResult = await listStoredIntegrationPrices(params);
-        setStoredPrices(storedResult.data);
+        setNormalizedPrices(storedResult.data);
         setPagination(storedResult.pagination);
       }
     } catch (loadError) {
@@ -212,7 +215,71 @@ export default function MarketIntegrationsPage() {
     }
   };
 
-  const handleTabChange = (tab: "live" | "stored") => {
+  const selectedAggregationLabel = selectedAggregationSources.length
+    ? `${selectedAggregationSources.length} selected`
+    : "No sources selected";
+
+  const toggleAggregationSource = (sourceKey: string) => {
+    setSelectedAggregationSources((current) =>
+      current.includes(sourceKey)
+        ? current.filter((key) => key !== sourceKey)
+        : [...current, sourceKey],
+    );
+  };
+
+  const checkSelectedSources = async () => {
+    if (!selectedAggregationSources.length) {
+      setError("Select at least one source before checking updates.");
+      setNotice("");
+      return;
+    }
+    setError("");
+    setNotice("");
+    for (const source of selectedAggregationSources) {
+      await loadUpdates(source);
+    }
+    setNotice(`Checked ${selectedAggregationSources.length} selected source(s).`);
+  };
+
+  const importSelectedSources = async () => {
+    if (!selectedAggregationSources.length) {
+      setError("Select at least one source before importing.");
+      setNotice("");
+      return;
+    }
+    setError("");
+    setNotice("");
+    let fetched = 0;
+    let selected = 0;
+    let created = 0;
+    let updated = 0;
+    let errors = 0;
+
+    try {
+      for (const source of selectedAggregationSources) {
+        setSyncingSource(source);
+        const response = await syncMarketIntegrations({ source, limit: 500, new_only: true });
+        fetched += response.result.fetched;
+        selected += response.result.selected;
+        created += response.result.created;
+        updated += response.result.updated;
+        errors += response.result.errors.length;
+        await loadUpdates(source);
+      }
+
+      setPage(1);
+      await loadData();
+      await loadHealth();
+      await loadSources();
+      setNotice(`Imported selected sources. Fetched: ${fetched}. New selected: ${selected}. Created: ${created}. Updated: ${updated}.${errors ? ` Errors: ${errors}.` : ""}`);
+    } catch (importError) {
+      setError(importError instanceof Error ? importError.message : "Could not import selected sources.");
+    } finally {
+      setSyncingSource("");
+    }
+  };
+
+  const handleTabChange = (tab: "raw" | "normalized") => {
     setActiveTab(tab);
     setPage(1);
   };
@@ -241,21 +308,21 @@ export default function MarketIntegrationsPage() {
           </button>
           <button
             type="button"
-            onClick={() => void loadUpdates()}
+            onClick={() => void checkSelectedSources()}
             disabled={Boolean(checkingUpdates)}
             className="flex items-center gap-2 rounded-md border border-main-300 bg-main-100 px-4 py-2 text-sm font-bold text-main-800 hover:border-primary-300 hover:text-primary-700 disabled:cursor-not-allowed disabled:opacity-60 transition-all cursor-pointer"
           >
             <i className={`bi ${checkingUpdates === "all" ? "bi-arrow-repeat animate-spin" : "bi-radar"}`} />
-            {checkingUpdates === "all" ? "Checking..." : "Check Updates"}
+            {checkingUpdates ? "Checking..." : "Check Selected"}
           </button>
           <button
             type="button"
-            onClick={() => void syncSource()}
+            onClick={() => void importSelectedSources()}
             disabled={Boolean(syncingSource)}
             className="flex items-center gap-2 rounded-md bg-primary-600 px-4 py-2 text-sm font-bold text-main-0 hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-60 transition-all cursor-pointer"
           >
             <i className={`bi ${syncingSource === "all" ? "bi-arrow-repeat animate-spin" : "bi-cloud-download"}`} />
-            {syncingSource === "all" ? "Importing..." : "Import New"}
+            {syncingSource ? "Importing..." : "Import Selected"}
           </button>
         </div>
       </section>
@@ -270,110 +337,75 @@ export default function MarketIntegrationsPage() {
         </div>
       )}
 
-      <section className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {sourceCards.map((source) => {
-          const sourceHealth = healthFor(source, health);
-          const isLocal = isLocalSource(source.key);
-          const isHealthy = sourceHealth?.ok === true || (!sourceHealth && isLocal);
-          const isUnhealthy = sourceHealth?.ok === false;
-          const isScraper = source.key === "viwanda";
-          const sourceUpdate = updateFor(source, updates);
-
-          return (
-            <div key={source.key} className="rounded-md border border-main-200 bg-main-100 p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between">
-              <div>
+      <section className="rounded-md border border-main-200 bg-main-100 p-4 shadow-sm">
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <div>
+            <p className="text-sm font-bold text-main-950">Sources</p>
+            <p className="text-xs text-main-500">{sourceCards.length} configured · {selectedAggregationLabel}</p>
+          </div>
+          <div className="flex gap-2">
+            <button type="button" onClick={() => setSelectedAggregationSources(sourceCards.map((source) => source.key))} className="rounded-md border border-main-300 px-3 py-1.5 text-xs font-bold text-main-700 hover:border-primary-300 hover:text-primary-700">
+              Select all
+            </button>
+            <button type="button" onClick={() => { setSelectedSource(""); setSelectedAggregationSources([]); }} className="rounded-md border border-main-300 px-3 py-1.5 text-xs font-bold text-main-700 hover:border-primary-300 hover:text-primary-700">
+              Clear
+            </button>
+          </div>
+        </div>
+        <div className="grid gap-3 lg:grid-cols-2">
+          {sourceCards.map((source) => {
+            const status = sourceStatus(source, health);
+            const sourceUpdate = updateFor(source, updates);
+            const isSelected = selectedSource === source.key;
+            const isAggregationSelected = selectedAggregationSources.includes(source.key);
+            return (
+              <div key={source.key} className={`rounded-md border p-3 ${isAggregationSelected ? "border-primary-300 bg-primary-50" : isSelected ? "border-primary-200 bg-main-50" : "border-main-200 bg-main-50"}`}>
                 <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <span className="text-xs font-semibold uppercase tracking-wider text-main-400">{source.key}</span>
-                    <h2 className="mt-0.5 text-lg font-bold text-main-950">{source.name}</h2>
+                  <div className="flex min-w-0 items-start gap-2">
+                    <input
+                      type="checkbox"
+                      checked={isAggregationSelected}
+                      onChange={() => toggleAggregationSource(source.key)}
+                      className="mt-1 size-4 accent-primary-600"
+                      aria-label={`Select ${source.name} for aggregation`}
+                    />
+                    <button type="button" onClick={() => { setSelectedSource(source.key); setPage(1); }} className="min-w-0 text-left">
+                      <span className="block truncate font-bold text-main-900">{source.name}</span>
+                      <span className="font-mono text-xs text-main-500">{source.key}</span>
+                    </button>
                   </div>
-                  <span
-                    className={`rounded-md px-2 py-1 text-xs font-bold ${
-                      isHealthy
-                        ? "bg-success-100 text-success-700"
-                        : isUnhealthy
-                        ? "bg-danger-100 text-danger-700"
-                        : "bg-main-200 text-main-700"
-                    }`}
-                  >
-                    {isHealthy ? (isLocal ? "Local" : "Online") : isUnhealthy ? "Offline" : "Unknown"}
-                  </span>
+                  <span className={`shrink-0 rounded-md px-2 py-1 text-xs font-bold ${status.className}`}>{status.label}</span>
                 </div>
-                
-                <div className="mt-4 space-y-2 text-xs">
+                <div className="mt-3 grid grid-cols-3 gap-2 text-xs">
                   <div>
-                    <p className="font-bold text-main-500">Service URL</p>
-                    <p className="break-all text-main-800 font-mono mt-0.5">
-                      {serviceLabel(source)}
+                    <p className="font-bold text-main-500">Latest</p>
+                    <p className="mt-1 truncate text-main-800">{formatDate(sourceUpdate?.latest_stored_at)}</p>
+                  </div>
+                  <div>
+                    <p className="font-bold text-main-500">Imported</p>
+                    <p className="mt-1 truncate text-main-800">{formatDate(source.last_imported_at)}</p>
+                  </div>
+                  <div>
+                    <p className="font-bold text-main-500">New</p>
+                    <p className={`mt-1 font-bold ${sourceUpdate?.has_updates ? "text-success-700" : "text-main-800"}`}>
+                      {sourceUpdate ? `${sourceUpdate.new} / ${sourceUpdate.fetched}` : "None"}
                     </p>
                   </div>
-                  {!isScraper && source.prices_url && (
-                    <div>
-                      <p className="font-bold text-main-500">Endpoint</p>
-                      <p className="break-all text-main-800 font-mono mt-0.5">{source.prices_url}</p>
-                    </div>
-                  )}
-                  {isScraper && (
-                    <p className="text-xs text-main-600 bg-main-50 p-2 rounded border border-main-200">
-                      External PDF scraping source for Ministry of Industry and Trade reports.
-                    </p>
-                  )}
-                  {sourceHealth?.error && (
-                    <p className="rounded-md border border-danger-200 bg-danger-100 p-2 text-danger-700 mt-2">
-                      {sourceHealth.error}
-                    </p>
-                  )}
-                  {sourceUpdate && (
-                    <div className="grid grid-cols-2 gap-2 rounded-md border border-main-200 bg-main-50 p-2">
-                      <div>
-                        <p className="font-bold text-main-500">Latest stored</p>
-                        <p className="mt-0.5 text-main-800">{formatDate(sourceUpdate.latest_stored_at)}</p>
-                      </div>
-                      <div>
-                        <p className="font-bold text-main-500">New rows</p>
-                        <p className={`mt-0.5 font-bold ${sourceUpdate.has_updates ? "text-success-700" : "text-main-800"}`}>
-                          {sourceUpdate.new} / {sourceUpdate.fetched}
-                        </p>
-                      </div>
-                    </div>
-                  )}
+                </div>
+                <div className="mt-3 flex justify-end gap-2">
+                  <button type="button" onClick={() => void loadUpdates(source.key)} disabled={Boolean(checkingUpdates)} className="flex items-center justify-center gap-1.5 rounded-md border border-main-300 bg-main-100 px-3 py-1.5 text-xs font-bold text-main-700 hover:border-primary-300 hover:text-primary-700 disabled:opacity-60">
+                    <i className={`bi ${checkingUpdates === source.key ? "bi-arrow-repeat animate-spin" : "bi-radar"}`} />
+                    Check
+                  </button>
+                  <button type="button" onClick={() => void syncSource(source.key)} disabled={Boolean(syncingSource)} className="flex items-center justify-center gap-1.5 rounded-md bg-primary-600 px-3 py-1.5 text-xs font-bold text-main-0 hover:bg-primary-700 disabled:opacity-60">
+                    <i className={`bi ${syncingSource === source.key ? "bi-arrow-repeat animate-spin" : "bi-cloud-download"}`} />
+                    Import
+                  </button>
                 </div>
               </div>
-
-              <div className="mt-5 grid grid-cols-3 gap-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSelectedSource(source.key);
-                    setPage(1);
-                  }}
-                  className="flex items-center justify-center gap-1.5 rounded border border-main-300 bg-main-100 py-1.5 text-xs font-bold text-main-800 hover:border-primary-300 hover:text-primary-700 transition-all cursor-pointer"
-                >
-                  <i className="bi bi-search" />
-                  Feed
-                </button>
-                <button
-                  type="button"
-                  onClick={() => void loadUpdates(source.key)}
-                  disabled={Boolean(checkingUpdates)}
-                  className="flex items-center justify-center gap-1.5 rounded border border-main-300 bg-main-100 py-1.5 text-xs font-bold text-main-800 hover:border-primary-300 hover:text-primary-700 disabled:cursor-not-allowed disabled:opacity-60 transition-all cursor-pointer"
-                >
-                  <i className={`bi ${checkingUpdates === source.key ? "bi-arrow-repeat animate-spin" : "bi-radar"}`} />
-                  Check
-                </button>
-                <button
-                  type="button"
-                  onClick={() => void syncSource(source.key)}
-                  disabled={Boolean(syncingSource)}
-                  className="flex items-center justify-center gap-1.5 rounded bg-primary-600 py-1.5 text-xs font-bold text-main-0 hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-60 transition-all cursor-pointer"
-                >
-                  <i className={`bi ${syncingSource === source.key ? "bi-arrow-repeat animate-spin" : "bi-cloud-download"}`} />
-                  Import
-                </button>
-              </div>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
       </section>
 
       <section className="rounded-md border border-main-200 bg-main-100 p-5 shadow-sm">
@@ -382,27 +414,27 @@ export default function MarketIntegrationsPage() {
             <div className="flex gap-2 border-b border-transparent">
               <button
                 type="button"
-                onClick={() => handleTabChange("live")}
+                onClick={() => handleTabChange("raw")}
                 className={`pb-2 text-sm font-bold border-b-2 transition-all cursor-pointer ${
-                  activeTab === "live" ? "border-primary-600 text-primary-700" : "border-transparent text-main-500 hover:text-main-800"
+                  activeTab === "raw" ? "border-primary-600 text-primary-700" : "border-transparent text-main-500 hover:text-main-800"
                 }`}
               >
-                Normalized Live Prices Feed
+                Raw Prices
               </button>
               <button
                 type="button"
-                onClick={() => handleTabChange("stored")}
+                onClick={() => handleTabChange("normalized")}
                 className={`pb-2 text-sm font-bold border-b-2 transition-all cursor-pointer ${
-                  activeTab === "stored" ? "border-primary-600 text-primary-700" : "border-transparent text-main-500 hover:text-main-800"
+                  activeTab === "normalized" ? "border-primary-600 text-primary-700" : "border-transparent text-main-500 hover:text-main-800"
                 }`}
               >
-                Synced Prices Database
+                Standard Prices
               </button>
             </div>
             <p className="text-xs text-main-500 font-semibold">
-              {activeTab === "live" 
-                ? "Showing real-time raw normalized payloads parsed from API sources." 
-                : "Showing verified records synced and saved to the central database."
+              {activeTab === "raw" 
+                ? "Source-level imported rows stored in raw commodity prices." 
+                : "Standard app-ready rows stored in commodities prices."
               }
             </p>
           </div>
@@ -465,10 +497,10 @@ export default function MarketIntegrationsPage() {
             <div className="h-8 w-8 animate-spin rounded-full border-4 border-main-300 border-t-primary-600" />
             <p className="text-sm font-semibold text-main-500">Retrieving feed rows...</p>
           </div>
-        ) : activeTab === "live" ? (
-          <LivePricesTable prices={livePrices} onViewRaw={setRawPayloadModal} />
+        ) : activeTab === "raw" ? (
+          <RawPricesTable prices={rawPrices} onViewRaw={setRawPayloadModal} />
         ) : (
-          <StoredPricesTable prices={storedPrices} />
+          <NormalizedPricesTable prices={normalizedPrices} />
         )}
 
         {!loading && (
@@ -519,7 +551,7 @@ export default function MarketIntegrationsPage() {
               <div>
                 <h3 className="text-lg font-bold text-main-950">Raw JSON Payload</h3>
                 <p className="text-xs text-main-500 mt-0.5">
-                  Parsed record from source <span className="font-bold text-primary-700">{rawPayloadModal.source}</span>
+                  Stored raw record from source <span className="font-bold text-primary-700">{rawPayloadModal.source_name || rawPayloadModal.source_key}</span>
                 </p>
               </div>
               <button
@@ -533,7 +565,7 @@ export default function MarketIntegrationsPage() {
             
             <div className="flex-1 overflow-auto bg-main-900 text-main-50 p-4 rounded-md font-mono text-xs my-4 select-text">
               <pre className="whitespace-pre-wrap">
-                {JSON.stringify(rawPayloadModal.raw ?? rawPayloadModal, null, 2)}
+                {JSON.stringify(rawPayloadModal.raw_payload ?? rawPayloadModal, null, 2)}
               </pre>
             </div>
 
@@ -553,12 +585,12 @@ export default function MarketIntegrationsPage() {
   );
 }
 
-function LivePricesTable({
+function RawPricesTable({
   prices,
   onViewRaw,
 }: {
-  prices: NormalizedMarketPrice[];
-  onViewRaw: (item: NormalizedMarketPrice) => void;
+  prices: RawCommodityPrice[];
+  onViewRaw: (item: RawCommodityPrice) => void;
 }) {
   return (
     <div className="mt-5 overflow-x-auto">
@@ -568,51 +600,30 @@ function LivePricesTable({
             <th className="py-3 pr-4">Source</th>
             <th className="py-3 pr-4">Commodity</th>
             <th className="py-3 pr-4">Market</th>
-            <th className="py-3 pr-4">Price TZS</th>
-            <th className="py-3 pr-4">Price USD</th>
-            <th className="py-3 pr-4">Confidence</th>
-            <th className="py-3 pr-4">Feed Time</th>
+            <th className="py-3 pr-4">Price</th>
+            <th className="py-3 pr-4">Reference</th>
+            <th className="py-3 pr-4">Observed</th>
+            <th className="py-3 pr-4">Normalized ID</th>
             <th className="py-3 pr-4 text-right">Actions</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-main-200">
           {prices.length ? (
-            prices.map((price, idx) => {
-              const confidence = price.confidence ?? 1.0;
-              const confPercent = Math.round(confidence * 100);
-              return (
-                <tr key={`${price.source}-${price.commodity}-${idx}`} className="hover:bg-main-50 transition-colors">
+            prices.map((price) => (
+                <tr key={price.raw_price_id} className="hover:bg-main-50 transition-colors">
                   <td className="py-4 pr-4">
                     <span className="inline-flex rounded-md bg-accent-100 px-2.5 py-1 text-xs font-bold text-accent-800">
-                      {sourceLabel(price.source)}
+                      {price.source_name || sourceLabel(price.source_key)}
                     </span>
                   </td>
-                  <td className="py-4 pr-4 font-bold text-main-900">{price.commodity}</td>
-                  <td className="py-4 pr-4 text-main-700">{price.market ?? "Unknown Market"}</td>
+                  <td className="py-4 pr-4 font-bold text-main-900">{price.commodity_name}</td>
+                  <td className="py-4 pr-4 text-main-700">{price.market_name}</td>
                   <td className="py-4 pr-4 font-bold text-primary-700">
-                    {price.price_tzs !== null ? formatMoney(price.price_tzs, "TZS") : "N/A"}
+                    {formatMoney(price.price, price.currency)}
                   </td>
-                  <td className="py-4 pr-4 font-semibold text-main-850">
-                    {price.price_usd !== null ? formatMoney(price.price_usd, "USD") : "N/A"}
-                  </td>
-                  <td className="py-4 pr-4">
-                    <div className="flex items-center gap-1.5">
-                      <div className="h-2 w-12 bg-main-200 rounded overflow-hidden">
-                        <div
-                          className={`h-full rounded ${
-                            confidence >= 0.85 
-                              ? "bg-success-500" 
-                              : confidence >= 0.6 
-                              ? "bg-warning-500" 
-                              : "bg-danger-500"
-                          }`}
-                          style={{ width: `${confPercent}%` }}
-                        />
-                      </div>
-                      <span className="text-xs font-bold text-main-600">{confPercent}%</span>
-                    </div>
-                  </td>
-                  <td className="py-4 pr-4 text-xs text-main-600">{formatDate(price.timestamp)}</td>
+                  <td className="max-w-56 truncate py-4 pr-4 text-xs text-main-600">{price.source_reference || "None"}</td>
+                  <td className="py-4 pr-4 text-xs text-main-600">{formatDate(price.observed_at)}</td>
+                  <td className="py-4 pr-4 font-mono text-xs text-main-600">{price.normalized_price_id || "None"}</td>
                   <td className="py-4 pr-4 text-right">
                     <button
                       type="button"
@@ -623,12 +634,11 @@ function LivePricesTable({
                     </button>
                   </td>
                 </tr>
-              );
-            })
+            ))
           ) : (
             <tr>
               <td colSpan={8} className="py-12 text-center text-main-550">
-                No normalized live rows received. The API feeds might be unreachable or returning empty results.
+                No raw imported rows found. Check updates and import new source data.
               </td>
             </tr>
           )}
@@ -638,7 +648,7 @@ function LivePricesTable({
   );
 }
 
-function StoredPricesTable({ prices }: { prices: MarketPrice[] }) {
+function NormalizedPricesTable({ prices }: { prices: MarketPrice[] }) {
   return (
     <div className="mt-5 overflow-x-auto">
       <table className="w-full min-w-220 text-left text-sm">
@@ -649,6 +659,7 @@ function StoredPricesTable({ prices }: { prices: MarketPrice[] }) {
             <th className="py-3 pr-4">Market</th>
             <th className="py-3 pr-4">Price TZS</th>
             <th className="py-3 pr-4">Price USD</th>
+            <th className="py-3 pr-4">Sources</th>
             <th className="py-3 pr-4">Report Date</th>
             <th className="py-3 pr-4">Date Synced</th>
           </tr>
@@ -670,13 +681,14 @@ function StoredPricesTable({ prices }: { prices: MarketPrice[] }) {
                 </td>
                 <td className="py-4 pr-4 font-bold text-primary-700">{formatMoney(price.price, price.currency)}</td>
                 <td className="py-4 pr-4 font-semibold text-main-850">{formatMoney(price.price_usd, "USD")}</td>
+                <td className="py-4 pr-4 font-bold text-main-800">{price.raw_prices_count ?? 0}</td>
                 <td className="py-4 pr-4 text-main-700">{formatDate(price.price_date)}</td>
                 <td className="py-4 pr-4 text-xs text-main-600">{formatDate(price.created_at)}</td>
               </tr>
             ))
           ) : (
             <tr>
-              <td colSpan={7} className="py-12 text-center text-main-550">
+              <td colSpan={8} className="py-12 text-center text-main-550">
                 No synced integration rows found. Try triggering a sync.
               </td>
             </tr>
