@@ -3,11 +3,12 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   checkMarketIntegrationUpdates,
+  importRawMarketIntegrationPrices,
   checkMarketIntegrationHealth,
   listMarketIntegrationSources,
   listRawIntegrationPrices,
   listStoredIntegrationPrices,
-  syncMarketIntegrations,
+  standardizeMarketIntegrationPrices,
   type MarketIntegrationHealth,
   type MarketIntegrationSource,
   type MarketIntegrationUpdateStatus,
@@ -35,6 +36,12 @@ function formatDate(value?: string | null) {
   return Number.isNaN(date.getTime()) ? value : date.toLocaleString();
 }
 
+function formatDateOnly(value?: string | null) {
+  if (!value) return "None";
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? value : date.toLocaleDateString();
+}
+
 function formatMoney(value: string | number | null | undefined, currency: string) {
   if (value === null || value === undefined || value === "") return "None";
   return `${currency} ${Number(value).toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
@@ -54,6 +61,12 @@ function isLocalSource(sourceKey: string) {
 
 function updateFor(source: MarketIntegrationSource, updates: MarketIntegrationUpdateStatus[]) {
   return updates.find((item) => item.source === source.key);
+}
+
+function updateSummary(update?: MarketIntegrationUpdateStatus) {
+  if (!update) return "None";
+  if (update.new <= 0) return "Up to date";
+  return update.new === 1 ? "1 record" : `${update.new} records`;
 }
 
 function sourceStatus(source: MarketIntegrationSource, health: MarketIntegrationHealth[]) {
@@ -83,7 +96,8 @@ export default function MarketIntegrationsPage() {
   const [loading, setLoading] = useState(true);
   const [checkingHealth, setCheckingHealth] = useState(false);
   const [checkingUpdates, setCheckingUpdates] = useState<string>("");
-  const [syncingSource, setSyncingSource] = useState<string>("");
+  const [importingSource, setImportingSource] = useState<string>("");
+  const [standardizingSource, setStandardizingSource] = useState<string>("");
   const [updates, setUpdates] = useState<MarketIntegrationUpdateStatus[]>([]);
   
   const [notice, setNotice] = useState("");
@@ -192,15 +206,15 @@ export default function MarketIntegrationsPage() {
     };
   }, [loadSources, loadHealth, loadUpdates, loadData]);
 
-  const syncSource = async (source?: string) => {
-    setSyncingSource(source ?? "all");
+  const importRawSource = async (source?: string) => {
+    setImportingSource(source ?? "all");
     setNotice("");
     setError("");
     try {
-      const response = await syncMarketIntegrations({ source, limit: 500, new_only: true });
+      const response = await importRawMarketIntegrationPrices({ source, limit: 500, new_only: true });
       const errorCount = response.result.errors.length;
       setNotice(
-        `${response.message} Fetched: ${response.result.fetched}. New selected: ${response.result.selected}. Created: ${response.result.created}. Updated: ${response.result.updated}.${
+        `${response.message} Fetched: ${response.result.fetched}. New selected: ${response.result.selected}. Raw created: ${response.result.created}. Raw updated: ${response.result.updated}.${
           errorCount ? ` Errors: ${errorCount}.` : ""
         }`
       );
@@ -209,9 +223,9 @@ export default function MarketIntegrationsPage() {
       await loadHealth();
       await loadUpdates(source);
     } catch (syncError) {
-      setError(syncError instanceof Error ? syncError.message : "Could not sync source data.");
+      setError(syncError instanceof Error ? syncError.message : "Could not import raw source data.");
     } finally {
-      setSyncingSource("");
+      setImportingSource("");
     }
   };
 
@@ -235,10 +249,17 @@ export default function MarketIntegrationsPage() {
     }
     setError("");
     setNotice("");
+    let newRows = 0;
     for (const source of selectedAggregationSources) {
-      await loadUpdates(source);
+      const result = await checkMarketIntegrationUpdates({ source, limit: 500 });
+      setUpdates((current) => [...current.filter((item) => item.source !== source), ...result.sources]);
+      newRows += result.sources.reduce((total, item) => total + item.new, 0);
     }
-    setNotice(`Checked ${selectedAggregationSources.length} selected source(s).`);
+    setNotice(
+      newRows
+        ? `Checked ${selectedAggregationSources.length} selected source(s). ${newRows} new row(s) available.`
+        : `Checked ${selectedAggregationSources.length} selected source(s). No new data available.`,
+    );
   };
 
   const importSelectedSources = async () => {
@@ -257,8 +278,8 @@ export default function MarketIntegrationsPage() {
 
     try {
       for (const source of selectedAggregationSources) {
-        setSyncingSource(source);
-        const response = await syncMarketIntegrations({ source, limit: 500, new_only: true });
+        setImportingSource(source);
+        const response = await importRawMarketIntegrationPrices({ source, limit: 500, new_only: true });
         fetched += response.result.fetched;
         selected += response.result.selected;
         created += response.result.created;
@@ -271,11 +292,45 @@ export default function MarketIntegrationsPage() {
       await loadData();
       await loadHealth();
       await loadSources();
-      setNotice(`Imported selected sources. Fetched: ${fetched}. New selected: ${selected}. Created: ${created}. Updated: ${updated}.${errors ? ` Errors: ${errors}.` : ""}`);
+      setNotice(
+        selected
+          ? `Imported selected sources. Fetched: ${fetched}. New selected: ${selected}. Raw created: ${created}. Raw updated: ${updated}.${errors ? ` Errors: ${errors}.` : ""}`
+          : `No new data available. Fetched: ${fetched}. Raw created: 0. Raw updated: 0.${errors ? ` Errors: ${errors}.` : ""}`,
+      );
     } catch (importError) {
-      setError(importError instanceof Error ? importError.message : "Could not import selected sources.");
+      setError(importError instanceof Error ? importError.message : "Could not import selected raw sources.");
     } finally {
-      setSyncingSource("");
+      setImportingSource("");
+    }
+  };
+
+  const standardizeSelectedSources = async () => {
+    if (!selectedAggregationSources.length) {
+      setError("Select at least one source before standardising.");
+      setNotice("");
+      return;
+    }
+    setError("");
+    setNotice("");
+    let created = 0;
+    let updated = 0;
+    let errors = 0;
+    try {
+      for (const source of selectedAggregationSources) {
+        setStandardizingSource(source);
+        const response = await standardizeMarketIntegrationPrices({ source, limit: 500 });
+        created += response.result.created;
+        updated += response.result.updated;
+        errors += response.result.errors.length;
+      }
+      setPage(1);
+      await loadData();
+      await loadSources();
+      setNotice(`Standardised selected sources. Created: ${created}. Updated: ${updated}.${errors ? ` Errors: ${errors}.` : ""}`);
+    } catch (standardizeError) {
+      setError(standardizeError instanceof Error ? standardizeError.message : "Could not standardise selected sources.");
+    } finally {
+      setStandardizingSource("");
     }
   };
 
@@ -294,7 +349,6 @@ export default function MarketIntegrationsPage() {
       <section className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="text-sm font-semibold text-main-500">Market integrations</p>
-          <h1 className="text-2xl font-bold text-main-950 sm:text-3xl">External API Integration Feed</h1>
         </div>
         <div className="flex flex-wrap gap-2">
           <button
@@ -318,11 +372,20 @@ export default function MarketIntegrationsPage() {
           <button
             type="button"
             onClick={() => void importSelectedSources()}
-            disabled={Boolean(syncingSource)}
+            disabled={Boolean(importingSource)}
             className="flex items-center gap-2 rounded-md bg-primary-600 px-4 py-2 text-sm font-bold text-main-0 hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-60 transition-all cursor-pointer"
           >
-            <i className={`bi ${syncingSource === "all" ? "bi-arrow-repeat animate-spin" : "bi-cloud-download"}`} />
-            {syncingSource ? "Importing..." : "Import Selected"}
+            <i className={`bi ${importingSource === "all" ? "bi-arrow-repeat animate-spin" : "bi-cloud-download"}`} />
+            {importingSource ? "Importing..." : "Import Raw"}
+          </button>
+          <button
+            type="button"
+            onClick={() => void standardizeSelectedSources()}
+            disabled={Boolean(standardizingSource)}
+            className="flex items-center gap-2 rounded-md bg-accent-600 px-4 py-2 text-sm font-bold text-main-0 hover:bg-accent-700 disabled:cursor-not-allowed disabled:opacity-60 transition-all cursor-pointer"
+          >
+            <i className={`bi ${standardizingSource ? "bi-arrow-repeat animate-spin" : "bi-check2-circle"}`} />
+            {standardizingSource ? "Standardising..." : "Standardise"}
           </button>
         </div>
       </section>
@@ -379,16 +442,16 @@ export default function MarketIntegrationsPage() {
                 <div className="mt-3 grid grid-cols-3 gap-2 text-xs">
                   <div>
                     <p className="font-bold text-main-500">Latest</p>
-                    <p className="mt-1 truncate text-main-800">{formatDate(sourceUpdate?.latest_stored_at)}</p>
+                    <p className="mt-1 truncate text-main-800">{formatDateOnly(sourceUpdate?.latest_stored_at)}</p>
                   </div>
                   <div>
                     <p className="font-bold text-main-500">Imported</p>
-                    <p className="mt-1 truncate text-main-800">{formatDate(source.last_imported_at)}</p>
+                    <p className="mt-1 truncate text-main-800">{formatDateOnly(source.last_imported_at)}</p>
                   </div>
                   <div>
                     <p className="font-bold text-main-500">New</p>
                     <p className={`mt-1 font-bold ${sourceUpdate?.has_updates ? "text-success-700" : "text-main-800"}`}>
-                      {sourceUpdate ? `${sourceUpdate.new} / ${sourceUpdate.fetched}` : "None"}
+                      {updateSummary(sourceUpdate)}
                     </p>
                   </div>
                 </div>
@@ -397,9 +460,9 @@ export default function MarketIntegrationsPage() {
                     <i className={`bi ${checkingUpdates === source.key ? "bi-arrow-repeat animate-spin" : "bi-radar"}`} />
                     Check
                   </button>
-                  <button type="button" onClick={() => void syncSource(source.key)} disabled={Boolean(syncingSource)} className="flex items-center justify-center gap-1.5 rounded-md bg-primary-600 px-3 py-1.5 text-xs font-bold text-main-0 hover:bg-primary-700 disabled:opacity-60">
-                    <i className={`bi ${syncingSource === source.key ? "bi-arrow-repeat animate-spin" : "bi-cloud-download"}`} />
-                    Import
+                  <button type="button" onClick={() => void importRawSource(source.key)} disabled={Boolean(importingSource)} className="flex items-center justify-center gap-1.5 rounded-md bg-primary-600 px-3 py-1.5 text-xs font-bold text-main-0 hover:bg-primary-700 disabled:opacity-60">
+                    <i className={`bi ${importingSource === source.key ? "bi-arrow-repeat animate-spin" : "bi-cloud-download"}`} />
+                    Import Raw
                   </button>
                 </div>
               </div>

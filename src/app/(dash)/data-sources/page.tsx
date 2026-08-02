@@ -60,6 +60,12 @@ function updateFor(source: MarketIntegrationSource, updates: MarketIntegrationUp
   return updates.find((item) => item.source === source.key);
 }
 
+function updateSummary(update?: MarketIntegrationUpdateStatus) {
+  if (!update) return "None";
+  if (update.new <= 0) return "Up to date";
+  return update.new === 1 ? "1 record" : `${update.new} records`;
+}
+
 function sourceStatus(source: MarketIntegrationSource, health: MarketIntegrationHealth[]) {
   const sourceHealth = healthFor(source, health);
   const isLocal = isLocalSource(source.key);
@@ -233,7 +239,7 @@ export default function DataSourcesPage() {
                   </div>
                   <div>
                     <p className="font-bold text-main-500">New</p>
-                    <p className={`mt-1 font-bold ${sourceUpdate?.has_updates ? "text-success-700" : "text-main-800"}`}>{sourceUpdate ? `${sourceUpdate.new} / ${sourceUpdate.fetched}` : "None"}</p>
+                    <p className={`mt-1 font-bold ${sourceUpdate?.has_updates ? "text-success-700" : "text-main-800"}`}>{updateSummary(sourceUpdate)}</p>
                   </div>
                 </div>
                 <div className="mt-3 flex justify-end gap-2">

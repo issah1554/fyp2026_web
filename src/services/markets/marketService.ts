@@ -283,6 +283,30 @@ export async function syncMarketIntegrations(params: { source?: string; commodit
   };
 }
 
+export async function importRawMarketIntegrationPrices(params: { source?: string; commodity?: string; market?: string; limit?: number; new_only?: boolean } = {}) {
+  const payload = await marketRequest<MarketIntegrationSyncResult>(
+    withQuery("/market-integrations/import-raw", params),
+    { method: "POST" },
+    "Could not import raw market integration prices.",
+  );
+  return {
+    message: payload.message ?? "Raw market integration prices imported successfully.",
+    result: payload.data ?? { fetched: 0, selected: 0, created: 0, updated: 0, errors: [] },
+  };
+}
+
+export async function standardizeMarketIntegrationPrices(params: { source?: string; commodity?: string; market?: string; limit?: number } = {}) {
+  const payload = await marketRequest<Pick<MarketIntegrationSyncResult, "created" | "updated" | "errors">>(
+    withQuery("/market-integrations/standardize", params),
+    { method: "POST" },
+    "Could not standardise market integration prices.",
+  );
+  return {
+    message: payload.message ?? "Raw market integration prices standardised successfully.",
+    result: payload.data ?? { created: 0, updated: 0, errors: [] },
+  };
+}
+
 export async function checkMarketIntegrationUpdates(params: { source?: string; commodity?: string; market?: string; limit?: number } = {}) {
   const payload = await marketRequest<MarketIntegrationUpdateResult>(
     withQuery("/market-integrations/updates", params),
