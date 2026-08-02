@@ -15,6 +15,11 @@ import {
 } from "@/src/services/markets/marketService";
 
 type SourceKey = "platform_a" | "platform_b" | "internal" | "viwanda";
+type SortDirection = "asc" | "desc";
+type SortConfig<TSortKey extends string> = {
+  key: TSortKey;
+  direction: SortDirection;
+};
 
 const sourceKeys: SourceKey[] = ["platform_a", "platform_b", "internal", "viwanda"];
 
@@ -74,12 +79,53 @@ function sourceStatus(source: MarketIntegrationSource, health: MarketIntegration
   return { label: "Unknown", className: "bg-main-200 text-main-700" };
 }
 
+function showingCount(currentCount: number, totalItems: number) {
+  return `Showing ${currentCount.toLocaleString()} of ${totalItems.toLocaleString()}`;
+}
+
+function nextSort<TSortKey extends string>(current: SortConfig<TSortKey>, key: TSortKey): SortConfig<TSortKey> {
+  return {
+    key,
+    direction: current.key === key && current.direction === "asc" ? "desc" : "asc",
+  };
+}
+
+function orderingFromSort<TSortKey extends string>(sort: SortConfig<TSortKey>) {
+  return `${sort.direction === "desc" ? "-" : ""}${sort.key}`;
+}
+
+function SortHeader<TSortKey extends string>({
+  label,
+  sortKey,
+  sort,
+  onSort,
+  align = "left",
+}: {
+  label: string;
+  sortKey: TSortKey;
+  sort: SortConfig<TSortKey>;
+  onSort: (key: TSortKey) => void;
+  align?: "left" | "right";
+}) {
+  const active = sort.key === sortKey;
+  return (
+    <th className={`py-3 pr-4 ${align === "right" ? "text-right" : ""}`}>
+      <button type="button" onClick={() => onSort(sortKey)} className={`inline-flex items-center gap-1 font-bold uppercase ${align === "right" ? "justify-end" : ""}`}>
+        {label}
+        <i className={`bi ${active ? (sort.direction === "asc" ? "bi-sort-up" : "bi-sort-down") : "bi-arrow-down-up"} text-xs`} />
+      </button>
+    </th>
+  );
+}
+
 export default function DataSourcesPage() {
   const [sources, setSources] = useState<MarketIntegrationSource[]>([]);
   const [health, setHealth] = useState<MarketIntegrationHealth[]>([]);
   const [prices, setPrices] = useState<MarketPrice[]>([]);
   const [pagination, setPagination] = useState(emptyPagination);
   const [selectedSource, setSelectedSource] = useState<SourceKey | "">("");
+  const [search, setSearch] = useState("");
+  const [sort, setSort] = useState<SortConfig<SourcePriceSortKey>>({ key: "price_date", direction: "desc" });
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [loading, setLoading] = useState(true);
@@ -140,12 +186,14 @@ export default function DataSourcesPage() {
   const loadPrices = useCallback(async () => {
     const result = await listMarketPrices({
       source_key: selectedSource,
+      search: search || undefined,
+      ordering: orderingFromSort(sort),
       page,
       page_size: pageSize,
     });
     setPrices(result.data);
     setPagination(result.pagination);
-  }, [page, pageSize, selectedSource]);
+  }, [page, pageSize, search, selectedSource, sort]);
 
   useEffect(() => {
     let mounted = true;
@@ -262,14 +310,38 @@ export default function DataSourcesPage() {
             <p className="text-sm font-semibold text-main-500">Stored data</p>
             <h2 className="mt-1 text-xl font-bold text-main-950">Imported market prices</h2>
           </div>
-          <select value={selectedSource} onChange={(event) => { setSelectedSource(event.target.value as SourceKey | ""); setPage(1); }} className="w-full rounded-md border border-main-300 bg-main-100 px-3 py-2 text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-100 sm:w-60">
-            <option value="">All source rows</option>
-            {sourceCards.map((source) => <option key={source.key} value={source.key}>{source.name}</option>)}
-          </select>
+          <div className="grid w-full gap-2 sm:w-auto sm:grid-cols-[minmax(0,14rem)_minmax(0,16rem)]">
+            <select value={selectedSource} onChange={(event) => { setSelectedSource(event.target.value as SourceKey | ""); setPage(1); }} className="rounded-md border border-main-300 bg-main-100 px-3 py-2 text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-100">
+              <option value="">All source rows</option>
+              {sourceCards.map((source) => <option key={source.key} value={source.key}>{source.name}</option>)}
+            </select>
+            <input
+              value={search}
+              onChange={(event) => {
+                setSearch(event.target.value);
+                setPage(1);
+              }}
+              placeholder="Search source, market, commodity"
+              className="rounded-md border border-main-300 bg-main-100 px-3 py-2 text-sm text-main-900 outline-none placeholder:text-main-500 focus:border-primary-500 focus:bg-main-100"
+            />
+          </div>
         </div>
-        {loading ? <p className="py-10 text-center text-main-500">Loading source data...</p> : <SourcePriceTable prices={prices} />}
+        {loading ? <p className="py-10 text-center text-main-500">Loading source data...</p> : <SourcePriceTable prices={prices} sort={sort} onSort={(key) => { setSort((current) => nextSort(current, key)); setPage(1); }} />}
         <div className="mt-4 flex flex-col gap-3 border-t border-main-200 pt-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-2 text-sm text-main-600"><span>Rows</span><select value={pageSize} onChange={(event) => { setPageSize(Number(event.target.value)); setPage(1); }} className="rounded-md border border-main-300 bg-main-100 px-2 py-1 text-sm text-main-900 outline-none">{[10, 25, 50, 100].map((size) => <option key={size} value={size}>{size}</option>)}</select></div>
+          <div className="flex flex-wrap items-center gap-3 text-sm text-main-600">
+            <span>{showingCount(prices.length, pagination.total_items)}</span>
+            <span>Rows</span>
+            <select
+              value={pageSize}
+              onChange={(event) => {
+                setPageSize(Number(event.target.value));
+                setPage(1);
+              }}
+              className="rounded-md border border-main-300 bg-main-100 px-2 py-1 text-sm text-main-900 outline-none"
+            >
+              {[10, 25, 50, 100].map((size) => <option key={size} value={size}>{size}</option>)}
+            </select>
+          </div>
           <div className="flex items-center gap-2 text-sm font-semibold text-main-600"><button type="button" disabled={!pagination.has_previous} onClick={() => setPage((current) => Math.max(1, current - 1))} className="rounded-md border border-main-300 bg-main-100 px-3 py-1.5 disabled:cursor-not-allowed disabled:opacity-50">Previous</button><span>Page {pagination.page} of {pagination.total_pages}</span><button type="button" disabled={!pagination.has_next} onClick={() => setPage((current) => current + 1)} className="rounded-md border border-main-300 bg-main-100 px-3 py-1.5 disabled:cursor-not-allowed disabled:opacity-50">Next</button></div>
         </div>
       </section>
@@ -277,11 +349,13 @@ export default function DataSourcesPage() {
   );
 }
 
-function SourcePriceTable({ prices }: { prices: MarketPrice[] }) {
+type SourcePriceSortKey = "source" | "market" | "commodity" | "price" | "price_date" | "created_at";
+
+function SourcePriceTable({ prices, sort, onSort }: { prices: MarketPrice[]; sort: SortConfig<SourcePriceSortKey>; onSort: (key: SourcePriceSortKey) => void }) {
   return (
     <div className="mt-5 overflow-x-auto">
       <table className="w-full min-w-220 text-left text-sm">
-        <thead><tr className="border-b border-main-200 text-xs font-bold uppercase text-main-500"><th className="py-3 pr-4">Source</th><th className="py-3 pr-4">Market</th><th className="py-3 pr-4">Commodity</th><th className="py-3 pr-4">Price TZS</th><th className="py-3 pr-4">Price USD</th><th className="py-3 pr-4">Price date</th><th className="py-3 pr-4">Imported</th></tr></thead>
+        <thead><tr className="border-b border-main-200 text-xs font-bold uppercase text-main-500"><SortHeader label="Source" sortKey="source" sort={sort} onSort={onSort} /><SortHeader label="Market" sortKey="market" sort={sort} onSort={onSort} /><SortHeader label="Commodity" sortKey="commodity" sort={sort} onSort={onSort} /><SortHeader label="Price TZS" sortKey="price" sort={sort} onSort={onSort} /><th className="py-3 pr-4">Price USD</th><SortHeader label="Price date" sortKey="price_date" sort={sort} onSort={onSort} /><SortHeader label="Imported" sortKey="created_at" sort={sort} onSort={onSort} /></tr></thead>
         <tbody className="divide-y divide-main-200">
           {prices.length ? prices.map((price) => (
             <tr key={price.price_id} className="hover:bg-main-50">

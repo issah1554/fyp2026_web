@@ -18,6 +18,11 @@ import {
 } from "@/src/services/markets/marketService";
 
 type SourceKey = "platform_a" | "platform_b" | "internal" | "viwanda";
+type SortDirection = "asc" | "desc";
+type SortConfig<TSortKey extends string> = {
+  key: TSortKey;
+  direction: SortDirection;
+};
 
 const sourceKeys: SourceKey[] = ["platform_a", "platform_b", "internal", "viwanda"];
 
@@ -77,6 +82,45 @@ function sourceStatus(source: MarketIntegrationSource, health: MarketIntegration
   return { label: "Unknown", className: "bg-main-200 text-main-700" };
 }
 
+function showingCount(currentCount: number, totalItems: number) {
+  return `Showing ${currentCount.toLocaleString()} of ${totalItems.toLocaleString()}`;
+}
+
+function nextSort<TSortKey extends string>(current: SortConfig<TSortKey>, key: TSortKey): SortConfig<TSortKey> {
+  return {
+    key,
+    direction: current.key === key && current.direction === "asc" ? "desc" : "asc",
+  };
+}
+
+function orderingFromSort<TSortKey extends string>(sort: SortConfig<TSortKey>) {
+  return `${sort.direction === "desc" ? "-" : ""}${sort.key}`;
+}
+
+function SortHeader<TSortKey extends string>({
+  label,
+  sortKey,
+  sort,
+  onSort,
+  align = "left",
+}: {
+  label: string;
+  sortKey: TSortKey;
+  sort: SortConfig<TSortKey>;
+  onSort: (key: TSortKey) => void;
+  align?: "left" | "right";
+}) {
+  const active = sort.key === sortKey;
+  return (
+    <th className={`py-3 pr-4 ${align === "right" ? "text-right" : ""}`}>
+      <button type="button" onClick={() => onSort(sortKey)} className={`inline-flex items-center gap-1 font-bold uppercase ${align === "right" ? "justify-end" : ""}`}>
+        {label}
+        <i className={`bi ${active ? (sort.direction === "asc" ? "bi-sort-up" : "bi-sort-down") : "bi-arrow-down-up"} text-xs`} />
+      </button>
+    </th>
+  );
+}
+
 export default function MarketIntegrationsPage() {
   const [sources, setSources] = useState<MarketIntegrationSource[]>([]);
   const [health, setHealth] = useState<MarketIntegrationHealth[]>([]);
@@ -88,6 +132,9 @@ export default function MarketIntegrationsPage() {
   const [selectedAggregationSources, setSelectedAggregationSources] = useState<string[]>([]);
   const [filterCommodity, setFilterCommodity] = useState<string>("");
   const [filterMarket, setFilterMarket] = useState<string>("");
+  const [search, setSearch] = useState<string>("");
+  const [rawSort, setRawSort] = useState<SortConfig<RawPriceSortKey>>({ key: "observed_at", direction: "desc" });
+  const [normalizedSort, setNormalizedSort] = useState<SortConfig<NormalizedPriceSortKey>>({ key: "price_date", direction: "desc" });
   
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
@@ -168,6 +215,8 @@ export default function MarketIntegrationsPage() {
         source: selectedSource || undefined,
         commodity: filterCommodity || undefined,
         market: filterMarket || undefined,
+        search: search || undefined,
+        ordering: orderingFromSort(activeTab === "raw" ? rawSort : normalizedSort),
         page,
         page_size: pageSize,
       };
@@ -186,7 +235,7 @@ export default function MarketIntegrationsPage() {
     } finally {
       setLoading(false);
     }
-  }, [activeTab, selectedSource, filterCommodity, filterMarket, page, pageSize]);
+  }, [activeTab, selectedSource, filterCommodity, filterMarket, page, pageSize, rawSort, normalizedSort, search]);
 
   useEffect(() => {
     let mounted = true;
@@ -337,11 +386,6 @@ export default function MarketIntegrationsPage() {
   const handleTabChange = (tab: "raw" | "normalized") => {
     setActiveTab(tab);
     setPage(1);
-  };
-
-  const handleFilterSubmit = () => {
-    setPage(1);
-    void loadData();
   };
 
   return (
@@ -503,22 +547,24 @@ export default function MarketIntegrationsPage() {
           </div>
 
           <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-4">
-            <div>
-              <label className="block text-xs font-bold text-main-600 mb-1">Source Feed</label>
-              <select
-                value={selectedSource}
-                onChange={(e) => {
-                  setSelectedSource(e.target.value);
-                  setPage(1);
-                }}
-                className="w-full rounded-md border border-main-300 bg-main-100 px-3 py-2 text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-100 transition-all"
-              >
-                <option value="">All Integration Sources</option>
-                {sourceCards.map((src) => (
-                  <option key={src.key} value={src.key}>{src.name}</option>
-                ))}
-              </select>
-            </div>
+            {activeTab === "raw" && (
+              <div>
+                <label className="block text-xs font-bold text-main-600 mb-1">Source Feed</label>
+                <select
+                  value={selectedSource}
+                  onChange={(e) => {
+                    setSelectedSource(e.target.value);
+                    setPage(1);
+                  }}
+                  className="w-full rounded-md border border-main-300 bg-main-100 px-3 py-2 text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-100 transition-all"
+                >
+                  <option value="">All Integration Sources</option>
+                  {sourceCards.map((src) => (
+                    <option key={src.key} value={src.key}>{src.name}</option>
+                  ))}
+                </select>
+              </div>
+            )}
             
             <div>
               <label className="block text-xs font-bold text-main-600 mb-1">Filter Commodity</label>
@@ -542,16 +588,20 @@ export default function MarketIntegrationsPage() {
               />
             </div>
 
-            <div className="flex items-end">
-              <button
-                type="button"
-                onClick={handleFilterSubmit}
-                className="w-full flex items-center justify-center gap-2 rounded-md bg-main-800 text-main-0 py-2.5 text-sm font-bold hover:bg-main-900 transition-all cursor-pointer"
-              >
-                <i className="bi bi-filter" />
-                Apply Filters
-              </button>
+            <div>
+              <label className="block text-xs font-bold text-main-600 mb-1">Search</label>
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => {
+                  setSearch(e.target.value);
+                  setPage(1);
+                }}
+                placeholder="Source, market, commodity, reference"
+                className="w-full rounded-md border border-main-300 bg-main-100 px-3 py-2 text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-100 transition-all"
+              />
             </div>
+
           </div>
         </div>
 
@@ -561,14 +611,30 @@ export default function MarketIntegrationsPage() {
             <p className="text-sm font-semibold text-main-500">Retrieving feed rows...</p>
           </div>
         ) : activeTab === "raw" ? (
-          <RawPricesTable prices={rawPrices} onViewRaw={setRawPayloadModal} />
+          <RawPricesTable
+            prices={rawPrices}
+            sort={rawSort}
+            onSort={(key) => {
+              setRawSort((current) => nextSort(current, key));
+              setPage(1);
+            }}
+            onViewRaw={setRawPayloadModal}
+          />
         ) : (
-          <NormalizedPricesTable prices={normalizedPrices} />
+          <NormalizedPricesTable
+            prices={normalizedPrices}
+            sort={normalizedSort}
+            onSort={(key) => {
+              setNormalizedSort((current) => nextSort(current, key));
+              setPage(1);
+            }}
+          />
         )}
 
         {!loading && (
           <div className="mt-4 flex flex-col gap-3 border-t border-main-200 pt-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center gap-2 text-sm text-main-600">
+            <div className="flex flex-wrap items-center gap-3 text-sm text-main-600">
+              <span>{showingCount(activeTab === "raw" ? rawPrices.length : normalizedPrices.length, pagination.total_items)}</span>
               <span>Rows</span>
               <select
                 value={pageSize}
@@ -650,9 +716,13 @@ export default function MarketIntegrationsPage() {
 
 function RawPricesTable({
   prices,
+  sort,
+  onSort,
   onViewRaw,
 }: {
   prices: RawCommodityPrice[];
+  sort: SortConfig<RawPriceSortKey>;
+  onSort: (key: RawPriceSortKey) => void;
   onViewRaw: (item: RawCommodityPrice) => void;
 }) {
   return (
@@ -660,13 +730,12 @@ function RawPricesTable({
       <table className="w-full min-w-220 text-left text-sm">
         <thead>
           <tr className="border-b border-main-200 text-xs font-bold uppercase text-main-500">
-            <th className="py-3 pr-4">Source</th>
-            <th className="py-3 pr-4">Commodity</th>
-            <th className="py-3 pr-4">Market</th>
-            <th className="py-3 pr-4">Price</th>
-            <th className="py-3 pr-4">Reference</th>
-            <th className="py-3 pr-4">Observed</th>
-            <th className="py-3 pr-4">Normalized ID</th>
+            <SortHeader label="Source" sortKey="source" sort={sort} onSort={onSort} />
+            <SortHeader label="Commodity" sortKey="commodity" sort={sort} onSort={onSort} />
+            <SortHeader label="Market" sortKey="market" sort={sort} onSort={onSort} />
+            <SortHeader label="Price" sortKey="price" sort={sort} onSort={onSort} />
+            <SortHeader label="Reference" sortKey="reference" sort={sort} onSort={onSort} />
+            <SortHeader label="Observed" sortKey="observed_at" sort={sort} onSort={onSort} />
             <th className="py-3 pr-4 text-right">Actions</th>
           </tr>
         </thead>
@@ -686,7 +755,6 @@ function RawPricesTable({
                   </td>
                   <td className="max-w-56 truncate py-4 pr-4 text-xs text-main-600">{price.source_reference || "None"}</td>
                   <td className="py-4 pr-4 text-xs text-main-600">{formatDate(price.observed_at)}</td>
-                  <td className="py-4 pr-4 font-mono text-xs text-main-600">{price.normalized_price_id || "None"}</td>
                   <td className="py-4 pr-4 text-right">
                     <button
                       type="button"
@@ -700,7 +768,7 @@ function RawPricesTable({
             ))
           ) : (
             <tr>
-              <td colSpan={8} className="py-12 text-center text-main-550">
+              <td colSpan={7} className="py-12 text-center text-main-550">
                 No raw imported rows found. Check updates and import new source data.
               </td>
             </tr>
@@ -711,31 +779,29 @@ function RawPricesTable({
   );
 }
 
-function NormalizedPricesTable({ prices }: { prices: MarketPrice[] }) {
+type RawPriceSortKey = "source" | "commodity" | "market" | "price" | "reference" | "observed_at";
+
+type NormalizedPriceSortKey = "commodity" | "market" | "price" | "raw_prices_count" | "price_date" | "created_at";
+
+function NormalizedPricesTable({ prices, sort, onSort }: { prices: MarketPrice[]; sort: SortConfig<NormalizedPriceSortKey>; onSort: (key: NormalizedPriceSortKey) => void }) {
   return (
     <div className="mt-5 overflow-x-auto">
       <table className="w-full min-w-220 text-left text-sm">
         <thead>
           <tr className="border-b border-main-200 text-xs font-bold uppercase text-main-500">
-            <th className="py-3 pr-4">Source</th>
-            <th className="py-3 pr-4">Commodity</th>
-            <th className="py-3 pr-4">Market</th>
-            <th className="py-3 pr-4">Price TZS</th>
+            <SortHeader label="Commodity" sortKey="commodity" sort={sort} onSort={onSort} />
+            <SortHeader label="Market" sortKey="market" sort={sort} onSort={onSort} />
+            <SortHeader label="Price TZS" sortKey="price" sort={sort} onSort={onSort} />
             <th className="py-3 pr-4">Price USD</th>
-            <th className="py-3 pr-4">Sources</th>
-            <th className="py-3 pr-4">Report Date</th>
-            <th className="py-3 pr-4">Date Synced</th>
+            <SortHeader label="Sources" sortKey="raw_prices_count" sort={sort} onSort={onSort} />
+            <SortHeader label="Report Date" sortKey="price_date" sort={sort} onSort={onSort} />
+            <SortHeader label="Date Synced" sortKey="created_at" sort={sort} onSort={onSort} />
           </tr>
         </thead>
         <tbody className="divide-y divide-main-200">
           {prices.length ? (
             prices.map((price) => (
               <tr key={price.price_id} className="hover:bg-main-50 transition-colors">
-                <td className="py-4 pr-4">
-                  <span className="inline-flex rounded-md bg-primary-100 px-2.5 py-1 text-xs font-bold text-primary-700">
-                    {price.source_name || sourceLabel(price.source_key || "feed")}
-                  </span>
-                </td>
                 <td className="py-4 pr-4 font-bold text-main-900">
                   {price.commodity?.name ?? price.commodity_name ?? "Unknown"}
                 </td>
@@ -751,7 +817,7 @@ function NormalizedPricesTable({ prices }: { prices: MarketPrice[] }) {
             ))
           ) : (
             <tr>
-              <td colSpan={8} className="py-12 text-center text-main-550">
+              <td colSpan={7} className="py-12 text-center text-main-550">
                 No synced integration rows found. Try triggering a sync.
               </td>
             </tr>

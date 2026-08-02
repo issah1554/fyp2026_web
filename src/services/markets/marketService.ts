@@ -260,7 +260,7 @@ export async function deleteMarket(marketId: string) {
 }
 
 export async function listMarketPrices(
-  params: { market_id?: string; commodity_id?: string; price_date?: string; date_from?: string; date_to?: string; source_key?: string; page?: number; page_size?: number } = {},
+  params: { market_id?: string; commodity_id?: string; price_date?: string; date_from?: string; date_to?: string; source_key?: string; search?: string; ordering?: string; page?: number; page_size?: number } = {},
 ): Promise<MarketPriceListResult> {
   const payload = await marketRequest<MarketPrice[]>(
     withQuery("/market-prices", params),
@@ -418,7 +418,7 @@ export async function listLivePrices(params: { source?: string; commodity?: stri
   return { data, pagination: normalizePagination(payload.meta, data.length) };
 }
 
-export async function listStoredIntegrationPrices(params: { source?: string; commodity?: string; market?: string; page?: number; page_size?: number } = {}): Promise<MarketPriceListResult> {
+export async function listStoredIntegrationPrices(params: { source?: string; commodity?: string; market?: string; search?: string; ordering?: string; page?: number; page_size?: number } = {}): Promise<MarketPriceListResult> {
   const payload = await marketRequest<MarketPrice[]>(
     withQuery("/market-integrations/prices", params),
     {},
@@ -428,7 +428,7 @@ export async function listStoredIntegrationPrices(params: { source?: string; com
   return { data, pagination: normalizePagination(payload.meta, data.length) };
 }
 
-export async function listRawIntegrationPrices(params: { source?: string; commodity?: string; market?: string; page?: number; page_size?: number } = {}): Promise<RawCommodityPriceListResult> {
+export async function listRawIntegrationPrices(params: { source?: string; commodity?: string; market?: string; search?: string; ordering?: string; page?: number; page_size?: number } = {}): Promise<RawCommodityPriceListResult> {
   const payload = await marketRequest<RawCommodityPrice[]>(
     withQuery("/market-integrations/raw-prices", params),
     {},

@@ -158,6 +158,10 @@ function statusBadgeClass(status: string) {
   return status === "active" ? "bg-success-100 text-success-700" : "bg-main-200 text-main-700";
 }
 
+function showingCount(currentCount: number, totalItems: number) {
+  return `Showing ${currentCount.toLocaleString()} of ${totalItems.toLocaleString()}`;
+}
+
 function sourceLabel(price: MarketPrice) {
   return price.source_name || (price.source_key ? price.source_key.replace(/_/g, " ").replace(/\b\w/g, (char) => char.toUpperCase()) : "Manual");
 }
@@ -608,7 +612,8 @@ export default function MarketsPage() {
           </table>
         </div>
         <div className="mt-4 flex flex-col gap-3 border-t border-main-200 pt-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-2 text-sm text-main-600">
+          <div className="flex flex-wrap items-center gap-3 text-sm text-main-600">
+            <span>{showingCount(markets.length, pagination.total_items)}</span>
             <span>Rows</span>
             <select value={pageSize} onChange={(event) => { setPageSize(Number(event.target.value)); setPage(1); }} className="rounded-md border border-main-300 bg-main-100 px-2 py-1 text-sm text-main-900 outline-none">
               {[10, 25, 50, 100].map((size) => <option key={size} value={size}>{size}</option>)}
@@ -666,7 +671,20 @@ export default function MarketsPage() {
         </div>
         {loadingPrices ? <p className="py-10 text-center text-main-500">Loading prices...</p> : <PriceTable prices={prices} markets={markets} commodities={commodities} canUpdate={canUpdatePrices} canDelete={canDeletePrices} onEdit={(price) => openEditPrice(price)} onDelete={removePrice} emptyText="No market prices found." />}
         <div className="mt-4 flex flex-col gap-3 border-t border-main-200 pt-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-2 text-sm text-main-600"><span>Rows</span><select value={pricePageSize} onChange={(event) => { setPricePageSize(Number(event.target.value)); setPricePage(1); }} className="rounded-md border border-main-300 bg-main-100 px-2 py-1 text-sm text-main-900 outline-none">{[10, 25, 50, 100].map((size) => <option key={size} value={size}>{size}</option>)}</select></div>
+          <div className="flex flex-wrap items-center gap-3 text-sm text-main-600">
+            <span>{showingCount(prices.length, pricePagination.total_items)}</span>
+            <span>Rows</span>
+            <select
+              value={pricePageSize}
+              onChange={(event) => {
+                setPricePageSize(Number(event.target.value));
+                setPricePage(1);
+              }}
+              className="rounded-md border border-main-300 bg-main-100 px-2 py-1 text-sm text-main-900 outline-none"
+            >
+              {[10, 25, 50, 100].map((size) => <option key={size} value={size}>{size}</option>)}
+            </select>
+          </div>
           <Pagination page={pricePagination.page} pageSize={pricePagination.page_size} totalItems={pricePagination.total_items} onChange={setPricePage} showHelper size="sm" rounded="full" disabled={loadingPrices} />
         </div>
       </section>
