@@ -112,20 +112,12 @@ export function Sidebar({
   const groups = useMemo<NavGroup[]>(
     () => [
       {
-        title: "Overview",
+        title: "Dashboard",
         icon: <i className="bi bi-grid-1x2" />,
         items: [
           {
             label: "Dashboard",
             to: "/dash",
-          },
-          {
-            label: "Market Data",
-            to: "/market-data",
-          },
-          {
-            label: "Validation",
-            to: "/validations",
           },
         ],
       },
@@ -230,11 +222,22 @@ export function Sidebar({
   );
   const visibleGroupItems = useMemo<NavItemProps[]>(
     () =>
-      visibleGroups.map((group) => ({
-        label: group.title,
-        icon: group.icon,
-        subItems: stripNavItemIcons(group.items),
-      })),
+      visibleGroups.map((group) => {
+        if (group.items.length === 1) {
+          const firstItem = group.items[0];
+          return {
+            label: group.title,
+            icon: group.icon,
+            to: firstItem.to,
+            requiredPermission: firstItem.requiredPermission,
+          };
+        }
+        return {
+          label: group.title,
+          icon: group.icon,
+          subItems: stripNavItemIcons(group.items),
+        };
+      }),
     [visibleGroups],
   );
 
