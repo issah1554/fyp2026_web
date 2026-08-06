@@ -54,7 +54,7 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
         </nav>
       </header>
 
-      <main className="flex-1 px-6 py-12 mx-auto w-full max-w-7xl lg:px-8">{children}</main>
+      <main className="flex-1 w-full">{children}</main>
 
       <footer className="bg-main-900 px-6 py-16 text-main-400 lg:px-8">
         <div className="mx-auto grid max-w-7xl gap-8 sm:grid-cols-2 md:grid-cols-3">

@@ -243,7 +243,7 @@ export function UssdPage() {
       <div className="grid gap-6 lg:grid-cols-[0.75fr_1.25fr]">
         <div className="grid gap-4"><StatCard label="Live sessions" value={String(sessions)} icon="bi-phone-vibrate" detail="Average response latency 480 ms" /><StatCard label="Dial code" value="*123#" icon="bi-hash" detail="Gateway uptime 99.98%" /></div>
         <div className="rounded-md border border-main-200 bg-main-100 p-6 shadow-sm">
-          <div className="mx-auto max-w-sm rounded-[2rem] border-8 border-main-900 bg-main-950 p-4 shadow-sm">
+          <div className="mx-auto max-w-sm rounded-4xl border-8 border-main-900 bg-main-950 p-4 shadow-sm">
             <div className="rounded-md bg-main-100 p-4 font-mono text-sm whitespace-pre-line text-main-900">{screen}</div>
             <div className="mt-4 grid grid-cols-3 gap-2">{["1", "2", "3", "4", "5", "6", "7", "8", "9", "*", "0", "#"].map((key) => <button key={key} onClick={() => setScreen(key === "1" ? "Rice Ifakara\nRetail: TZS 2,950\nWholesale: TZS 2,720" : key === "2" ? "Sell advice\nHold rice for 10-14 days" : screen)} className="rounded-md bg-main-800 py-3 font-bold text-main-0 hover:bg-primary-700" type="button">{key}</button>)}</div>
           </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "../../auth/hooks/useAuth";
 import {
@@ -9,10 +9,11 @@ import {
   type CommodityListing,
 } from "../../../services/trade/tradeService";
 import { listCommodities, type Commodity } from "../../../services/commodities/commodityService";
-import { listAreas, type Area } from "../../../services/areas/areaService";
+import { listAreas, type Area, type AreaLevel } from "../../../services/areas/areaService";
 
 type PriceRangeOption = "any" | "under-50k" | "50k-150k" | "over-150k";
 type SortOption = "recommended" | "price-asc" | "price-desc" | "newest";
+type ActiveArea = { area_id: string; name: string; level: AreaLevel | null; count: number };
 
 export default function MarketplacePage() {
   const { user } = useAuth();
@@ -21,7 +22,7 @@ export default function MarketplacePage() {
   // State
   const [listings, setListings] = useState<CommodityListing[]>([]);
   const [commodities, setCommodities] = useState<Commodity[]>([]);
-  const [areas, setAreas] = useState<Area[]>([]);
+  const [areaMap, setAreaMap] = useState<Map<string, Area>>(new Map());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
@@ -29,6 +30,8 @@ export default function MarketplacePage() {
   // Search & Filter state
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedArea, setSelectedArea] = useState("");
+  const [locationSearch, setLocationSearch] = useState("");
+  const [locationDropdownOpen, setLocationDropdownOpen] = useState(false);
   const [selectedCommodity, setSelectedCommodity] = useState("");
   const [priceRange, setPriceRange] = useState<PriceRangeOption>("any");
   const [sortBy, setSortBy] = useState<SortOption>("recommended");
@@ -36,25 +39,28 @@ export default function MarketplacePage() {
   // Favorites state (client-side only for visual interaction)
   const [favorites, setFavorites] = useState<Record<string, boolean>>({});
 
+  // Location search state
+  const [locationResults, setLocationResults] = useState<Area[]>([]);
+  const [locationSearching, setLocationSearching] = useState(false);
+  const locationDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   // Modals state
   const [orderModalOpen, setOrderModalOpen] = useState(false);
   const [orderingListing, setOrderingListing] = useState<CommodityListing | null>(null);
   const [orderQuantity, setOrderQuantity] = useState(1);
   const [submitting, setSubmitting] = useState(false);
 
-  // Load initial data
+  // Load initial data (no bulk area preload — areas are searched server-side on demand)
   const loadData = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
-      const [listingsData, commoditiesData, areasData] = await Promise.all([
+      const [listingsData, commoditiesData] = await Promise.all([
         listListings(),
         listCommodities(),
-        listAreas(),
       ]);
       setListings(listingsData);
       setCommodities(commoditiesData.data || []);
-      setAreas(areasData.data || []);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load listings and catalog data.");
     } finally {
@@ -70,29 +76,57 @@ export default function MarketplacePage() {
   }, [loadData]);
 
   // Compute active locations that intersect with active listings
-  const activeListingAreas = useMemo(() => {
-    const areaMap = new Map<string, { area_id: string; name: string; count: number }>();
+  const activeListingAreas = useMemo<ActiveArea[]>(() => {
+    const result = new Map<string, ActiveArea>();
     listings.forEach((item) => {
       if (item.status === "active" && item.adm_area) {
         const areaId = item.adm_area.area_id;
-        const existing = areaMap.get(areaId);
+        const existing = result.get(areaId);
         if (existing) {
           existing.count += 1;
         } else {
-          areaMap.set(areaId, {
+          const fullArea = areaMap.get(areaId);
+          result.set(areaId, {
             area_id: areaId,
             name: item.adm_area.name,
+            level: fullArea?.level ?? null,
             count: 1,
           });
         }
       }
     });
-    return Array.from(areaMap.values());
-  }, [listings]);
+    return Array.from(result.values());
+  }, [listings, areaMap]);
+
+  // Walk parent chain to build breadcrumb ancestor names (Region > District > Ward)
+  const breadcrumbSegments = useMemo(() => {
+    if (!selectedArea) return [];
+    const segments: string[] = [];
+    let current = areaMap.get(selectedArea);
+    // Each Area has parent: { area_id, name, level } inline — use that name directly
+    // then look up the full parent Area to continue walking further up
+    while (current?.parent) {
+      segments.unshift(current.parent.name);
+      // Walk up: look up parent's full Area to read ITS parent
+      current = areaMap.get(current.parent.area_id);
+    }
+    return segments;
+  }, [selectedArea, areaMap]);
+
+  // Level label (Region / District / Ward)
+  const levelLabel = (level: AreaLevel | null): string => {
+    if (!level) return "";
+    const map: Record<AreaLevel, string> = {
+      region: "Region",
+      district: "District",
+      ward: "Ward",
+    };
+    return map[level];
+  };
 
   // Filter listings: active only for marketplace
   const filteredListings = useMemo(() => {
-    let list = listings.filter((item) => {
+    const list = listings.filter((item) => {
       if (item.status !== "active") return false;
 
       // Search query
@@ -168,168 +202,238 @@ export default function MarketplacePage() {
   };
 
   const selectedAreaName = selectedArea
-    ? activeListingAreas.find((a) => a.area_id === selectedArea)?.name
+    ? (areaMap.get(selectedArea)?.name ?? activeListingAreas.find((a) => a.area_id === selectedArea)?.name ?? "Tanzania")
     : "Tanzania";
 
-  const selectedCommodityName = selectedCommodity
-    ? commodities.find((c) => c.commodity_id === selectedCommodity)?.name
-    : "Commodities";
+
+  // Build listing count lookup: area_id → count
+  const listingCountByArea = useMemo(() => {
+    const counts = new Map<string, number>();
+    activeListingAreas.forEach((a) => counts.set(a.area_id, a.count));
+    return counts;
+  }, [activeListingAreas]);
+
+  // Server-side debounced location search
+  useEffect(() => {
+    if (locationDebounceRef.current) clearTimeout(locationDebounceRef.current);
+    if (!locationDropdownOpen) return;
+    locationDebounceRef.current = setTimeout(() => {
+      setLocationSearching(true);
+      void listAreas({ search: locationSearch.trim() || undefined, page_size: 20 })
+        .then((res) => {
+          const results = res.data || [];
+          setLocationResults(results);
+          // Populate areaMap with results for breadcrumb parent traversal
+          setAreaMap((prev) => {
+            const next = new Map(prev);
+            results.forEach((a) => next.set(a.area_id, a));
+            return next;
+          });
+        })
+        .catch(() => setLocationResults([]))
+        .finally(() => setLocationSearching(false));
+    }, 300);
+    return () => {
+      if (locationDebounceRef.current) clearTimeout(locationDebounceRef.current);
+    };
+  }, [locationSearch, locationDropdownOpen]);
+
+  // When an area is selected, ensure its ancestor chain is in the areaMap for breadcrumbs
+  useEffect(() => {
+    if (!selectedArea || areaMap.has(selectedArea)) return;
+    void listAreas({ search: undefined, page_size: 5000 })
+      .then((res) => {
+        setAreaMap((prev) => {
+          const next = new Map(prev);
+          (res.data || []).forEach((a) => next.set(a.area_id, a));
+          return next;
+        });
+      })
+      .catch(() => undefined);
+  }, [selectedArea, areaMap]);
+
+  const handleAreaSelect = (area: Area) => {
+    setSelectedArea(area.area_id);
+    setLocationSearch(area.name);
+    setLocationDropdownOpen(false);
+  };
+
+  const handleAreaClear = () => {
+    setSelectedArea("");
+    setLocationSearch("");
+    setLocationDropdownOpen(false);
+  };
 
   return (
-    <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-4 sm:px-6 lg:px-8">
-      {/* Breadcrumb */}
-      <nav className="text-xs font-semibold text-main-500 flex items-center gap-2">
-        <Link href="/" className="hover:text-primary-700">Home</Link>
-        <i className="bi bi-chevron-right text-3xs" />
-        <Link href="/market" className="hover:text-primary-700">Commodity For Sale</Link>
-        <i className="bi bi-chevron-right text-3xs" />
-        <span className="text-main-800">{selectedAreaName}</span>
-      </nav>
+    <div className="w-full flex flex-col gap-8">
+      {/* Grouped Header & Flat Filter Banner */}
+      <section className="w-full bg-main-200 border-b border-main-300 py-8 px-0 shadow-none">
+        <div className="mx-auto max-w-7xl px-6 lg:px-8 flex flex-col gap-6" onClick={() => setLocationDropdownOpen(false)}>
+          {/* Breadcrumb — shows full ancestor chain when a location is selected */}
+          <nav className="text-xs font-semibold text-main-600 flex items-center flex-wrap gap-2">
+            <Link href="/" className="hover:text-primary-700 transition-colors">Home</Link>
+            <i className="bi bi-chevron-right text-3xs text-main-400" />
+            <Link href="/market" className="hover:text-primary-700 transition-colors">Commodity For Sale</Link>
+            {breadcrumbSegments.map((seg) => (
+              <span key={seg} className="flex items-center gap-2">
+                <i className="bi bi-chevron-right text-3xs text-main-400" />
+                <span className="text-main-500">{seg}</span>
+              </span>
+            ))}
+            <i className="bi bi-chevron-right text-3xs text-main-400" />
+            <span className="text-main-800">{selectedAreaName}</span>
+          </nav>
 
-      {/* Horizontal Filter Bar */}
-      <section className="rounded-xl border border-main-200 bg-main-100 p-5 shadow-sm">
-        <div className="grid gap-5 md:grid-cols-4 items-end">
-
-          {/* Location Selector (Active Intersected Areas Only) */}
-          <div className="relative">
-            <label className="block text-xs font-bold text-main-500 mb-2 uppercase">Location</label>
+          {/* Filters Grid */}
+          <div className="grid gap-5 md:grid-cols-4 items-end">
+            {/* Searchable Location Selector */}
             <div className="relative">
-              <i className="bi bi-geo-alt absolute left-3 top-1/2 -translate-y-1/2 text-main-400" />
-              <select
-                value={selectedArea}
-                onChange={(e) => setSelectedArea(e.target.value)}
-                className="w-full rounded-lg border border-main-300 bg-main-0 py-2 pl-9 pr-4 text-xs outline-none focus:border-primary-500 transition-colors"
+              <label className="block text-xs font-bold text-main-600 mb-2 uppercase tracking-wide">Location</label>
+              <div className="relative">
+                <i className="bi bi-geo-alt absolute left-3 top-1/2 -translate-y-1/2 text-main-400 z-10" />
+                <input
+                  type="text"
+                  placeholder="Search location..."
+                  value={locationSearch}
+                  onFocus={() => setLocationDropdownOpen(true)}
+                  onBlur={() => setTimeout(() => setLocationDropdownOpen(false), 150)}
+                  onChange={(e) => {
+                    setLocationSearch(e.target.value);
+                    setSelectedArea("");
+                    setLocationDropdownOpen(true);
+                  }}
+                  className="w-full rounded-lg border border-main-400 bg-main-0 py-2 pl-9 pr-8 text-xs text-main-900 outline-none focus:border-primary-500 transition-colors"
+                />
+                {locationSearch && (
+                  <button
+                    type="button"
+                    onClick={handleAreaClear}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-main-400 hover:text-main-700 text-sm cursor-pointer"
+                  >
+                    <i className="bi bi-x" />
+                  </button>
+                )}
+                {locationDropdownOpen && (
+                  <ul className="absolute z-50 top-full left-0 mt-1 w-full rounded-lg border border-main-300 bg-main-0 shadow-lg max-h-56 overflow-y-auto">
+                    {locationSearching ? (
+                      <li className="px-3 py-3 text-xs text-main-500 flex items-center gap-2">
+                        <i className="bi bi-arrow-repeat animate-spin" /> Searching...
+                      </li>
+                    ) : locationResults.length === 0 ? (
+                      <li className="px-3 py-3 text-xs text-main-400">No locations found</li>
+                    ) : (
+                      locationResults.map((a) => (
+                        <li key={a.area_id}>
+                          <button
+                            type="button"
+                            onMouseDown={() => handleAreaSelect(a)}
+                            className="w-full flex items-center justify-between px-3 py-2 text-xs text-main-800 hover:bg-main-100 cursor-pointer text-left"
+                          >
+                            <span>{a.name}</span>
+                            <span className="ml-2 text-main-400 text-2xs shrink-0">
+                              {levelLabel(a.level)}
+                              {(listingCountByArea.get(a.area_id) ?? 0) > 0 && (
+                                <> · {listingCountByArea.get(a.area_id)}</>
+                              )}
+                            </span>
+                          </button>
+                        </li>
+                      ))
+                    )}
+                  </ul>
+                )}
+              </div>
+            </div>
+
+            {/* Commodity Type Selector */}
+            <div>
+              <label className="block text-xs font-bold text-main-600 mb-2 uppercase tracking-wide">Commodity Type</label>
+              <div className="relative">
+                <i className="bi bi-basket absolute left-3 top-1/2 -translate-y-1/2 text-main-400" />
+                <select
+                  value={selectedCommodity}
+                  onChange={(e) => setSelectedCommodity(e.target.value)}
+                  className="w-full rounded-lg border border-main-400 bg-main-0 py-2 pl-9 pr-4 text-xs text-main-900 outline-none focus:border-primary-500 transition-colors cursor-pointer"
+                >
+                  <option value="" className="bg-main-0 text-main-900">Any commodity</option>
+                  {commodities.map((c) => (
+                    <option key={c.commodity_id} value={c.commodity_id} className="bg-main-0 text-main-900">
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {/* Price Selector */}
+            <div>
+              <label className="block text-xs font-bold text-main-600 mb-2 uppercase tracking-wide">Price (TZS)</label>
+              <div className="relative">
+                <i className="bi bi-cash-stack absolute left-3 top-1/2 -translate-y-1/2 text-main-400" />
+                <select
+                  value={priceRange}
+                  onChange={(e) => setPriceRange(e.target.value as PriceRangeOption)}
+                  className="w-full rounded-lg border border-main-400 bg-main-0 py-2 pl-9 pr-4 text-xs text-main-900 outline-none focus:border-primary-500 transition-colors cursor-pointer"
+                >
+                  <option value="any" className="bg-main-0 text-main-900">Any price</option>
+                  <option value="under-50k" className="bg-main-0 text-main-900">Under 50,000 TZS</option>
+                  <option value="50k-150k" className="bg-main-0 text-main-900">50,000 - 150,000 TZS</option>
+                  <option value="over-150k" className="bg-main-0 text-main-900">Over 150,000 TZS</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Reset Filters / Action */}
+            <div>
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedArea("");
+                  setSelectedCommodity("");
+                  setPriceRange("any");
+                  setSearchQuery("");
+                  setSortBy("recommended");
+                  setLocationSearch("");
+                }}
+                className="w-full flex items-center justify-center gap-2 rounded-lg border border-main-400 bg-main-0 py-2 text-xs font-bold text-main-700 hover:bg-main-100 hover:text-main-900 transition-all cursor-pointer shadow-sm"
               >
-                <option value="">Any location</option>
-                {activeListingAreas.map((a) => (
-                  <option key={a.area_id} value={a.area_id}>
-                    {a.name}
-                  </option>
-                ))}
-              </select>
+                <i className="bi bi-funnel-fill" />
+                Reset Filters
+              </button>
             </div>
           </div>
 
-          {/* Commodity Type Selector */}
-          <div>
-            <label className="block text-xs font-bold text-main-500 mb-2 uppercase">Commodity Type</label>
-            <div className="relative">
-              <i className="bi bi-basket absolute left-3 top-1/2 -translate-y-1/2 text-main-400" />
-              <select
-                value={selectedCommodity}
-                onChange={(e) => setSelectedCommodity(e.target.value)}
-                className="w-full rounded-lg border border-main-300 bg-main-0 py-2 pl-9 pr-4 text-xs outline-none focus:border-primary-500 transition-colors"
-              >
-                <option value="">Any commodity</option>
-                {commodities.map((c) => (
-                  <option key={c.commodity_id} value={c.commodity_id}>
-                    {c.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          {/* Price Selector */}
-          <div>
-            <label className="block text-xs font-bold text-main-500 mb-2 uppercase">Price (TZS)</label>
-            <div className="relative">
-              <i className="bi bi-cash-stack absolute left-3 top-1/2 -translate-y-1/2 text-main-400" />
-              <select
-                value={priceRange}
-                onChange={(e) => setPriceRange(e.target.value as PriceRangeOption)}
-                className="w-full rounded-lg border border-main-300 bg-main-0 py-2 pl-9 pr-4 text-xs outline-none focus:border-primary-500 transition-colors"
-              >
-                <option value="any">Any price</option>
-                <option value="under-50k">Under 50,000 TZS</option>
-                <option value="50k-150k">50,000 - 150,000 TZS</option>
-                <option value="over-150k">Over 150,000 TZS</option>
-              </select>
-            </div>
-          </div>
-
-          {/* Reset Filters / Text Search */}
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={() => {
-                setSelectedArea("");
-                setSelectedCommodity("");
-                setPriceRange("any");
-                setSearchQuery("");
-                setSortBy("recommended");
-              }}
-              className="w-full flex items-center justify-center gap-2 rounded-lg border border-main-300 bg-main-0 py-2 text-xs font-bold text-main-700 hover:bg-main-50 transition-all cursor-pointer"
-            >
-              <i className="bi bi-funnel-fill" />
-              Reset Filters
-            </button>
-          </div>
-        </div>
-
-        {/* Text Search Bar */}
-        <div className="relative mt-4">
-          <i className="bi bi-search absolute left-3 top-1/2 -translate-y-1/2 text-main-400" />
-          <input
-            type="text"
-            placeholder="Search by keywords (e.g. Grade A maize, Kilosa)..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full rounded-lg border border-main-300 bg-main-0 py-2 pl-10 pr-4 text-xs outline-none focus:border-primary-500 transition-colors"
-          />
+          {/* Results count — below the filters */}
+          <p className="text-sm font-semibold text-main-600">
+            {filteredListings.length.toLocaleString()} results found
+          </p>
         </div>
       </section>
 
-      {/* Notifications */}
-      {error && (
-        <div className="rounded-xl border border-danger-300 bg-danger-100 px-4 py-3 text-sm font-semibold text-danger-700 shadow-sm">
-          <i className="bi bi-exclamation-triangle-fill mr-2" />
-          {error}
-        </div>
-      )}
-      {notice && (
-        <div className="rounded-xl border border-success-300 bg-success-100 px-4 py-3 text-sm font-semibold text-success-700 shadow-sm">
-          <i className="bi bi-check-circle-fill mr-2" />
-          {notice}
-        </div>
-      )}
-
-      {/* Main Listings Header */}
-      <section className="flex flex-col gap-3">
-        <div className="flex flex-col sm:flex-row sm:items-baseline sm:justify-between border-b border-main-200 pb-3">
-          <div>
-            <h2 className="text-xl font-extrabold text-main-950">
-              {selectedCommodityName} For Sale in {selectedAreaName}
-            </h2>
-            <p className="text-xs text-main-500 mt-1 font-semibold">
-              {filteredListings.length.toLocaleString()} results found
-            </p>
+      {/* Main Content Area */}
+      <div className="mx-auto w-full max-w-7xl px-6 py-12 lg:px-8 flex flex-col gap-6">
+        {/* Notifications */}
+        {error && (
+          <div className="rounded-xl border border-danger-300 bg-danger-100 px-4 py-3 text-sm font-semibold text-danger-700 shadow-sm">
+            <i className="bi bi-exclamation-triangle-fill mr-2" />
+            {error}
           </div>
-
-          {/* Sort selector */}
-          <div className="flex items-center gap-2 mt-3 sm:mt-0">
-            <i className="bi bi-sort-down text-main-500" />
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as SortOption)}
-              className="rounded bg-transparent text-xs font-bold text-main-700 border-none outline-none focus:text-primary-700 transition-colors cursor-pointer"
-            >
-              <option value="recommended">Recommended</option>
-              <option value="price-asc">Price: Low to High</option>
-              <option value="price-desc">Price: High to Low</option>
-              <option value="newest">Newest Listings</option>
-            </select>
+        )}
+        {notice && (
+          <div className="rounded-xl border border-success-300 bg-success-100 px-4 py-3 text-sm font-semibold text-success-700 shadow-sm">
+            <i className="bi bi-check-circle-fill mr-2" />
+            {notice}
           </div>
-        </div>
+        )}
 
         {/* Quick Area Tags */}
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs font-bold text-main-600 mt-1">
+        <section className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs font-bold text-main-600 mt-1 pb-4 border-b border-main-200">
           <span className="text-main-500 uppercase tracking-wider text-2xs">Quick Areas:</span>
           <button
             onClick={() => setSelectedArea("")}
             className={`px-3 py-1 rounded-full border transition-all cursor-pointer ${
               selectedArea === ""
-                ? "bg-primary-50 border-primary-200 text-primary-700"
+                ? "bg-primary-50 border-primary-200 text-primary-700 animate-fade-in"
                 : "border-main-300 hover:border-main-500 text-main-600"
             }`}
           >
@@ -348,104 +452,104 @@ export default function MarketplacePage() {
               {a.name} ({a.count})
             </button>
           ))}
-        </div>
-      </section>
+        </section>
 
-      {/* Listings List (Grid Cards) */}
-      {loading ? (
-        <div className="py-24 text-center text-main-500">
-          <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-primary-600 border-r-transparent align-[-0.125em]" />
-          <p className="mt-4 font-semibold">Loading marketplace...</p>
-        </div>
-      ) : filteredListings.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-main-300 bg-main-0 py-16 text-center text-main-500">
-          <i className="bi bi-basket text-4xl text-main-300" />
-          <p className="mt-4 text-base font-bold text-main-800">No matching commodity listings found</p>
-          <p className="text-xs text-main-500">Try adjusting your locations, commodity filters, or search keywords.</p>
-        </div>
-      ) : (
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {filteredListings.map((item) => (
-            <div
-              key={item.listing_id}
-              className="group flex flex-col justify-between overflow-hidden rounded-xl border border-main-200 bg-main-100 p-5 shadow-sm hover:shadow-md transition-all duration-200 relative"
-            >
-              {/* Favorite heart icon on top right */}
-              <button
-                type="button"
-                onClick={() => toggleFavorite(item.listing_id)}
-                className="absolute right-4 top-4 p-1.5 rounded-full hover:bg-main-250 bg-main-100/50 backdrop-blur-sm transition-colors text-base cursor-pointer z-10"
-                aria-label="Add to favorites"
+        {/* Listings List (Grid Cards) */}
+        {loading ? (
+          <div className="py-24 text-center text-main-500">
+            <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-primary-600 border-r-transparent align-[-0.125em]" />
+            <p className="mt-4 font-semibold">Loading marketplace...</p>
+          </div>
+        ) : filteredListings.length === 0 ? (
+          <div className="rounded-xl border border-dashed border-main-300 bg-main-0 py-16 text-center text-main-500">
+            <i className="bi bi-basket text-4xl text-main-300" />
+            <p className="mt-4 text-base font-bold text-main-800">No matching commodity listings found</p>
+            <p className="text-xs text-main-500">Try adjusting your locations, commodity filters, or search keywords.</p>
+          </div>
+        ) : (
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {filteredListings.map((item) => (
+              <div
+                key={item.listing_id}
+                className="group flex flex-col justify-between overflow-hidden rounded-xl border border-main-200 bg-main-100 p-5 shadow-sm hover:shadow-md transition-all duration-200 relative"
               >
-                <i className={`bi ${favorites[item.listing_id] ? "bi-heart-fill text-danger-600" : "bi-heart text-main-400"}`} />
-              </button>
+                {/* Favorite heart icon on top right */}
+                <button
+                  type="button"
+                  onClick={() => toggleFavorite(item.listing_id)}
+                  className="absolute right-4 top-4 p-1.5 rounded-full hover:bg-main-250 bg-main-100/50 backdrop-blur-sm transition-colors text-base cursor-pointer z-10"
+                  aria-label="Add to favorites"
+                >
+                  <i className={`bi ${favorites[item.listing_id] ? "bi-heart-fill text-danger-600" : "bi-heart text-main-400"}`} />
+                </button>
 
-              <div>
-                <div className="flex items-start justify-between gap-2">
-                  <span className="rounded-full bg-primary-100 px-2.5 py-1 text-xs font-bold text-primary-700">
-                    {item.commodity?.name || "Commodity"}
-                  </span>
-                  <span className="flex items-center text-xs text-main-500 mr-8">
-                    <i className="bi bi-geo-alt-fill mr-1 text-primary-600" />
-                    {item.adm_area?.name}
-                  </span>
-                </div>
-                <h3 className="mt-3 text-lg font-bold text-main-950 group-hover:text-primary-700 transition-colors">
-                  {item.title || `${item.commodity?.name} for Sale`}
-                </h3>
-                <p className="mt-2 line-clamp-3 text-sm text-main-600 leading-relaxed">
-                  {item.description || "No description provided."}
-                </p>
-              </div>
-
-              <div className="mt-6 border-t border-main-200 pt-4">
-                <div className="flex items-end justify-between">
-                  <div>
-                    <span className="text-xs font-semibold text-main-500 block uppercase">Price</span>
-                    <span className="text-lg font-extrabold text-main-900">
-                      TZS {parseFloat(item.price).toLocaleString()}
-                      <span className="text-xs font-normal text-main-500"> / {item.commodity?.unit || "unit"}</span>
+                <div>
+                  <div className="flex items-start justify-between gap-2">
+                    <span className="rounded-full bg-primary-100 px-2.5 py-1 text-xs font-bold text-primary-700">
+                      {item.commodity?.name || "Commodity"}
+                    </span>
+                    <span className="flex items-center text-xs text-main-500 mr-8">
+                      <i className="bi bi-geo-alt-fill mr-1 text-primary-600" />
+                      {item.adm_area?.name}
                     </span>
                   </div>
-                  <div className="text-right">
-                    <span className="text-xs font-semibold text-main-500 block uppercase">Stock</span>
-                    <span className="text-sm font-bold text-main-800">
-                      {parseFloat(item.quantity).toLocaleString()} {item.commodity?.unit}
-                    </span>
-                  </div>
+                  <h3 className="mt-3 text-lg font-bold text-main-950 group-hover:text-primary-700 transition-colors">
+                    {item.title || `${item.commodity?.name} for Sale`}
+                  </h3>
+                  <p className="mt-2 line-clamp-3 text-sm text-main-600 leading-relaxed">
+                    {item.description || "No description provided."}
+                  </p>
                 </div>
 
-                <div className="mt-4">
-                  {isLoggedIn ? (
-                    item.seller_id === user?.id ? (
-                      <button
-                        disabled
-                        className="w-full rounded-lg bg-main-300 py-2.5 text-center text-xs font-bold text-main-600 cursor-not-allowed"
-                      >
-                        Your Listing
-                      </button>
+                <div className="mt-6 border-t border-main-200 pt-4">
+                  <div className="flex items-end justify-between">
+                    <div>
+                      <span className="text-xs font-semibold text-main-500 block uppercase">Price</span>
+                      <span className="text-lg font-extrabold text-main-900">
+                        TZS {parseFloat(item.price).toLocaleString()}
+                        <span className="text-xs font-normal text-main-500"> / {item.commodity?.unit || "unit"}</span>
+                      </span>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-xs font-semibold text-main-500 block uppercase">Stock</span>
+                      <span className="text-sm font-bold text-main-800">
+                        {parseFloat(item.quantity).toLocaleString()} {item.commodity?.unit}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="mt-4">
+                    {isLoggedIn ? (
+                      item.seller_id === user?.id ? (
+                        <button
+                          disabled
+                          className="w-full rounded-lg bg-main-300 py-2.5 text-center text-xs font-bold text-main-600 cursor-not-allowed"
+                        >
+                          Your Listing
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => handleOpenOrderModal(item)}
+                          className="w-full rounded-lg bg-primary-600 py-2.5 text-center text-xs font-bold text-main-0 hover:bg-primary-700 transition-all cursor-pointer"
+                        >
+                          Order Now
+                        </button>
+                      )
                     ) : (
-                      <button
-                        onClick={() => handleOpenOrderModal(item)}
-                        className="w-full rounded-lg bg-primary-600 py-2.5 text-center text-xs font-bold text-main-0 hover:bg-primary-700 transition-all cursor-pointer"
+                      <a
+                        href="/auth/login"
+                        className="block w-full rounded-lg border border-primary-600 py-2 text-center text-xs font-bold text-primary-700 hover:bg-primary-50 transition-all"
                       >
-                        Order Now
-                      </button>
-                    )
-                  ) : (
-                    <a
-                      href="/auth/login"
-                      className="block w-full rounded-lg border border-primary-600 py-2 text-center text-xs font-bold text-primary-700 hover:bg-primary-50 transition-all"
-                    >
-                      Login to Order
-                    </a>
-                  )}
+                        Login to Order
+                      </a>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
-      )}
+            ))}
+          </div>
+        )}
+      </div>
 
       {/* Order Placement Modal */}
       {orderModalOpen && orderingListing && (
