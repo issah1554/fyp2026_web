@@ -49,7 +49,7 @@ export default function OrdersPage() {
   }, [loadData]);
 
   // Separate orders
-  const myUserId = user?.profile?.public_id;
+  const myUserId = user?.id;
   const placedOrders = useMemo(() => orders.filter((o) => o.buyer_id === myUserId), [orders, myUserId]);
   const receivedOrders = useMemo(() => orders.filter((o) => o.listing?.seller_id === myUserId), [orders, myUserId]);
 

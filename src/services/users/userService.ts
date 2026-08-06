@@ -198,7 +198,7 @@ export async function deleteUser(userId: string) {
   const payload = await userRequest<unknown>(
     `/users/${userId}`,
     { method: "DELETE" },
-    "Could not delete user.",
+    "Could not deactivate user.",
   );
-  return payload.message ?? "User deleted successfully.";
+  return payload.message ?? "User deactivated successfully.";
 }

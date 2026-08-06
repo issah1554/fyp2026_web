@@ -20,6 +20,7 @@ export default function ListingsPage() {
 
   // Authentication flags
   const isLoggedIn = Boolean(user);
+  const isAdmin = Boolean(user && (typeof user.role === "string" ? user.role === "admin" : user.role?.code === "admin"));
   const canCreate = isLoggedIn && userCan(user, "listings.create");
   const canUpdate = isLoggedIn && userCan(user, "listings.update");
   const canDelete = isLoggedIn && userCan(user, "listings.delete");
@@ -89,12 +90,12 @@ export default function ListingsPage() {
     return listings.filter((item) => {
       // Tab check
       if (activeTab === "my-listings") {
-        if (!isLoggedIn || item.seller_id !== user?.profile?.public_id) {
+        if (!isLoggedIn || item.seller_id !== user?.id) {
           return false;
         }
       } else {
         // Marketplace only shows active listings unless admin
-        if (item.status !== "active" && !user?.is_staff) {
+        if (item.status !== "active" && !isAdmin) {
           return false;
         }
       }
@@ -262,7 +263,7 @@ export default function ListingsPage() {
             }`}
           >
             <i className="bi bi-journal-text mr-2" />
-            My Listings ({listings.filter((l) => l.seller_id === user?.profile?.public_id).length})
+            My Listings ({listings.filter((l) => l.seller_id === user?.id).length})
           </button>
         </div>
       )}
@@ -398,7 +399,7 @@ export default function ListingsPage() {
 
                 <div className="mt-4">
                   {isLoggedIn ? (
-                    item.seller_id === user?.profile?.public_id ? (
+                    item.seller_id === user?.id ? (
                       <button
                         disabled
                         className="w-full rounded-lg bg-main-300 py-2.5 text-center text-xs font-bold text-main-600 cursor-not-allowed"
