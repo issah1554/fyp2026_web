@@ -390,6 +390,17 @@ export default function MarketIntegrationsPage() {
 
   return (
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 py-4">
+      <div className="flex flex-col gap-2 rounded-md border border-primary-200 bg-primary-50 p-4 text-primary-900">
+        <div className="flex items-center gap-2 font-bold">
+          <i className="bi bi-info-circle-fill text-primary-600" />
+          <span>Automatic Synchronization Active</span>
+        </div>
+        <p className="text-xs text-primary-850 leading-relaxed">
+          The system aggregates and standardizes market prices automatically in the background every 6 hours. 
+          The manual controls below are provided for testing, overrides, and forcing instant updates.
+        </p>
+      </div>
+
       <section className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="text-sm font-semibold text-main-500">Market integrations</p>
