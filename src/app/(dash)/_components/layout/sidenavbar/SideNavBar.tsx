@@ -176,12 +176,16 @@ export function Sidebar({
         icon: <i className="bi bi-graph-up-arrow" />,
         items: [
           {
-            label: "Forecasting",
-            to: "/ai-forecasting",
+            label: "Visualization",
+            to: "/insights/visualization",
           },
           {
-            label: "Reports",
-            to: "/reports",
+            label: "Reporting",
+            to: "/insights/reporting",
+          },
+          {
+            label: "Decision Support",
+            to: "/insights/decision-support",
           },
         ],
       },

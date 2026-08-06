@@ -262,6 +262,183 @@ export function ReportsPage() {
   );
 }
 
+export function InsightsPage() {
+  const reportQueue = [
+    { name: "Weekly commodity bulletin", audience: "Policy & extension teams", schedule: "Every Monday, 08:00", status: "Approved" },
+    { name: "District price variance digest", audience: "Regional market officers", schedule: "Daily, 17:30", status: "Reviewed" },
+    { name: "Buyer readiness brief", audience: "Large buyers & aggregators", schedule: "On demand", status: "Draft" },
+  ];
+
+  const decisionSignals = [
+    {
+      title: "Rice supply tightening in Kilombero",
+      impact: "Wholesale prices are trending upward across three markets.",
+      action: "Prioritize restocking alerts and highlight high-confidence selling windows in tomorrow's bulletin.",
+    },
+    {
+      title: "Maize prices stabilizing after validation cleanup",
+      impact: "Outlier submissions dropped and district averages are converging.",
+      action: "Promote the stable trend in dashboard snapshots and reduce exception-review volume.",
+    },
+    {
+      title: "Beans demand pulse increasing in feeder markets",
+      impact: "Two surrounding markets show stronger retail pull than the district baseline.",
+      action: "Surface this as a decision note for traders comparing destination markets.",
+    },
+  ];
+
+  const dashboardModules = [
+    { name: "Executive dashboard", detail: "High-level KPIs, market coverage, price movement, and alert volumes.", tone: "primary", icon: "bi-speedometer2" },
+    { name: "Analytical visualizations", detail: "Trend charts, variance maps, and commodity comparison views for analysts.", tone: "accent", icon: "bi-bar-chart-line" },
+    { name: "Decision support cards", detail: "Recommended actions, emerging risks, and market opportunities for operations teams.", tone: "warning", icon: "bi-lightbulb" },
+  ];
+
+  const toneClass: Record<string, string> = {
+    primary: "bg-primary-100 text-primary-700",
+    accent: "bg-accent-100 text-accent-700",
+    warning: "bg-warning-100 text-warning-700",
+  };
+
+  return (
+    <PageShell
+      eyebrow="Insight subsystem"
+      title="Reporting, Visualization, and Decision Support"
+      description="Generate structured reports, interactive dashboards, and analytical decision signals from validated market intelligence so officers, managers, and stakeholders can act faster."
+      action={
+        <div className="flex flex-wrap gap-2">
+          <button className="rounded-md bg-primary-600 px-4 py-2 text-sm font-bold text-main-0 hover:bg-primary-700" type="button">
+            <i className="bi bi-file-earmark-pdf" /> Generate report
+          </button>
+          <button className="rounded-md bg-accent-600 px-4 py-2 text-sm font-bold text-main-0 hover:bg-accent-700" type="button">
+            <i className="bi bi-sliders" /> Open dashboard
+          </button>
+        </div>
+      }
+    >
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <StatCard label="Scheduled reports" value="12" icon="bi-file-earmark-text" detail="Automated briefs and stakeholder-ready outputs." />
+        <StatCard label="Live dashboards" value="5" icon="bi-grid-1x2" detail="Operational, analytical, and executive monitoring views." />
+        <StatCard label="Decision alerts" value="18" icon="bi-bell" detail="Priority signals waiting for review or distribution." />
+        <StatCard label="Insight confidence" value="87%" icon="bi-patch-check" detail="Average confidence across active analytical recommendations." />
+      </div>
+
+      <div className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
+        <div className="rounded-md border border-main-200 bg-main-100 p-5 shadow-sm">
+          <div className="flex flex-col gap-2 border-b border-main-200 pb-4">
+            <p className="text-sm font-bold uppercase text-primary-700">Subsystem modules</p>
+            <h2 className="text-xl font-bold text-main-950">What the insights workspace delivers</h2>
+          </div>
+          <div className="mt-5 grid gap-4">
+            {dashboardModules.map((module) => (
+              <article key={module.name} className="rounded-md border border-main-200 bg-main-50 p-4">
+                <div className="flex items-start gap-4">
+                  <span className={`flex size-11 shrink-0 items-center justify-center rounded-md ${toneClass[module.tone]}`}>
+                    <i className={`bi ${module.icon}`} />
+                  </span>
+                  <div>
+                    <h3 className="font-bold text-main-950">{module.name}</h3>
+                    <p className="mt-1 text-sm leading-6 text-main-600">{module.detail}</p>
+                  </div>
+                </div>
+              </article>
+            ))}
+          </div>
+        </div>
+
+        <div className="rounded-md border border-main-200 bg-main-950 p-5 text-main-0 shadow-sm">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <p className="text-sm font-semibold text-main-300">Visualization focus</p>
+              <h2 className="mt-1 text-xl font-bold text-main-0">Analytical trend canvas</h2>
+            </div>
+            <span className="rounded-full bg-success-100 px-3 py-1 text-xs font-bold text-success-700">Live</span>
+          </div>
+          <div className="mt-6 space-y-4">
+            <SparkLine values={[118, 126, 124, 139, 148, 154, 162]} />
+            <div className="grid grid-cols-3 gap-3 text-sm">
+              <div className="rounded-md bg-main-900 p-3">
+                <p className="text-main-400">Commodity trend</p>
+                <p className="mt-2 font-bold text-main-0">Upward</p>
+              </div>
+              <div className="rounded-md bg-main-900 p-3">
+                <p className="text-main-400">Variance hotspots</p>
+                <p className="mt-2 font-bold text-main-0">3 markets</p>
+              </div>
+              <div className="rounded-md bg-main-900 p-3">
+                <p className="text-main-400">Dashboard refresh</p>
+                <p className="mt-2 font-bold text-main-0">15 min</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
+        <div className="rounded-md border border-main-200 bg-main-100 p-5 shadow-sm">
+          <div className="flex items-center justify-between gap-4 border-b border-main-200 pb-4">
+            <div>
+              <p className="text-sm font-bold uppercase text-primary-700">Reporting center</p>
+              <h2 className="text-xl font-bold text-main-950">Report queue and distribution plan</h2>
+            </div>
+            <button className="rounded-md bg-main-950 px-4 py-2 text-sm font-bold text-main-0" type="button">
+              <i className="bi bi-send" /> Publish
+            </button>
+          </div>
+          <div className="mt-4 overflow-x-auto">
+            <table className="w-full min-w-160 text-left text-sm">
+              <thead>
+                <tr className="border-b border-main-200 text-xs font-bold uppercase text-main-500">
+                  <th className="py-3 pr-4">Report</th>
+                  <th className="py-3 pr-4">Audience</th>
+                  <th className="py-3 pr-4">Schedule</th>
+                  <th className="py-3 pr-4">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {reportQueue.map((report) => (
+                  <tr key={report.name} className="border-b border-main-200">
+                    <td className="py-4 pr-4 font-bold text-main-950">{report.name}</td>
+                    <td className="py-4 pr-4 text-main-700">{report.audience}</td>
+                    <td className="py-4 pr-4 text-main-600">{report.schedule}</td>
+                    <td className="py-4 pr-4">
+                      <Badge status={report.status} />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div className="rounded-md border border-main-200 bg-main-100 p-5 shadow-sm">
+          <div className="border-b border-main-200 pb-4">
+            <p className="text-sm font-bold uppercase text-primary-700">Decision support</p>
+            <h2 className="text-xl font-bold text-main-950">Analytical insights ready for action</h2>
+          </div>
+          <div className="mt-5 space-y-4">
+            {decisionSignals.map((signal) => (
+              <article key={signal.title} className="rounded-md border border-main-200 bg-main-50 p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <h3 className="font-bold text-main-950">{signal.title}</h3>
+                    <p className="mt-2 text-sm leading-6 text-main-600">{signal.impact}</p>
+                    <p className="mt-3 rounded-md bg-accent-50 px-3 py-3 text-sm font-semibold text-main-800">
+                      Recommended action: {signal.action}
+                    </p>
+                  </div>
+                  <span className="flex size-10 shrink-0 items-center justify-center rounded-md bg-warning-100 text-warning-700">
+                    <i className="bi bi-lightning-charge" />
+                  </span>
+                </div>
+              </article>
+            ))}
+          </div>
+        </div>
+      </div>
+    </PageShell>
+  );
+}
+
 function Badge({ status }: { status: string }) {
   return <span className={`rounded-full px-3 py-1 text-xs font-bold ${statusClass(status)}`}>{status}</span>;
 }
