@@ -132,6 +132,7 @@ export default function UsersPage() {
   const [formError, setFormError] = useState("");
   const [formNotice, setFormNotice] = useState("");
   const [saving, setSaving] = useState(false);
+  const isSelf = Boolean(modal?.user && user && modal.user.user_id === user.id);
 
   useEffect(() => {
     if (!authLoading && !canListUsers) {
@@ -240,14 +241,40 @@ export default function UsersPage() {
   };
 
   const handleDelete = async (managedUser: ManagedUser) => {
-    if (!window.confirm(`Delete ${managedUser.username}?`)) return;
+    if (!window.confirm(`Deactivate ${managedUser.username}?`)) return;
     setPageError("");
     setPageNotice("");
     try {
       setPageNotice(await deleteUser(managedUser.user_id));
       await loadUsers();
     } catch (error) {
-      setPageError(error instanceof Error ? error.message : "Could not delete user.");
+      setPageError(error instanceof Error ? error.message : "Could not deactivate user.");
+    }
+  };
+
+  const handleActivate = async (managedUser: ManagedUser) => {
+    if (!window.confirm(`Activate ${managedUser.username}?`)) return;
+    setPageError("");
+    setPageNotice("");
+    try {
+      const formPayload: FormState = {
+        username: managedUser.username,
+        email: managedUser.email,
+        password: "",
+        first_name: managedUser.first_name,
+        last_name: managedUser.last_name,
+        roles: managedUser.profile.roles || (managedUser.profile.role ? [managedUser.profile.role] : []),
+        phone_number: managedUser.profile.phone_number,
+        organization: managedUser.profile.organization,
+        is_active: true,
+        is_staff: managedUser.is_staff,
+        is_superuser: managedUser.is_superuser,
+      };
+      const result = await updateUser(managedUser.user_id, normalizeUpdatePayload(formPayload));
+      setPageNotice(result.message);
+      await loadUsers();
+    } catch (error) {
+      setPageError(error instanceof Error ? error.message : "Could not activate user.");
     }
   };
 
@@ -405,21 +432,32 @@ export default function UsersPage() {
                             <button
                               type="button"
                               onClick={() => openEditModal(managedUser)}
-                              className="flex size-8 items-center justify-center rounded-md border border-main-300 bg-main-100 text-main-700 hover:border-primary-300 hover:text-primary-700"
+                              className="rounded-md border border-main-300 bg-main-100 px-2.5 py-1.5 text-xs font-bold text-main-700 hover:border-primary-300 hover:text-primary-700 cursor-pointer"
                               aria-label={`Edit ${managedUser.username}`}
                             >
-                              <i className="bi bi-pencil-square" aria-hidden="true" />
+                              Edit
                             </button>
                           )}
                           {canDeleteUsers && (
-                            <button
-                              type="button"
-                              onClick={() => void handleDelete(managedUser)}
-                              className="flex size-8 items-center justify-center rounded-md border border-danger-300 bg-danger-100 text-danger-700 hover:bg-danger-200"
-                              aria-label={`Delete ${managedUser.username}`}
-                            >
-                              <i className="bi bi-trash" aria-hidden="true" />
-                            </button>
+                            managedUser.is_active ? (
+                              <button
+                                type="button"
+                                onClick={() => void handleDelete(managedUser)}
+                                className="rounded-md border border-danger-300 bg-danger-100 px-2.5 py-1.5 text-xs font-bold text-danger-700 hover:bg-danger-200 cursor-pointer"
+                                aria-label={`Deactivate ${managedUser.username}`}
+                              >
+                                Deactivate
+                              </button>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => void handleActivate(managedUser)}
+                                className="rounded-md border border-success-300 bg-success-100 px-2.5 py-1.5 text-xs font-bold text-success-700 hover:bg-success-200 cursor-pointer"
+                                aria-label={`Activate ${managedUser.username}`}
+                              >
+                                Activate
+                              </button>
+                            )
                           )}
                         </div>
                       </td>
@@ -479,7 +517,7 @@ export default function UsersPage() {
               ["last_name", "Last name", "text"],
               ["phone_number", "Phone number", "tel"],
               ["organization", "Organization", "text"],
-            ].map(([key, label, type]) => (
+             ].map(([key, label, type]) => (
               <div key={key}>
                 <label htmlFor={`user-${key}`} className="text-sm font-bold text-main-900">{label}</label>
                 <input
@@ -495,8 +533,9 @@ export default function UsersPage() {
                     setFormError("");
                     setFormNotice("");
                   }}
+                  disabled={modal?.mode === "edit" && !isSelf && ["username", "email", "first_name", "last_name", "phone_number"].includes(key)}
                   required={key === "username" || key === "email"}
-                  className="mt-2 w-full rounded-md border border-main-300 bg-main-100 px-4 py-2.5 text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-100"
+                  className="mt-2 w-full rounded-md border border-main-300 bg-main-100 px-4 py-2.5 text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-100 disabled:opacity-65 disabled:cursor-not-allowed"
                 />
               </div>
             ))}
