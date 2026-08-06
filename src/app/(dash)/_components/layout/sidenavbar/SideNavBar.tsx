@@ -153,6 +153,7 @@ export function Sidebar({
           {
             label: "Market Integrations",
             to: "/market-integrations",
+            requiredPermission: "market_integrations.read",
           },
           {
             label: "Markets",

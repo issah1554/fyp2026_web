@@ -1,6 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "../../auth/hooks/useAuth";
+import { userCan } from "@/src/services/auth/authService";
 import {
   checkMarketIntegrationUpdates,
   importRawMarketIntegrationPrices,
@@ -122,6 +125,17 @@ function SortHeader<TSortKey extends string>({
 }
 
 export default function MarketIntegrationsPage() {
+  const router = useRouter();
+  const { user, loading: authLoading } = useAuth();
+  const canRead = userCan(user, "market_integrations.read");
+  const canWrite = userCan(user, "market_integrations.write");
+
+  useEffect(() => {
+    if (!authLoading && !canRead) {
+      router.replace("/dash");
+    }
+  }, [authLoading, canRead, router]);
+
   const [sources, setSources] = useState<MarketIntegrationSource[]>([]);
   const [health, setHealth] = useState<MarketIntegrationHealth[]>([]);
   const [rawPrices, setRawPrices] = useState<RawCommodityPrice[]>([]);
@@ -238,6 +252,7 @@ export default function MarketIntegrationsPage() {
   }, [activeTab, selectedSource, filterCommodity, filterMarket, page, pageSize, rawSort, normalizedSort, search]);
 
   useEffect(() => {
+    if (!canRead) return;
     let mounted = true;
     const timeout = window.setTimeout(() => {
       setLoading(true);
@@ -253,7 +268,7 @@ export default function MarketIntegrationsPage() {
       mounted = false;
       window.clearTimeout(timeout);
     };
-  }, [loadSources, loadHealth, loadUpdates, loadData]);
+  }, [canRead, loadSources, loadHealth, loadUpdates, loadData]);
 
   const importRawSource = async (source?: string) => {
     setImportingSource(source ?? "all");
@@ -424,24 +439,28 @@ export default function MarketIntegrationsPage() {
             <i className={`bi ${checkingUpdates === "all" ? "bi-arrow-repeat animate-spin" : "bi-radar"}`} />
             {checkingUpdates ? "Checking..." : "Check Selected"}
           </button>
-          <button
-            type="button"
-            onClick={() => void importSelectedSources()}
-            disabled={Boolean(importingSource)}
-            className="flex items-center gap-2 rounded-md bg-primary-600 px-4 py-2 text-sm font-bold text-main-0 hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-60 transition-all cursor-pointer"
-          >
-            <i className={`bi ${importingSource === "all" ? "bi-arrow-repeat animate-spin" : "bi-cloud-download"}`} />
-            {importingSource ? "Importing..." : "Import Raw"}
-          </button>
-          <button
-            type="button"
-            onClick={() => void standardizeSelectedSources()}
-            disabled={Boolean(standardizingSource)}
-            className="flex items-center gap-2 rounded-md bg-accent-600 px-4 py-2 text-sm font-bold text-main-0 hover:bg-accent-700 disabled:cursor-not-allowed disabled:opacity-60 transition-all cursor-pointer"
-          >
-            <i className={`bi ${standardizingSource ? "bi-arrow-repeat animate-spin" : "bi-check2-circle"}`} />
-            {standardizingSource ? "Standardising..." : "Standardise"}
-          </button>
+          {canWrite && (
+            <>
+              <button
+                type="button"
+                onClick={() => void importSelectedSources()}
+                disabled={Boolean(importingSource)}
+                className="flex items-center gap-2 rounded-md bg-primary-600 px-4 py-2 text-sm font-bold text-main-0 hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-60 transition-all cursor-pointer"
+              >
+                <i className={`bi ${importingSource === "all" ? "bi-arrow-repeat animate-spin" : "bi-cloud-download"}`} />
+                {importingSource ? "Importing..." : "Import Raw"}
+              </button>
+              <button
+                type="button"
+                onClick={() => void standardizeSelectedSources()}
+                disabled={Boolean(standardizingSource)}
+                className="flex items-center gap-2 rounded-md bg-accent-600 px-4 py-2 text-sm font-bold text-main-0 hover:bg-accent-700 disabled:cursor-not-allowed disabled:opacity-60 transition-all cursor-pointer"
+              >
+                <i className={`bi ${standardizingSource ? "bi-arrow-repeat animate-spin" : "bi-check2-circle"}`} />
+                {standardizingSource ? "Standardising..." : "Standardise"}
+              </button>
+            </>
+          )}
         </div>
       </section>
 
@@ -515,10 +534,12 @@ export default function MarketIntegrationsPage() {
                     <i className={`bi ${checkingUpdates === source.key ? "bi-arrow-repeat animate-spin" : "bi-radar"}`} />
                     Check
                   </button>
-                  <button type="button" onClick={() => void importRawSource(source.key)} disabled={Boolean(importingSource)} className="flex items-center justify-center gap-1.5 rounded-md bg-primary-600 px-3 py-1.5 text-xs font-bold text-main-0 hover:bg-primary-700 disabled:opacity-60">
-                    <i className={`bi ${importingSource === source.key ? "bi-arrow-repeat animate-spin" : "bi-cloud-download"}`} />
-                    Import Raw
-                  </button>
+                  {canWrite && (
+                    <button type="button" onClick={() => void importRawSource(source.key)} disabled={Boolean(importingSource)} className="flex items-center justify-center gap-1.5 rounded-md bg-primary-600 px-3 py-1.5 text-xs font-bold text-main-0 hover:bg-primary-700 disabled:opacity-60">
+                      <i className={`bi ${importingSource === source.key ? "bi-arrow-repeat animate-spin" : "bi-cloud-download"}`} />
+                      Import Raw
+                    </button>
+                  )}
                 </div>
               </div>
             );
