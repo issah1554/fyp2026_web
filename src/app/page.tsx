@@ -1,5 +1,8 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
+import { useAuth } from "./auth/hooks/useAuth";
 
 const impactMetrics = [
   { value: "24/7", label: "USSD and web access" },
@@ -66,6 +69,8 @@ const benefits = [
 ];
 
 export default function Home() {
+  const { user } = useAuth();
+
   return (
     <main className="min-h-screen bg-main-50 text-main-900">
 
@@ -93,13 +98,26 @@ export default function Home() {
             <a className="flex items-center gap-2 hover:text-primary-700" href="#benefits">
               Benefits
             </a>
-            <Link
-              href="/auth/login"
-              className="flex items-center gap-2 rounded-md bg-primary-600 px-4 py-2 text-sm font-semibold text-main-0 hover:bg-primary-700"
-            >
-              <i className="bi bi-person-lock" aria-hidden="true" />
-              Sign in
+            <Link className="flex items-center gap-2 hover:text-primary-700" href="/market">
+              Marketplace
             </Link>
+            {user ? (
+              <Link
+                href="/dash"
+                className="flex items-center gap-2 rounded-md bg-primary-600 px-4 py-2 text-sm font-semibold text-main-0 hover:bg-primary-700"
+              >
+                <i className="bi bi-person" aria-hidden="true" />
+                Dashboard
+              </Link>
+            ) : (
+              <Link
+                href="/auth/login"
+                className="flex items-center gap-2 rounded-md bg-primary-600 px-4 py-2 text-sm font-semibold text-main-0 hover:bg-primary-700"
+              >
+                <i className="bi bi-person-lock" aria-hidden="true" />
+                Sign in
+              </Link>
+            )}
           </div>
         </nav>
       </header>

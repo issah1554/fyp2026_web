@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import {
   AUTH_SESSION_CHANGED_EVENT,
+  getStoredUser,
   initializeAuthSession,
   loginWithPassword,
   logoutFromApi,
@@ -19,8 +20,8 @@ type AuthState = {
 };
 
 export function useAuth(): AuthState {
-  const [user, setUser] = useState<AuthUser | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<AuthUser | null>(() => getStoredUser());
+  const [loading, setLoading] = useState(() => !getStoredUser());
 
   useEffect(() => {
     let active = true;

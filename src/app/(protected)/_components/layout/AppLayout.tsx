@@ -33,17 +33,22 @@ export function AppLayout({
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isHovering, setIsHovering] = useState(false);
 
+  const [mounted, setMounted] = useState(false);
   const effectiveCollapsed = !isPinned && !isHovering ? true : isCollapsed;
 
   const mainMargin = isMobile ? "ml-0" : effectiveCollapsed ? "ml-16" : "ml-64";
 
   useEffect(() => {
-    if (!loading && !user) {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (mounted && !loading && !user) {
       router.replace("/auth/login");
     }
-  }, [loading, router, user]);
+  }, [mounted, loading, router, user]);
 
-  if (loading || !user) {
+  if (!mounted || loading || !user) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-main-100 text-main-700">
         <div className="flex items-center gap-3 rounded border border-main-300 bg-main-200 px-4 py-3 shadow-sm">

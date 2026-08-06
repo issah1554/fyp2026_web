@@ -8,19 +8,20 @@ import {
   createListing,
   updateListing,
   deleteListing,
-  createOrder,
   type CommodityListing,
   type CommodityListingFormPayload,
 } from "../../../services/trade/tradeService";
 import { listCommodities, type Commodity } from "../../../services/commodities/commodityService";
 import { listAreas, type Area } from "../../../services/areas/areaService";
 
-export default function ListingsPage() {
-  const { user } = useAuth();
+type TabOption = "my-listings" | "system-listings";
 
-  // Authentication flags
+export default function ProtectedListingsPage() {
+  const { user } = useAuth();
   const isLoggedIn = Boolean(user);
   const isAdmin = Boolean(user && (typeof user.role === "string" ? user.role === "admin" : user.role?.code === "admin"));
+
+  // Permission checks
   const canCreate = isLoggedIn && userCan(user, "listings.create");
   const canUpdate = isLoggedIn && userCan(user, "listings.update");
   const canDelete = isLoggedIn && userCan(user, "listings.delete");
@@ -33,22 +34,21 @@ export default function ListingsPage() {
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
 
-  // Tabs: "marketplace" (all active) or "my-listings" (seller's own)
-  const [activeTab, setActiveTab] = useState<"marketplace" | "my-listings">("marketplace");
+  // Tabs: "my-listings" (own listings) or "system-listings" (all listings for admins)
+  const [activeTab, setActiveTab] = useState<TabOption>("my-listings");
 
-  // Search & Filter state
+  // Search & Filters
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedArea, setSelectedArea] = useState("");
   const [selectedCommodity, setSelectedCommodity] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("");
 
-  // Modals state
+  // Modals
   const [listingModalOpen, setListingModalOpen] = useState(false);
   const [editingListing, setEditingListing] = useState<CommodityListing | null>(null);
-  const [orderModalOpen, setOrderModalOpen] = useState(false);
-  const [orderingListing, setOrderingListing] = useState<CommodityListing | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
-  // Form states
+  // Form
   const [listingForm, setListingForm] = useState({
     title: "",
     description: "",
@@ -58,10 +58,8 @@ export default function ListingsPage() {
     quantity: 0,
     status: "active",
   });
-  const [orderQuantity, setOrderQuantity] = useState(1);
-  const [submitting, setSubmitting] = useState(false);
 
-  // Load initial data
+  // Load catalogs and listings
   const loadData = useCallback(async () => {
     setLoading(true);
     setError("");
@@ -75,7 +73,7 @@ export default function ListingsPage() {
       setCommodities(commoditiesData.data || []);
       setAreas(areasData.data || []);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load listings and catalog data.");
+      setError(err instanceof Error ? err.message : "Failed to load listings data.");
     } finally {
       setLoading(false);
     }
@@ -85,22 +83,29 @@ export default function ListingsPage() {
     void loadData();
   }, [loadData]);
 
-  // Filter listings based on tab and filters
+  // Set default form values once catalogs are loaded
+  useEffect(() => {
+    if (commodities.length > 0 && areas.length > 0 && !listingForm.commodity_id) {
+      setListingForm((prev) => ({
+        ...prev,
+        commodity_id: commodities[0].commodity_id,
+        adm_area_id: areas[0].area_id,
+      }));
+    }
+  }, [commodities, areas, listingForm.commodity_id]);
+
+  // Filter listings based on active tab and search filters
   const filteredListings = useMemo(() => {
     return listings.filter((item) => {
-      // Tab check
+      // Tab separation
       if (activeTab === "my-listings") {
-        if (!isLoggedIn || item.seller_id !== user?.id) {
-          return false;
-        }
+        if (item.seller_id !== user?.id) return false;
       } else {
-        // Marketplace only shows active listings unless admin
-        if (item.status !== "active" && !isAdmin) {
-          return false;
-        }
+        // system-listings (Admins only)
+        if (!isAdmin) return false;
       }
 
-      // Search query
+      // Search filters
       if (searchQuery) {
         const query = searchQuery.toLowerCase();
         const matchesTitle = item.title?.toLowerCase().includes(query);
@@ -111,16 +116,15 @@ export default function ListingsPage() {
         }
       }
 
-      // Filters
       if (selectedArea && item.adm_area?.area_id !== selectedArea) return false;
       if (selectedCommodity && item.commodity?.commodity_id !== selectedCommodity) return false;
       if (selectedStatus && item.status !== selectedStatus) return false;
 
       return true;
     });
-  }, [listings, activeTab, searchQuery, selectedArea, selectedCommodity, selectedStatus, isLoggedIn, user]);
+  }, [listings, activeTab, searchQuery, selectedArea, selectedCommodity, selectedStatus, user, isAdmin]);
 
-  // Open modal to Create Listing
+  // Modals triggers
   const handleOpenCreateModal = () => {
     setEditingListing(null);
     setListingForm({
@@ -135,7 +139,6 @@ export default function ListingsPage() {
     setListingModalOpen(true);
   };
 
-  // Open modal to Edit Listing
   const handleOpenEditModal = (listing: CommodityListing) => {
     setEditingListing(listing);
     setListingForm({
@@ -150,7 +153,7 @@ export default function ListingsPage() {
     setListingModalOpen(true);
   };
 
-  // Submit Listing Form (Create or Edit)
+  // Create or Update Listing API submit
   const handleListingSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
@@ -173,9 +176,9 @@ export default function ListingsPage() {
     }
   };
 
-  // Delete/Close listing
+  // Delete Listing
   const handleDeleteListing = async (listingId: string) => {
-    if (!window.confirm("Are you sure you want to delete this commodity listing?")) return;
+    if (!window.confirm("Are you sure you want to delete this listing?")) return;
     setError("");
     setNotice("");
     try {
@@ -187,70 +190,17 @@ export default function ListingsPage() {
     }
   };
 
-  // Open order modal
-  const handleOpenOrderModal = (listing: CommodityListing) => {
-    setOrderingListing(listing);
-    setOrderQuantity(1);
-    setOrderModalOpen(true);
-  };
-
-  // Submit Order placement
-  const handleOrderSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!orderingListing) return;
-    setSubmitting(true);
-    setError("");
-    setNotice("");
-    try {
-      const response = await createOrder({
-        listing_id: orderingListing.listing_id,
-        quantity: orderQuantity,
-      });
-      setNotice(response.message);
-      setOrderModalOpen(false);
-      await loadData();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to place order.");
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
   return (
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
-      {/* Hero Header */}
-      <section className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-primary-800 to-primary-600 px-6 py-12 text-main-0 shadow-lg md:px-12 md:py-16">
-        <div className="relative z-10 max-w-2xl">
-          <span className="rounded-full bg-primary-500/30 px-3 py-1 text-xs font-bold uppercase tracking-wider text-primary-100">
-            Smart Marketplace
-          </span>
-          <h1 className="mt-4 text-3xl font-extrabold tracking-tight sm:text-4xl md:text-5xl">
-            Commodity Marketplace
-          </h1>
-          <p className="mt-4 text-base text-primary-100 md:text-lg">
-            Direct farmer-to-buyer trade ecosystem. Search active listings, compare pricing, and place standard orders securely.
-          </p>
-        </div>
-        <div className="absolute right-0 top-0 -mr-20 -mt-20 h-80 w-80 rounded-full bg-primary-500/20 blur-2xl" />
-      </section>
+      {/* Title */}
+      <div>
+        <h1 className="text-2xl font-bold text-main-950">Listings Workspace</h1>
+        <p className="text-sm text-main-600">Create and manage your commodity offerings or review platform listings.</p>
+      </div>
 
-      {/* Navigation Tabs */}
-      {isLoggedIn && (
+      {/* Tabs */}
+      {isAdmin && (
         <div className="flex border-b border-main-200">
-          <button
-            onClick={() => {
-              setActiveTab("marketplace");
-              setSelectedStatus("");
-            }}
-            className={`pb-3 text-sm font-bold border-b-2 px-4 transition-all cursor-pointer ${
-              activeTab === "marketplace"
-                ? "border-primary-600 text-primary-700"
-                : "border-transparent text-main-500 hover:text-main-800"
-            }`}
-          >
-            <i className="bi bi-shop mr-2" />
-            Marketplace
-          </button>
           <button
             onClick={() => {
               setActiveTab("my-listings");
@@ -262,8 +212,20 @@ export default function ListingsPage() {
                 : "border-transparent text-main-500 hover:text-main-800"
             }`}
           >
-            <i className="bi bi-journal-text mr-2" />
             My Listings ({listings.filter((l) => l.seller_id === user?.id).length})
+          </button>
+          <button
+            onClick={() => {
+              setActiveTab("system-listings");
+              setSelectedStatus("");
+            }}
+            className={`pb-3 text-sm font-bold border-b-2 px-4 transition-all cursor-pointer ${
+              activeTab === "system-listings"
+                ? "border-primary-600 text-primary-700"
+                : "border-transparent text-main-500 hover:text-main-800"
+            }`}
+          >
+            All System Listings ({listings.length})
           </button>
         </div>
       )}
@@ -282,13 +244,13 @@ export default function ListingsPage() {
         </div>
       )}
 
-      {/* Search & Filter Controls */}
+      {/* Controls */}
       <section className="flex flex-col gap-4 rounded-xl border border-main-200 bg-main-100 p-4 shadow-sm md:flex-row md:items-center md:justify-between">
         <div className="relative flex-1">
           <i className="bi bi-search absolute left-3 top-1/2 -translate-y-1/2 text-main-400" />
           <input
             type="text"
-            placeholder="Search by title, description, or commodity..."
+            placeholder="Search listings..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full rounded-lg border border-main-300 bg-main-0 py-2 pl-10 pr-4 text-sm outline-none focus:border-primary-500 transition-colors"
@@ -319,18 +281,17 @@ export default function ListingsPage() {
               </option>
             ))}
           </select>
-          {activeTab === "my-listings" && (
-            <select
-              value={selectedStatus}
-              onChange={(e) => setSelectedStatus(e.target.value)}
-              className="rounded-lg border border-main-300 bg-main-0 px-3 py-2 text-sm outline-none focus:border-primary-500 transition-colors"
-            >
-              <option value="">All Statuses</option>
-              <option value="active">Active</option>
-              <option value="sold">Sold</option>
-              <option value="inactive">Inactive</option>
-            </select>
-          )}
+          <select
+            value={selectedStatus}
+            onChange={(e) => setSelectedStatus(e.target.value)}
+            className="rounded-lg border border-main-300 bg-main-0 px-3 py-2 text-sm outline-none focus:border-primary-500 transition-colors"
+          >
+            <option value="">All Statuses</option>
+            <option value="active">Active</option>
+            <option value="sold">Sold</option>
+            <option value="inactive">Inactive</option>
+          </select>
+
           {activeTab === "my-listings" && canCreate && (
             <button
               onClick={handleOpenCreateModal}
@@ -343,92 +304,19 @@ export default function ListingsPage() {
         </div>
       </section>
 
-      {/* Grid of Listings */}
+      {/* Grid or Table list */}
       {loading ? (
         <div className="py-24 text-center text-main-500">
-          <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-primary-600 border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite]" />
+          <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-primary-600 border-r-transparent align-[-0.125em]" />
           <p className="mt-4 font-semibold">Loading listings...</p>
         </div>
       ) : filteredListings.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-main-300 py-16 text-center text-main-500">
-          <i className="bi bi-basket text-4xl text-main-300" />
-          <p className="mt-4 text-base font-bold text-main-800">No commodity listings found</p>
-          <p className="text-xs text-main-500">Try adjusting your filters or search query.</p>
-        </div>
-      ) : activeTab === "marketplace" ? (
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {filteredListings.map((item) => (
-            <div
-              key={item.listing_id}
-              className="group flex flex-col justify-between overflow-hidden rounded-xl border border-main-200 bg-main-100 p-5 shadow-sm hover:shadow-md transition-all duration-200"
-            >
-              <div>
-                <div className="flex items-start justify-between gap-2">
-                  <span className="rounded-full bg-primary-100 px-2.5 py-1 text-xs font-bold text-primary-700">
-                    {item.commodity?.name || "Commodity"}
-                  </span>
-                  <span className="flex items-center text-xs text-main-500">
-                    <i className="bi bi-geo-alt-fill mr-1 text-primary-600" />
-                    {item.adm_area?.name}
-                  </span>
-                </div>
-                <h3 className="mt-3 text-lg font-bold text-main-950 group-hover:text-primary-700 transition-colors">
-                  {item.title || `${item.commodity?.name} for Sale`}
-                </h3>
-                <p className="mt-2 line-clamp-3 text-sm text-main-600 leading-relaxed">
-                  {item.description || "No description provided."}
-                </p>
-              </div>
-
-              <div className="mt-6 border-t border-main-200 pt-4">
-                <div className="flex items-end justify-between">
-                  <div>
-                    <span className="text-xs font-semibold text-main-500 block uppercase">Price</span>
-                    <span className="text-lg font-extrabold text-main-900">
-                      TZS {parseFloat(item.price).toLocaleString()}
-                      <span className="text-xs font-normal text-main-500"> / {item.commodity?.unit || "unit"}</span>
-                    </span>
-                  </div>
-                  <div className="text-right">
-                    <span className="text-xs font-semibold text-main-500 block uppercase">Stock</span>
-                    <span className="text-sm font-bold text-main-800">
-                      {parseFloat(item.quantity).toLocaleString()} {item.commodity?.unit}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="mt-4">
-                  {isLoggedIn ? (
-                    item.seller_id === user?.id ? (
-                      <button
-                        disabled
-                        className="w-full rounded-lg bg-main-300 py-2.5 text-center text-xs font-bold text-main-600 cursor-not-allowed"
-                      >
-                        Your Listing
-                      </button>
-                    ) : (
-                      <button
-                        onClick={() => handleOpenOrderModal(item)}
-                        className="w-full rounded-lg bg-primary-600 py-2.5 text-center text-xs font-bold text-main-0 hover:bg-primary-700 transition-all cursor-pointer"
-                      >
-                        Order Now
-                      </button>
-                    )
-                  ) : (
-                    <a
-                      href="/auth/login"
-                      className="block w-full rounded-lg border border-primary-600 py-2 text-center text-xs font-bold text-primary-700 hover:bg-primary-50 transition-all"
-                    >
-                      Login to Order
-                    </a>
-                  )}
-                </div>
-              </div>
-            </div>
-          ))}
+        <div className="rounded-xl border border-dashed border-main-300 py-16 text-center text-main-500 bg-main-0">
+          <i className="bi bi-tag text-4xl text-main-300" />
+          <p className="mt-4 text-base font-bold text-main-800">No listings found in this space</p>
+          <p className="text-xs text-main-500">Try adjustments or click Create Listing to add one.</p>
         </div>
       ) : (
-        /* My Listings Tab (Table/Management Layout) */
         <div className="overflow-x-auto rounded-xl border border-main-200 bg-main-100 shadow-sm">
           <table className="w-full min-w-[56rem] text-left text-sm">
             <thead>
@@ -438,6 +326,7 @@ export default function ListingsPage() {
                 <th className="py-3 px-4">Quantity</th>
                 <th className="py-3 px-4">Price</th>
                 <th className="py-3 px-4">Status</th>
+                {activeTab === "system-listings" && <th className="py-3 px-4">Seller ID</th>}
                 <th className="py-3 px-4">Created</th>
                 <th className="py-3 px-4 text-right">Actions</th>
               </tr>
@@ -471,11 +360,16 @@ export default function ListingsPage() {
                       {item.status}
                     </span>
                   </td>
+                  {activeTab === "system-listings" && (
+                    <td className="py-4 px-4 font-mono text-xs text-main-600">
+                      {item.seller_id}
+                    </td>
+                  )}
                   <td className="py-4 px-4 text-main-500 text-xs">
                     {new Date(item.created_at).toLocaleDateString()}
                   </td>
                   <td className="py-4 px-4 text-right space-x-2">
-                    {canUpdate && (
+                    {(canUpdate || item.seller_id === user?.id) && (
                       <button
                         onClick={() => handleOpenEditModal(item)}
                         className="rounded border border-main-300 bg-main-100 px-2.5 py-1.5 text-xs font-bold text-main-700 hover:border-primary-300 hover:text-primary-700 transition-colors cursor-pointer"
@@ -483,7 +377,7 @@ export default function ListingsPage() {
                         Edit
                       </button>
                     )}
-                    {canDelete && (
+                    {(canDelete || item.seller_id === user?.id) && (
                       <button
                         onClick={() => void handleDeleteListing(item.listing_id)}
                         className="rounded border border-danger-300 bg-danger-100 px-2.5 py-1.5 text-xs font-bold text-danger-700 hover:bg-danger-200 transition-colors cursor-pointer"
@@ -499,10 +393,10 @@ export default function ListingsPage() {
         </div>
       )}
 
-      {/* Listing Form Modal (Create/Edit) */}
+      {/* Listing Form Modal */}
       {listingModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-main-950/40 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-xl border border-main-200 bg-main-100 p-6 shadow-xl animate-zoom-in">
+          <div className="w-full max-w-md rounded-xl border border-main-200 bg-main-100 p-6 shadow-xl">
             <h2 className="text-xl font-bold text-main-950">
               {editingListing ? "Edit Commodity Listing" : "Create Commodity Listing"}
             </h2>
@@ -581,25 +475,23 @@ export default function ListingsPage() {
                 <textarea
                   value={listingForm.description}
                   onChange={(e) => setListingForm({ ...listingForm, description: e.target.value })}
-                  placeholder="Provide grade details, shipping terms, packaging details..."
+                  placeholder="Provide details..."
                   className="mt-1 h-24 w-full rounded-lg border border-main-300 bg-main-0 px-3 py-2 text-sm outline-none focus:border-primary-500"
                 />
               </div>
 
-              {editingListing && (
-                <div>
-                  <label className="text-xs font-bold uppercase text-main-500">Listing Status</label>
-                  <select
-                    value={listingForm.status}
-                    onChange={(e) => setListingForm({ ...listingForm, status: e.target.value })}
-                    className="mt-1 w-full rounded-lg border border-main-300 bg-main-0 px-3 py-2 text-sm outline-none focus:border-primary-500"
-                  >
-                    <option value="active">Active</option>
-                    <option value="sold">Sold</option>
-                    <option value="inactive">Inactive</option>
-                  </select>
-                </div>
-              )}
+              <div>
+                <label className="text-xs font-bold uppercase text-main-500">Listing Status</label>
+                <select
+                  value={listingForm.status}
+                  onChange={(e) => setListingForm({ ...listingForm, status: e.target.value })}
+                  className="mt-1 w-full rounded-lg border border-main-300 bg-main-0 px-3 py-2 text-sm outline-none focus:border-primary-500"
+                >
+                  <option value="active">Active</option>
+                  <option value="sold">Sold</option>
+                  <option value="inactive">Inactive</option>
+                </select>
+              </div>
 
               <div className="flex justify-end gap-2 border-t border-main-200 pt-4">
                 <button
@@ -614,61 +506,7 @@ export default function ListingsPage() {
                   disabled={submitting}
                   className="rounded-lg bg-primary-600 px-4 py-2 text-sm font-bold text-main-0 hover:bg-primary-700 disabled:opacity-60 cursor-pointer"
                 >
-                  {submitting ? "Saving..." : "Save Listing"}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Order Placement Modal */}
-      {orderModalOpen && orderingListing && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-main-950/40 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-xl border border-main-200 bg-main-100 p-6 shadow-xl animate-zoom-in">
-            <h2 className="text-xl font-bold text-main-950">Place Purchase Order</h2>
-            <div className="mt-3 rounded-lg bg-main-200/50 p-3 text-xs text-main-700">
-              <p><strong>Item:</strong> {orderingListing.title}</p>
-              <p><strong>Seller Unit Price:</strong> TZS {parseFloat(orderingListing.price).toLocaleString()}</p>
-              <p><strong>Available Stock:</strong> {parseFloat(orderingListing.quantity).toLocaleString()} {orderingListing.commodity?.unit}</p>
-            </div>
-
-            <form onSubmit={(e) => void handleOrderSubmit(e)} className="mt-4 space-y-4">
-              <div>
-                <label className="text-xs font-bold uppercase text-main-500">Order Quantity</label>
-                <input
-                  type="number"
-                  step="any"
-                  required
-                  min="0.01"
-                  max={parseFloat(orderingListing.quantity)}
-                  value={orderQuantity || ""}
-                  onChange={(e) => setOrderQuantity(parseFloat(e.target.value) || 0)}
-                  className="mt-1 w-full rounded-lg border border-main-300 bg-main-0 px-3 py-2 text-sm outline-none focus:border-primary-500"
-                />
-              </div>
-
-              <div className="border-t border-main-200 pt-4 flex items-center justify-between text-sm">
-                <span className="font-bold text-main-600">Total Price:</span>
-                <span className="text-lg font-extrabold text-primary-700">
-                  TZS {(orderQuantity * parseFloat(orderingListing.price)).toLocaleString()}
-                </span>
-              </div>
-
-              <div className="flex justify-end gap-2 border-t border-main-200 pt-4">
-                <button
-                  type="button"
-                  onClick={() => setOrderModalOpen(false)}
-                  className="rounded-lg border border-main-300 bg-main-0 px-4 py-2 text-sm font-bold text-main-700 hover:bg-main-50 cursor-pointer"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={submitting || orderQuantity <= 0 || orderQuantity > parseFloat(orderingListing.quantity)}
-                  className="rounded-lg bg-primary-600 px-4 py-2 text-sm font-bold text-main-0 hover:bg-primary-700 disabled:opacity-60 cursor-pointer"
-                >
-                  {submitting ? "Submitting..." : "Confirm Order"}
+                  {submitting ? "Saving..." : "Save"}
                 </button>
               </div>
             </form>

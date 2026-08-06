@@ -269,8 +269,8 @@ export function getStoredUser(): AuthUser | null {
   const stored = window.localStorage.getItem(AUTH_USER_KEY);
   if (stored) {
     try {
-      const user = JSON.parse(stored) as StoredAuthUser;
-      return { ...user, permissions: [] };
+      const user = JSON.parse(stored) as AuthUser;
+      return user;
     } catch {
       window.localStorage.removeItem(AUTH_USER_KEY);
     }
@@ -284,7 +284,7 @@ export function setStoredUser(user: AuthUser, tokens?: { access: string; refresh
     return;
   }
 
-  window.localStorage.setItem(AUTH_USER_KEY, JSON.stringify(toStoredUser(user)));
+  window.localStorage.setItem(AUTH_USER_KEY, JSON.stringify(user));
   if (tokens) {
     window.localStorage.setItem(AUTH_ACCESS_TOKEN_KEY, tokens.access);
     window.localStorage.setItem(AUTH_REFRESH_TOKEN_KEY, tokens.refresh);
