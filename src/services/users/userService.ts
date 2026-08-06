@@ -13,6 +13,7 @@ export type UserRole = string;
 
 export type ManagedProfile = {
   role: UserRole;
+  roles: UserRole[];
   phone_number: string;
   organization: string;
   is_email_verified: boolean;
@@ -42,7 +43,8 @@ export type UserFormPayload = {
   is_active: boolean;
   is_staff: boolean;
   is_superuser: boolean;
-  role: UserRole;
+  role?: UserRole;
+  roles: UserRole[];
   phone_number: string;
   organization: string;
 };

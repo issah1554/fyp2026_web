@@ -26,7 +26,7 @@ type FormState = {
   password: string;
   first_name: string;
   last_name: string;
-  role: UserRole;
+  roles: UserRole[];
   phone_number: string;
   organization: string;
   is_active: boolean;
@@ -44,7 +44,7 @@ const emptyForm: FormState = {
   password: "",
   first_name: "",
   last_name: "",
-  role: "farmer",
+  roles: ["farmer"],
   phone_number: "",
   organization: "",
   is_active: true,
@@ -63,7 +63,7 @@ function normalizeCreatePayload(form: FormState): UserFormPayload {
     password: form.password,
     first_name: form.first_name.trim(),
     last_name: form.last_name.trim(),
-    role: form.role,
+    roles: form.roles,
     phone_number: form.phone_number.trim(),
     organization: form.organization.trim(),
     is_active: form.is_active,
@@ -78,7 +78,7 @@ function normalizeUpdatePayload(form: FormState): Omit<UserFormPayload, "passwor
     email: form.email.trim(),
     first_name: form.first_name.trim(),
     last_name: form.last_name.trim(),
-    role: form.role,
+    roles: form.roles,
     phone_number: form.phone_number.trim(),
     organization: form.organization.trim(),
     is_active: form.is_active,
@@ -202,7 +202,7 @@ export default function UsersPage() {
       password: "",
       first_name: managedUser.first_name,
       last_name: managedUser.last_name,
-      role: managedUser.profile.role,
+      roles: managedUser.profile.roles || (managedUser.profile.role ? [managedUser.profile.role] : []),
       phone_number: managedUser.profile.phone_number,
       organization: managedUser.profile.organization,
       is_active: managedUser.is_active,
@@ -374,9 +374,17 @@ export default function UsersPage() {
                       <p className="mt-1 text-xs text-main-500">{managedUser.email || managedUser.username}</p>
                     </td>
                     <td className="py-4 pr-4">
-                      <span className={`rounded-full px-3 py-1 text-xs font-bold ${roleBadgeClass(managedUser.profile.role)}`}>
-                        {roleLabel(managedUser.profile.role, roles)}
-                      </span>
+                      <div className="flex flex-wrap gap-1">
+                        {managedUser.profile.roles?.map((roleCode) => (
+                          <span key={roleCode} className={`rounded-full px-3 py-1 text-xs font-bold ${roleBadgeClass(roleCode)}`}>
+                            {roleLabel(roleCode, roles)}
+                          </span>
+                        )) || (
+                          <span className={`rounded-full px-3 py-1 text-xs font-bold ${roleBadgeClass(managedUser.profile.role)}`}>
+                            {roleLabel(managedUser.profile.role, roles)}
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="py-4 pr-4">
                       <div className="flex flex-wrap gap-1">
@@ -512,20 +520,31 @@ export default function UsersPage() {
               </div>
             )}
 
-            <div>
-              <label htmlFor="user-role" className="text-sm font-bold text-main-900">Role</label>
-              <select
-                id="user-role"
-                value={form.role}
-                onChange={(event) => {
-                  setForm((current) => ({ ...current, role: event.target.value as UserRole }));
-                  setFormError("");
-                  setFormNotice("");
-                }}
-                className="mt-2 w-full rounded-md border border-main-300 bg-main-100 px-4 py-2.5 text-sm text-main-900 outline-none focus:border-primary-500 focus:bg-main-100"
-              >
-                {roles.map((role) => <option key={role.role_id} value={role.code}>{role.name}</option>)}
-              </select>
+            <div className="lg:col-span-2">
+              <label className="text-sm font-bold text-main-900">Roles</label>
+              <div className="mt-2 grid gap-3 rounded-md border border-main-200 bg-main-50 p-4 sm:grid-cols-2 lg:grid-cols-3">
+                {roles.map((role) => (
+                  <label key={role.role_id} className="flex items-center gap-2 text-sm text-main-800">
+                    <input
+                      type="checkbox"
+                      checked={form.roles.includes(role.code)}
+                      onChange={(event) => {
+                        const checked = event.target.checked;
+                        setForm((current) => {
+                          const newRoles = checked
+                            ? [...current.roles, role.code]
+                            : current.roles.filter((c) => c !== role.code);
+                          return { ...current, roles: newRoles };
+                        });
+                        setFormError("");
+                        setFormNotice("");
+                      }}
+                      className="size-4 accent-primary-600"
+                    />
+                    {role.name}
+                  </label>
+                ))}
+              </div>
             </div>
 
             <div className="grid gap-3 rounded-md border border-main-200 bg-main-50 p-3 lg:col-span-2 sm:grid-cols-3">
