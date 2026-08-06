@@ -70,8 +70,18 @@ export default function ProtectedListingsPage() {
         listAreas(),
       ]);
       setListings(listingsData);
-      setCommodities(commoditiesData.data || []);
-      setAreas(areasData.data || []);
+      const fetchedCommodities = commoditiesData.data || [];
+      const fetchedAreas = areasData.data || [];
+      setCommodities(fetchedCommodities);
+      setAreas(fetchedAreas);
+
+      if (fetchedCommodities.length > 0 && fetchedAreas.length > 0) {
+        setListingForm((prev) => ({
+          ...prev,
+          commodity_id: prev.commodity_id || fetchedCommodities[0].commodity_id,
+          adm_area_id: prev.adm_area_id || fetchedAreas[0].area_id,
+        }));
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load listings data.");
     } finally {
@@ -80,19 +90,11 @@ export default function ProtectedListingsPage() {
   }, []);
 
   useEffect(() => {
-    void loadData();
+    const timeout = window.setTimeout(() => {
+      void loadData();
+    }, 0);
+    return () => window.clearTimeout(timeout);
   }, [loadData]);
-
-  // Set default form values once catalogs are loaded
-  useEffect(() => {
-    if (commodities.length > 0 && areas.length > 0 && !listingForm.commodity_id) {
-      setListingForm((prev) => ({
-        ...prev,
-        commodity_id: commodities[0].commodity_id,
-        adm_area_id: areas[0].area_id,
-      }));
-    }
-  }, [commodities, areas, listingForm.commodity_id]);
 
   // Filter listings based on active tab and search filters
   const filteredListings = useMemo(() => {
@@ -318,7 +320,7 @@ export default function ProtectedListingsPage() {
         </div>
       ) : (
         <div className="overflow-x-auto rounded-xl border border-main-200 bg-main-100 shadow-sm">
-          <table className="w-full min-w-[56rem] text-left text-sm">
+          <table className="w-full min-w-4xl text-left text-sm">
             <thead>
               <tr className="border-b border-main-200 text-xs font-bold uppercase text-main-500 bg-main-200/50">
                 <th className="py-3 px-4">Title / Commodity</th>

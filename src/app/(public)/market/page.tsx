@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { useAuth } from "../../auth/hooks/useAuth";
 import {
   listListings,
@@ -9,6 +10,9 @@ import {
 } from "../../../services/trade/tradeService";
 import { listCommodities, type Commodity } from "../../../services/commodities/commodityService";
 import { listAreas, type Area } from "../../../services/areas/areaService";
+
+type PriceRangeOption = "any" | "under-50k" | "50k-150k" | "over-150k";
+type SortOption = "recommended" | "price-asc" | "price-desc" | "newest";
 
 export default function MarketplacePage() {
   const { user } = useAuth();
@@ -26,6 +30,11 @@ export default function MarketplacePage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedArea, setSelectedArea] = useState("");
   const [selectedCommodity, setSelectedCommodity] = useState("");
+  const [priceRange, setPriceRange] = useState<PriceRangeOption>("any");
+  const [sortBy, setSortBy] = useState<SortOption>("recommended");
+
+  // Favorites state (client-side only for visual interaction)
+  const [favorites, setFavorites] = useState<Record<string, boolean>>({});
 
   // Modals state
   const [orderModalOpen, setOrderModalOpen] = useState(false);
@@ -54,12 +63,36 @@ export default function MarketplacePage() {
   }, []);
 
   useEffect(() => {
-    void loadData();
+    const timeout = window.setTimeout(() => {
+      void loadData();
+    }, 0);
+    return () => window.clearTimeout(timeout);
   }, [loadData]);
+
+  // Compute active locations that intersect with active listings
+  const activeListingAreas = useMemo(() => {
+    const areaMap = new Map<string, { area_id: string; name: string; count: number }>();
+    listings.forEach((item) => {
+      if (item.status === "active" && item.adm_area) {
+        const areaId = item.adm_area.area_id;
+        const existing = areaMap.get(areaId);
+        if (existing) {
+          existing.count += 1;
+        } else {
+          areaMap.set(areaId, {
+            area_id: areaId,
+            name: item.adm_area.name,
+            count: 1,
+          });
+        }
+      }
+    });
+    return Array.from(areaMap.values());
+  }, [listings]);
 
   // Filter listings: active only for marketplace
   const filteredListings = useMemo(() => {
-    return listings.filter((item) => {
+    let list = listings.filter((item) => {
       if (item.status !== "active") return false;
 
       // Search query
@@ -73,13 +106,37 @@ export default function MarketplacePage() {
         }
       }
 
-      // Filters
+      // Location Filter
       if (selectedArea && item.adm_area?.area_id !== selectedArea) return false;
+
+      // Commodity Filter
       if (selectedCommodity && item.commodity?.commodity_id !== selectedCommodity) return false;
+
+      // Price Range Filter
+      const price = parseFloat(item.price);
+      if (priceRange === "under-50k" && price >= 50000) return false;
+      if (priceRange === "50k-150k" && (price < 50000 || price > 150000)) return false;
+      if (priceRange === "over-150k" && price <= 150000) return false;
 
       return true;
     });
-  }, [listings, searchQuery, selectedArea, selectedCommodity]);
+
+    // Sorting
+    if (sortBy === "price-asc") {
+      list.sort((a, b) => parseFloat(a.price) - parseFloat(b.price));
+    } else if (sortBy === "price-desc") {
+      list.sort((a, b) => parseFloat(b.price) - parseFloat(a.price));
+    } else if (sortBy === "newest") {
+      list.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    }
+
+    return list;
+  }, [listings, searchQuery, selectedArea, selectedCommodity, priceRange, sortBy]);
+
+  // Handle Favorite toggle
+  const toggleFavorite = (listingId: string) => {
+    setFavorites((prev) => ({ ...prev, [listingId]: !prev[listingId] }));
+  };
 
   // Open order modal
   const handleOpenOrderModal = (listing: CommodityListing) => {
@@ -110,87 +167,225 @@ export default function MarketplacePage() {
     }
   };
 
+  const selectedAreaName = selectedArea
+    ? activeListingAreas.find((a) => a.area_id === selectedArea)?.name
+    : "Tanzania";
+
+  const selectedCommodityName = selectedCommodity
+    ? commodities.find((c) => c.commodity_id === selectedCommodity)?.name
+    : "Commodities";
+
   return (
-    <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
+    <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-4 sm:px-6 lg:px-8">
+      {/* Breadcrumb */}
+      <nav className="text-xs font-semibold text-main-500 flex items-center gap-2">
+        <Link href="/" className="hover:text-primary-700">Home</Link>
+        <i className="bi bi-chevron-right text-3xs" />
+        <Link href="/market" className="hover:text-primary-700">Commodity For Sale</Link>
+        <i className="bi bi-chevron-right text-3xs" />
+        <span className="text-main-800">{selectedAreaName}</span>
+      </nav>
+
+      {/* Horizontal Filter Bar */}
+      <section className="rounded-xl border border-main-200 bg-main-100 p-5 shadow-sm">
+        <div className="grid gap-5 md:grid-cols-4 items-end">
+
+          {/* Location Selector (Active Intersected Areas Only) */}
+          <div className="relative">
+            <label className="block text-xs font-bold text-main-500 mb-2 uppercase">Location</label>
+            <div className="relative">
+              <i className="bi bi-geo-alt absolute left-3 top-1/2 -translate-y-1/2 text-main-400" />
+              <select
+                value={selectedArea}
+                onChange={(e) => setSelectedArea(e.target.value)}
+                className="w-full rounded-lg border border-main-300 bg-main-0 py-2 pl-9 pr-4 text-xs outline-none focus:border-primary-500 transition-colors"
+              >
+                <option value="">Any location</option>
+                {activeListingAreas.map((a) => (
+                  <option key={a.area_id} value={a.area_id}>
+                    {a.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {/* Commodity Type Selector */}
+          <div>
+            <label className="block text-xs font-bold text-main-500 mb-2 uppercase">Commodity Type</label>
+            <div className="relative">
+              <i className="bi bi-basket absolute left-3 top-1/2 -translate-y-1/2 text-main-400" />
+              <select
+                value={selectedCommodity}
+                onChange={(e) => setSelectedCommodity(e.target.value)}
+                className="w-full rounded-lg border border-main-300 bg-main-0 py-2 pl-9 pr-4 text-xs outline-none focus:border-primary-500 transition-colors"
+              >
+                <option value="">Any commodity</option>
+                {commodities.map((c) => (
+                  <option key={c.commodity_id} value={c.commodity_id}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {/* Price Selector */}
+          <div>
+            <label className="block text-xs font-bold text-main-500 mb-2 uppercase">Price (TZS)</label>
+            <div className="relative">
+              <i className="bi bi-cash-stack absolute left-3 top-1/2 -translate-y-1/2 text-main-400" />
+              <select
+                value={priceRange}
+                onChange={(e) => setPriceRange(e.target.value as PriceRangeOption)}
+                className="w-full rounded-lg border border-main-300 bg-main-0 py-2 pl-9 pr-4 text-xs outline-none focus:border-primary-500 transition-colors"
+              >
+                <option value="any">Any price</option>
+                <option value="under-50k">Under 50,000 TZS</option>
+                <option value="50k-150k">50,000 - 150,000 TZS</option>
+                <option value="over-150k">Over 150,000 TZS</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Reset Filters / Text Search */}
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                setSelectedArea("");
+                setSelectedCommodity("");
+                setPriceRange("any");
+                setSearchQuery("");
+                setSortBy("recommended");
+              }}
+              className="w-full flex items-center justify-center gap-2 rounded-lg border border-main-300 bg-main-0 py-2 text-xs font-bold text-main-700 hover:bg-main-50 transition-all cursor-pointer"
+            >
+              <i className="bi bi-funnel-fill" />
+              Reset Filters
+            </button>
+          </div>
+        </div>
+
+        {/* Text Search Bar */}
+        <div className="relative mt-4">
+          <i className="bi bi-search absolute left-3 top-1/2 -translate-y-1/2 text-main-400" />
+          <input
+            type="text"
+            placeholder="Search by keywords (e.g. Grade A maize, Kilosa)..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full rounded-lg border border-main-300 bg-main-0 py-2 pl-10 pr-4 text-xs outline-none focus:border-primary-500 transition-colors"
+          />
+        </div>
+      </section>
+
       {/* Notifications */}
       {error && (
-        <div className="rounded-xl border border-danger-300 bg-danger-100 px-4 py-3 text-sm font-semibold text-danger-700">
+        <div className="rounded-xl border border-danger-300 bg-danger-100 px-4 py-3 text-sm font-semibold text-danger-700 shadow-sm">
           <i className="bi bi-exclamation-triangle-fill mr-2" />
           {error}
         </div>
       )}
       {notice && (
-        <div className="rounded-xl border border-success-300 bg-success-100 px-4 py-3 text-sm font-semibold text-success-700">
+        <div className="rounded-xl border border-success-300 bg-success-100 px-4 py-3 text-sm font-semibold text-success-700 shadow-sm">
           <i className="bi bi-check-circle-fill mr-2" />
           {notice}
         </div>
       )}
 
-      {/* Search & Filter Controls */}
-      <section className="flex flex-col gap-4 rounded-xl border border-main-200 bg-main-100 p-4 shadow-sm md:flex-row md:items-center md:justify-between">
-        <div className="relative flex-1">
-          <i className="bi bi-search absolute left-3 top-1/2 -translate-y-1/2 text-main-400" />
-          <input
-            type="text"
-            placeholder="Search by title, description, or commodity..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full rounded-lg border border-main-300 bg-main-0 py-2 pl-10 pr-4 text-sm outline-none focus:border-primary-500 transition-colors"
-          />
+      {/* Main Listings Header */}
+      <section className="flex flex-col gap-3">
+        <div className="flex flex-col sm:flex-row sm:items-baseline sm:justify-between border-b border-main-200 pb-3">
+          <div>
+            <h2 className="text-xl font-extrabold text-main-950">
+              {selectedCommodityName} For Sale in {selectedAreaName}
+            </h2>
+            <p className="text-xs text-main-500 mt-1 font-semibold">
+              {filteredListings.length.toLocaleString()} results found
+            </p>
+          </div>
+
+          {/* Sort selector */}
+          <div className="flex items-center gap-2 mt-3 sm:mt-0">
+            <i className="bi bi-sort-down text-main-500" />
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as SortOption)}
+              className="rounded bg-transparent text-xs font-bold text-main-700 border-none outline-none focus:text-primary-700 transition-colors cursor-pointer"
+            >
+              <option value="recommended">Recommended</option>
+              <option value="price-asc">Price: Low to High</option>
+              <option value="price-desc">Price: High to Low</option>
+              <option value="newest">Newest Listings</option>
+            </select>
+          </div>
         </div>
-        <div className="flex flex-wrap items-center gap-3">
-          <select
-            value={selectedCommodity}
-            onChange={(e) => setSelectedCommodity(e.target.value)}
-            className="rounded-lg border border-main-300 bg-main-0 px-3 py-2 text-sm outline-none focus:border-primary-500 transition-colors"
+
+        {/* Quick Area Tags */}
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs font-bold text-main-600 mt-1">
+          <span className="text-main-500 uppercase tracking-wider text-2xs">Quick Areas:</span>
+          <button
+            onClick={() => setSelectedArea("")}
+            className={`px-3 py-1 rounded-full border transition-all cursor-pointer ${
+              selectedArea === ""
+                ? "bg-primary-50 border-primary-200 text-primary-700"
+                : "border-main-300 hover:border-main-500 text-main-600"
+            }`}
           >
-            <option value="">All Commodities</option>
-            {commodities.map((c) => (
-              <option key={c.commodity_id} value={c.commodity_id}>
-                {c.name}
-              </option>
-            ))}
-          </select>
-          <select
-            value={selectedArea}
-            onChange={(e) => setSelectedArea(e.target.value)}
-            className="rounded-lg border border-main-300 bg-main-0 px-3 py-2 text-sm outline-none focus:border-primary-500 transition-colors"
-          >
-            <option value="">All Areas</option>
-            {areas.map((a) => (
-              <option key={a.area_id} value={a.area_id}>
-                {a.name} ({a.level})
-              </option>
-            ))}
-          </select>
+            All (Tanzania)
+          </button>
+          {activeListingAreas.slice(0, 6).map((a) => (
+            <button
+              key={a.area_id}
+              onClick={() => setSelectedArea(a.area_id)}
+              className={`px-3 py-1 rounded-full border transition-all cursor-pointer ${
+                selectedArea === a.area_id
+                  ? "bg-primary-50 border-primary-200 text-primary-700 font-extrabold"
+                  : "border-main-300 hover:border-main-500 text-main-600"
+              }`}
+            >
+              {a.name} ({a.count})
+            </button>
+          ))}
         </div>
       </section>
 
-      {/* Grid of Listings */}
+      {/* Listings List (Grid Cards) */}
       {loading ? (
         <div className="py-24 text-center text-main-500">
-          <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-primary-600 border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite]" />
-          <p className="mt-4 font-semibold">Loading listings...</p>
+          <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-primary-600 border-r-transparent align-[-0.125em]" />
+          <p className="mt-4 font-semibold">Loading marketplace...</p>
         </div>
       ) : filteredListings.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-main-300 py-16 text-center text-main-500">
+        <div className="rounded-xl border border-dashed border-main-300 bg-main-0 py-16 text-center text-main-500">
           <i className="bi bi-basket text-4xl text-main-300" />
-          <p className="mt-4 text-base font-bold text-main-800">No commodity listings found</p>
-          <p className="text-xs text-main-500">Try adjusting your filters or search query.</p>
+          <p className="mt-4 text-base font-bold text-main-800">No matching commodity listings found</p>
+          <p className="text-xs text-main-500">Try adjusting your locations, commodity filters, or search keywords.</p>
         </div>
       ) : (
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {filteredListings.map((item) => (
             <div
               key={item.listing_id}
-              className="group flex flex-col justify-between overflow-hidden rounded-xl border border-main-200 bg-main-100 p-5 shadow-sm hover:shadow-md transition-all duration-200"
+              className="group flex flex-col justify-between overflow-hidden rounded-xl border border-main-200 bg-main-100 p-5 shadow-sm hover:shadow-md transition-all duration-200 relative"
             >
+              {/* Favorite heart icon on top right */}
+              <button
+                type="button"
+                onClick={() => toggleFavorite(item.listing_id)}
+                className="absolute right-4 top-4 p-1.5 rounded-full hover:bg-main-250 bg-main-100/50 backdrop-blur-sm transition-colors text-base cursor-pointer z-10"
+                aria-label="Add to favorites"
+              >
+                <i className={`bi ${favorites[item.listing_id] ? "bi-heart-fill text-danger-600" : "bi-heart text-main-400"}`} />
+              </button>
+
               <div>
                 <div className="flex items-start justify-between gap-2">
                   <span className="rounded-full bg-primary-100 px-2.5 py-1 text-xs font-bold text-primary-700">
                     {item.commodity?.name || "Commodity"}
                   </span>
-                  <span className="flex items-center text-xs text-main-500">
+                  <span className="flex items-center text-xs text-main-500 mr-8">
                     <i className="bi bi-geo-alt-fill mr-1 text-primary-600" />
                     {item.adm_area?.name}
                   </span>
