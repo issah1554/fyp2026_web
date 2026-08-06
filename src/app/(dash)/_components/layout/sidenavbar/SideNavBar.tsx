@@ -130,6 +130,17 @@ export function Sidebar({
         ],
       },
       {
+        title: "Catalogs",
+        icon: <i className="bi bi-collection" />,
+        items: [
+          {
+            label: "Catalogs",
+            to: "/catalogs",
+            requiredPermission: ["commodities.list", "commodities.categories.list", "commodities.units.list"],
+          },
+        ],
+      },
+      {
         title: "Trade",
         icon: <i className="bi bi-tags" />,
         items: [
@@ -150,11 +161,6 @@ export function Sidebar({
           {
             label: "Market Integrations",
             to: "/market-integrations",
-          },
-          {
-            label: "Commodities",
-            to: "/commodities",
-            requiredPermission: ["commodities.list", "commodities.categories.list", "commodities.units.list"],
           },
           {
             label: "Markets",

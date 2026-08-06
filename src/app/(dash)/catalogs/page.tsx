@@ -459,7 +459,7 @@ export default function CommoditiesPage() {
       )}
 
       <section className="rounded-md border border-main-200 bg-main-100 shadow-sm">
-        <HorizontalTabs tabs={catalogTabs} activeTab={activeTab} basePath="/commodities" className="px-5" />
+        <HorizontalTabs tabs={catalogTabs} activeTab={activeTab} basePath="/catalogs" className="px-5" />
 
         <div className="p-5">
           <div className={activeTab === "commodities" ? "" : "hidden"}>
