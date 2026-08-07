@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useAuth } from "./auth/hooks/useAuth";
@@ -8,15 +9,6 @@ const impactMetrics = [
   { value: "24/7", label: "USSD and web access" },
   { value: "8", label: "Core system modules" },
   { value: "6", label: "User groups served" },
-];
-
-const dataSources = [
-  { label: "Market officers", icon: "bi-clipboard-data" },
-  { label: "Traders", icon: "bi-shop" },
-  { label: "Online marketplaces", icon: "bi-basket" },
-  { label: "Social media", icon: "bi-chat-square-text" },
-  { label: "E-commerce websites", icon: "bi-window-stack" },
-  { label: "Public APIs", icon: "bi-diagram-3" },
 ];
 
 const featureGroups = [
@@ -70,14 +62,37 @@ const benefits = [
 
 export default function Home() {
   const { user } = useAuth();
+  const [isScrolled, setIsScrolled] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 20);
+    };
+    handleScroll();
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  const isLoggedIn = mounted && Boolean(user);
 
   return (
     <main className="min-h-screen bg-main-50 text-main-900">
-
-      <header className="sticky top-0 z-50 border-b border-main-200 bg-main-100/90 backdrop-blur-sm">
+      <header
+        className={`sticky top-0 z-50 transition-all duration-300 ${
+          isScrolled
+            ? "border-b border-main-200 bg-main-100/90 backdrop-blur-sm shadow-sm"
+            : "border-b border-transparent bg-transparent"
+        }`}
+      >
         <nav className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5 lg:px-8">
           <a href="#" className="flex items-center gap-3" aria-label="Marketia home">
-            <span className="flex size-12 items-center justify-center hover:bg-primary-100 rounded-full p-1.5">
+            <span
+              className={`flex size-12 items-center justify-center rounded-full p-1.5 transition-colors ${
+                isScrolled ? "hover:bg-primary-100" : "hover:bg-main-800/40"
+              }`}
+            >
               <Image
                 src="/logo.png"
                 alt=""
@@ -87,24 +102,51 @@ export default function Home() {
                 priority
               />
             </span>
-            <span className="text-sm font-semibold uppercase text-main-800 hover:text-primary-700">
+            <span
+              className={`text-sm font-semibold uppercase transition-colors ${
+                isScrolled
+                  ? "text-main-800 hover:text-primary-700"
+                  : "text-main-0 hover:text-primary-300"
+              }`}
+            >
               Marketia
             </span>
           </a>
-          <div className="hidden items-center gap-8 text-sm font-medium text-main-600 md:flex">
-            <a className="flex items-center gap-2 hover:text-primary-700" href="#features">
+          <div className="hidden items-center gap-8 text-sm font-medium md:flex">
+            <a
+              className={`flex items-center gap-2 transition-colors ${
+                isScrolled
+                  ? "text-main-600 hover:text-primary-700"
+                  : "text-main-200 hover:text-primary-300"
+              }`}
+              href="#features"
+            >
               Features
             </a>
-            <a className="flex items-center gap-2 hover:text-primary-700" href="#benefits">
+            <a
+              className={`flex items-center gap-2 transition-colors ${
+                isScrolled
+                  ? "text-main-600 hover:text-primary-700"
+                  : "text-main-200 hover:text-primary-300"
+              }`}
+              href="#benefits"
+            >
               Benefits
             </a>
-            <Link className="flex items-center gap-2 hover:text-primary-700" href="/market">
+            <Link
+              className={`flex items-center gap-2 transition-colors ${
+                isScrolled
+                  ? "text-main-600 hover:text-primary-700"
+                  : "text-main-200 hover:text-primary-300"
+              }`}
+              href="/market"
+            >
               Marketplace
             </Link>
-            {user ? (
+            {isLoggedIn ? (
               <Link
                 href="/dash"
-                className="flex items-center gap-2 rounded-md bg-primary-600 px-4 py-2 text-sm font-semibold text-main-0 hover:bg-primary-700"
+                className="flex items-center gap-2 rounded-md bg-primary-600 px-4 py-2 text-sm font-semibold text-main-0 hover:bg-primary-700 shadow-sm transition-all"
               >
                 <i className="bi bi-person" aria-hidden="true" />
                 Dashboard
@@ -112,7 +154,7 @@ export default function Home() {
             ) : (
               <Link
                 href="/auth/login"
-                className="flex items-center gap-2 rounded-md bg-primary-600 px-4 py-2 text-sm font-semibold text-main-0 hover:bg-primary-700"
+                className="flex items-center gap-2 rounded-md bg-primary-600 px-4 py-2 text-sm font-semibold text-main-0 hover:bg-primary-700 shadow-sm transition-all"
               >
                 <i className="bi bi-person-lock" aria-hidden="true" />
                 Sign in
@@ -122,16 +164,22 @@ export default function Home() {
         </nav>
       </header>
 
-      <section className="border-b border-main-200 bg-main-100">
-        <div className="mx-auto grid max-w-7xl gap-12 px-6 py-16 lg:grid-cols-[1.05fr_0.95fr] lg:px-8 lg:py-20">
-          <div className="flex flex-col justify-center">
-            <p className="mb-5 w-fit rounded-full border border-primary-200 bg-primary-50 px-4 py-2 text-sm font-semibold text-primary-800">
-              Multi-source market analytics and USSD technology
-            </p>
-            <h1 className="max-w-4xl text-4xl font-bold leading-tight text-main-950 sm:text-5xl lg:text-6xl">
+      <section className="relative -mt-[88px] border-b border-main-800 pt-[88px] text-main-0 overflow-hidden">
+        <Image
+          src="/cover-image.jpg"
+          alt="Marketia Cover Background"
+          fill
+          priority
+          className="object-cover object-center"
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-main-950/50 via-main-950/30 to-main-950/60 pointer-events-none" />
+
+        <div className="relative z-10 mx-auto max-w-7xl px-6 py-20 lg:px-8 lg:py-28">
+          <div className="max-w-3xl rounded-2xl border border-main-700/50 bg-main- p-8 sm:p-10 lg:p-12 shadow-2xl backdrop-blur-sm">
+            <h3 className="text-3xl font-bold leading-tight text-main-0">
               Marketia and Price Decision Support System
-            </h1>
-            <p className="mt-6 max-w-2xl text-lg leading-8 text-main-700">
+            </h3>
+            <p className="mt-6 text-lg leading-8 text-main-300">
               An intelligent market information platform for farmers, entrepreneurs,
               buyers, and market officers who need reliable prices, forecasts, and
               recommendations for better market decisions.
@@ -139,81 +187,20 @@ export default function Home() {
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <a
                 href="#features"
-                className="flex items-center justify-center gap-2 rounded-md bg-primary-600 px-5 py-3 text-center text-sm font-semibold text-main-0 shadow-sm hover:bg-primary-700"
+                className="flex items-center justify-center gap-2 rounded-md bg-primary-600 px-5 py-3 text-center text-sm font-semibold text-main-0 shadow-lg shadow-primary-950/50 hover:bg-primary-500 transition-all"
               >
                 <i className="bi bi-arrow-down-circle" aria-hidden="true" />
                 Explore platform
               </a>
             </div>
-            <dl className="mt-10 grid max-w-2xl grid-cols-3 gap-3">
+            <dl className="mt-10 grid grid-cols-3 gap-6 border-t border-main-800/80 pt-8">
               {impactMetrics.map((metric) => (
-                <div key={metric.label} className="border-l border-main-200 pl-4">
-                  <dt className="text-2xl font-bold text-main-950">{metric.value}</dt>
-                  <dd className="mt-1 text-sm leading-5 text-main-600">{metric.label}</dd>
+                <div key={metric.label} className="border-l border-primary-500/40 pl-4">
+                  <dt className="text-2xl font-bold text-main-0 sm:text-3xl">{metric.value}</dt>
+                  <dd className="mt-1 text-sm leading-5 text-main-300">{metric.label}</dd>
                 </div>
               ))}
             </dl>
-          </div>
-
-          <div className="flex items-center">
-            <div className="w-full rounded-lg border border-main-200 bg-main-50 p-4 shadow-xl shadow-main-200">
-              <div className="rounded-md border border-main-200 bg-main-100 p-5">
-                <div className="flex items-center justify-between border-b border-main-200 pb-4">
-                  <div>
-                    <p className="text-sm font-semibold text-main-500">Market intelligence</p>
-                    <h2 className="mt-1 flex items-center gap-2 text-xl font-bold text-main-950">
-                      <i className="bi bi-broadcast-pin text-primary-600" aria-hidden="true" />
-                      Commodity signal hub
-                    </h2>
-                  </div>
-                  <span className="rounded-full bg-success-100 px-3 py-1 text-xs font-semibold text-success-700">
-                    Live ready
-                  </span>
-                </div>
-
-                <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                  {dataSources.map((source) => (
-                    <div key={source.label} className="rounded-md border border-main-200 bg-main-50 p-3">
-                      <div className="flex size-9 items-center justify-center rounded-md bg-primary-100 text-primary-700">
-                        <i className={`bi ${source.icon}`} aria-hidden="true" />
-                      </div>
-                      <p className="mt-3 text-sm font-medium text-main-800">{source.label}</p>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="mt-5 rounded-md border border-main-200 bg-main-950 p-4 text-main-0">
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm font-semibold text-main-200">Price forecast</p>
-                    <p className="text-xs font-medium text-accent-300">Next cycle</p>
-                  </div>
-                  <div className="mt-5 flex h-28 items-end gap-2">
-                    {[45, 62, 54, 76, 68, 88, 79, 96].map((height, index) => (
-                      <div
-                        key={height}
-                        className="flex flex-1 items-end rounded-t-md bg-primary-600"
-                      >
-                        <div
-                          className={[
-                            "w-full rounded-t-md bg-accent-400",
-                            index === 0 && "h-12",
-                            index === 1 && "h-16",
-                            index === 2 && "h-14",
-                            index === 3 && "h-20",
-                            index === 4 && "h-18",
-                            index === 5 && "h-24",
-                            index === 6 && "h-20",
-                            index === 7 && "h-28",
-                          ]
-                            .filter(Boolean)
-                            .join(" ")}
-                        />
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
           </div>
         </div>
       </section>
