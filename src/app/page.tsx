@@ -164,7 +164,7 @@ export default function Home() {
         </nav>
       </header>
 
-      <section className="relative -mt-[88px] border-b border-main-800 pt-[88px] text-main-0 overflow-hidden">
+      <section className="relative -mt-22 border-b border-main-800 pt-22 text-main-0 overflow-hidden">
         <Image
           src="/cover-image.jpg"
           alt="Marketia Cover Background"
@@ -172,7 +172,7 @@ export default function Home() {
           priority
           className="object-cover object-center"
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-main-950/50 via-main-950/30 to-main-950/60 pointer-events-none" />
+        <div className="absolute inset-0 bg-linear-to-b from-main-950/50 via-main-950/30 to-main-950/60 pointer-events-none" />
 
         <div className="relative z-10 mx-auto max-w-7xl px-6 py-20 lg:px-8 lg:py-28">
           <div className="max-w-3xl rounded-2xl border border-main-700/50 bg-main- p-8 sm:p-10 lg:p-12 shadow-2xl backdrop-blur-sm">
