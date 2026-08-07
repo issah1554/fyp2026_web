@@ -168,10 +168,6 @@ export function Sidebar({
             to: "/areas",
             requiredPermission: "areas.list",
           },
-          {
-            label: "USSD",
-            to: "/ussd",
-          },
         ],
       },
       {

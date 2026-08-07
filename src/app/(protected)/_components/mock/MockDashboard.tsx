@@ -226,33 +226,6 @@ export function ForecastingPage() {
   );
 }
 
-export function UssdPage() {
-  const [screen, setScreen] = useState("Welcome to Smart Market\n1. Prices\n2. Sell advice\n3. Orders");
-  const [sessions, setSessions] = useState(2176);
-
-  useEffect(() => {
-    const interval = window.setInterval(() => {
-      setSessions((current) => current + (current % 3 === 0 ? -1 : 2));
-    }, 1800);
-
-    return () => window.clearInterval(interval);
-  }, []);
-
-  return (
-    <PageShell eyebrow="Telecom" title="USSD & Telecom Gateway Monitor" description="Track active sessions and preview farmer-facing USSD flows for low-bandwidth price decisions.">
-      <div className="grid gap-6 lg:grid-cols-[0.75fr_1.25fr]">
-        <div className="grid gap-4"><StatCard label="Live sessions" value={String(sessions)} icon="bi-phone-vibrate" detail="Average response latency 480 ms" /><StatCard label="Dial code" value="*123#" icon="bi-hash" detail="Gateway uptime 99.98%" /></div>
-        <div className="rounded-md border border-main-200 bg-main-100 p-6 shadow-sm">
-          <div className="mx-auto max-w-sm rounded-4xl border-8 border-main-900 bg-main-950 p-4 shadow-sm">
-            <div className="rounded-md bg-main-100 p-4 font-mono text-sm whitespace-pre-line text-main-900">{screen}</div>
-            <div className="mt-4 grid grid-cols-3 gap-2">{["1", "2", "3", "4", "5", "6", "7", "8", "9", "*", "0", "#"].map((key) => <button key={key} onClick={() => setScreen(key === "1" ? "Rice Ifakara\nRetail: TZS 2,950\nWholesale: TZS 2,720" : key === "2" ? "Sell advice\nHold rice for 10-14 days" : screen)} className="rounded-md bg-main-800 py-3 font-bold text-main-0 hover:bg-primary-700" type="button">{key}</button>)}</div>
-          </div>
-        </div>
-      </div>
-    </PageShell>
-  );
-}
-
 export function ReportsPage() {
   return (
     <PageShell eyebrow="Decision support" title="Reports & Decision Support Exports" description="Prepare leadership-ready market intelligence packs with forecast, validation, and collection coverage sections." action={<div className="flex gap-2"><button className="rounded-md bg-primary-600 px-4 py-2 text-sm font-bold text-main-0" type="button"><i className="bi bi-filetype-pdf" /> PDF</button><button className="rounded-md bg-accent-600 px-4 py-2 text-sm font-bold text-main-0" type="button"><i className="bi bi-file-earmark-spreadsheet" /> Excel</button></div>}>
