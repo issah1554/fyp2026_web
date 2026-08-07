@@ -38,6 +38,7 @@ export type Area = {
   name: string;
   level: AreaLevel;
   parent: AreaParent | null;
+  ancestors: Partial<Record<AreaLevel, string>>;
   created_at: string;
 };
 

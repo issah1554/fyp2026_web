@@ -22,14 +22,15 @@ export default function MarketplacePage() {
   // State
   const [listings, setListings] = useState<CommodityListing[]>([]);
   const [commodities, setCommodities] = useState<Commodity[]>([]);
-  const [areaMap, setAreaMap] = useState<Map<string, Area>>(new Map());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
 
+
   // Search & Filter state
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedArea, setSelectedArea] = useState("");
+  const [selectedAreaObj, setSelectedAreaObj] = useState<Area | null>(null);
   const [locationSearch, setLocationSearch] = useState("");
   const [locationDropdownOpen, setLocationDropdownOpen] = useState(false);
   const [selectedCommodity, setSelectedCommodity] = useState("");
@@ -50,7 +51,7 @@ export default function MarketplacePage() {
   const [orderQuantity, setOrderQuantity] = useState(1);
   const [submitting, setSubmitting] = useState(false);
 
-  // Load initial data (no bulk area preload — areas are searched server-side on demand)
+  // Load initial data
   const loadData = useCallback(async () => {
     setLoading(true);
     setError("");
@@ -85,33 +86,28 @@ export default function MarketplacePage() {
         if (existing) {
           existing.count += 1;
         } else {
-          const fullArea = areaMap.get(areaId);
           result.set(areaId, {
             area_id: areaId,
             name: item.adm_area.name,
-            level: fullArea?.level ?? null,
+            level: null,
             count: 1,
           });
         }
       }
     });
     return Array.from(result.values());
-  }, [listings, areaMap]);
+  }, [listings]);
 
-  // Walk parent chain to build breadcrumb ancestor names (Region > District > Ward)
+  // Build breadcrumb ancestor segments directly from the selected area's ancestors field
   const breadcrumbSegments = useMemo(() => {
-    if (!selectedArea) return [];
+    if (!selectedAreaObj?.ancestors) return [];
+    const a = selectedAreaObj.ancestors;
     const segments: string[] = [];
-    let current = areaMap.get(selectedArea);
-    // Each Area has parent: { area_id, name, level } inline — use that name directly
-    // then look up the full parent Area to continue walking further up
-    while (current?.parent) {
-      segments.unshift(current.parent.name);
-      // Walk up: look up parent's full Area to read ITS parent
-      current = areaMap.get(current.parent.area_id);
-    }
+    // Order: region → district (both optional depending on level)
+    if (a.region) segments.push(a.region);
+    if (a.district) segments.push(a.district);
     return segments;
-  }, [selectedArea, areaMap]);
+  }, [selectedAreaObj]);
 
   // Level label (Region / District / Ward)
   const levelLabel = (level: AreaLevel | null): string => {
@@ -201,9 +197,7 @@ export default function MarketplacePage() {
     }
   };
 
-  const selectedAreaName = selectedArea
-    ? (areaMap.get(selectedArea)?.name ?? activeListingAreas.find((a) => a.area_id === selectedArea)?.name ?? "Tanzania")
-    : "Tanzania";
+  const selectedAreaName = selectedAreaObj?.name ?? "Tanzania";
 
 
   // Build listing count lookup: area_id → count
@@ -220,16 +214,7 @@ export default function MarketplacePage() {
     locationDebounceRef.current = setTimeout(() => {
       setLocationSearching(true);
       void listAreas({ search: locationSearch.trim() || undefined, page_size: 20 })
-        .then((res) => {
-          const results = res.data || [];
-          setLocationResults(results);
-          // Populate areaMap with results for breadcrumb parent traversal
-          setAreaMap((prev) => {
-            const next = new Map(prev);
-            results.forEach((a) => next.set(a.area_id, a));
-            return next;
-          });
-        })
+        .then((res) => setLocationResults(res.data || []))
         .catch(() => setLocationResults([]))
         .finally(() => setLocationSearching(false));
     }, 300);
@@ -238,30 +223,31 @@ export default function MarketplacePage() {
     };
   }, [locationSearch, locationDropdownOpen]);
 
-  // When an area is selected, ensure its ancestor chain is in the areaMap for breadcrumbs
-  useEffect(() => {
-    if (!selectedArea || areaMap.has(selectedArea)) return;
-    void listAreas({ search: undefined, page_size: 5000 })
-      .then((res) => {
-        setAreaMap((prev) => {
-          const next = new Map(prev);
-          (res.data || []).forEach((a) => next.set(a.area_id, a));
-          return next;
-        });
-      })
-      .catch(() => undefined);
-  }, [selectedArea, areaMap]);
+
 
   const handleAreaSelect = (area: Area) => {
     setSelectedArea(area.area_id);
+    setSelectedAreaObj(area);
     setLocationSearch(area.name);
     setLocationDropdownOpen(false);
   };
 
   const handleAreaClear = () => {
     setSelectedArea("");
+    setSelectedAreaObj(null);
     setLocationSearch("");
     setLocationDropdownOpen(false);
+  };
+
+  // Quick area pill click — fetch full Area object so ancestors/breadcrumb works
+  const handleQuickAreaSelect = (areaId: string, areaName: string) => {
+    setSelectedArea(areaId);
+    setLocationSearch(areaName);
+    // Fetch full Area to get ancestors for breadcrumb
+    void listAreas({ search: areaName, page_size: 20 }).then((res) => {
+      const match = res.data?.find((a) => a.area_id === areaId);
+      if (match) setSelectedAreaObj(match);
+    }).catch(() => undefined);
   };
 
   return (
@@ -287,7 +273,7 @@ export default function MarketplacePage() {
           {/* Filters Grid */}
           <div className="grid gap-5 md:grid-cols-4 items-end">
             {/* Searchable Location Selector */}
-            <div className="relative">
+            <div className="relative" onClick={(e) => e.stopPropagation()}>
               <label className="block text-xs font-bold text-main-600 mb-2 uppercase tracking-wide">Location</label>
               <div className="relative">
                 <i className="bi bi-geo-alt absolute left-3 top-1/2 -translate-y-1/2 text-main-400 z-10" />
@@ -430,7 +416,7 @@ export default function MarketplacePage() {
         <section className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs font-bold text-main-600 mt-1 pb-4 border-b border-main-200">
           <span className="text-main-500 uppercase tracking-wider text-2xs">Quick Areas:</span>
           <button
-            onClick={() => setSelectedArea("")}
+            onClick={handleAreaClear}
             className={`px-3 py-1 rounded-full border transition-all cursor-pointer ${
               selectedArea === ""
                 ? "bg-primary-50 border-primary-200 text-primary-700 animate-fade-in"
@@ -442,7 +428,7 @@ export default function MarketplacePage() {
           {activeListingAreas.slice(0, 6).map((a) => (
             <button
               key={a.area_id}
-              onClick={() => setSelectedArea(a.area_id)}
+              onClick={() => handleQuickAreaSelect(a.area_id, a.name)}
               className={`px-3 py-1 rounded-full border transition-all cursor-pointer ${
                 selectedArea === a.area_id
                   ? "bg-primary-50 border-primary-200 text-primary-700 font-extrabold"
