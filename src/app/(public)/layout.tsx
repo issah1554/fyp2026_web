@@ -1,11 +1,16 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useAuth } from "../auth/hooks/useAuth";
 
 export default function PublicLayout({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
+  const isLoggedIn = mounted && Boolean(user);
 
   return (
     <div className="flex min-h-screen flex-col bg-main-50 text-main-900">
@@ -33,7 +38,7 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
             <Link className="flex items-center gap-2 text-primary-700 font-bold hover:text-primary-700" href="/market">
               Marketplace
             </Link>
-            {user ? (
+            {isLoggedIn ? (
               <Link
                 href="/dash"
                 className="flex items-center gap-2 rounded-md bg-primary-600 px-4 py-2 text-sm font-semibold text-main-0 hover:bg-primary-700 transition-all"

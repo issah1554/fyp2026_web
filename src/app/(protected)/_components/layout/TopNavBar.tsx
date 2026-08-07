@@ -52,13 +52,23 @@ export default function TopNavBar({ isMobile, onToggleSidebar }: TopNavBarProps)
             <i className="bi bi-list text-2xl" />
           </button>
 
-          <Link
-            href="/dash"
-            prefetch={false}
-            className="hidden truncate text-sm font-semibold text-main-700 hover:text-primary-700 sm:block"
-          >
-            Dashboard
-          </Link>
+          <div className="hidden sm:flex items-center gap-3">
+            <Link
+              href="/dash"
+              prefetch={false}
+              className="truncate text-sm font-semibold text-main-700 hover:text-primary-700"
+            >
+              Dashboard
+            </Link>
+            <span className="text-main-300">|</span>
+            <Link
+              href="/market"
+              prefetch={false}
+              className="truncate text-sm font-semibold text-main-700 hover:text-primary-700"
+            >
+              Marketplace
+            </Link>
+          </div>
         </div>
 
         <div className="flex shrink-0 items-center gap-2 sm:gap-3">

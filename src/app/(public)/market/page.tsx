@@ -43,7 +43,13 @@ export default function MarketplacePage() {
   // Location search state
   const [locationResults, setLocationResults] = useState<Area[]>([]);
   const [locationSearching, setLocationSearching] = useState(false);
+  const [locationPage, setLocationPage] = useState(1);
+  const [locationHasMore, setLocationHasMore] = useState(false);
+  const [locationLoadingMore, setLocationLoadingMore] = useState(false);
   const locationDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const locationSentinelRef = useRef<HTMLDivElement | null>(null);
+  // Tracks the query string that was last successfully fetched — prevents redundant re-fetches on focus
+  const locationFetchedQueryRef = useRef<string | undefined>(undefined);
 
   // Modals state
   const [orderModalOpen, setOrderModalOpen] = useState(false);
@@ -207,21 +213,63 @@ export default function MarketplacePage() {
     return counts;
   }, [activeListingAreas]);
 
-  // Server-side debounced location search
+  // Server-side debounced location search — only re-fetches when the query actually changes
   useEffect(() => {
-    if (locationDebounceRef.current) clearTimeout(locationDebounceRef.current);
     if (!locationDropdownOpen) return;
+    // Same query already loaded (e.g. dropdown re-opened after scroll) — keep existing results
+    if (locationFetchedQueryRef.current === locationSearch) return;
+
+    if (locationDebounceRef.current) clearTimeout(locationDebounceRef.current);
+    setLocationSearching(true);
+    // No debounce delay on the very first fetch; 300ms for subsequent query changes
+    const delay = locationFetchedQueryRef.current === undefined ? 0 : 300;
     locationDebounceRef.current = setTimeout(() => {
-      setLocationSearching(true);
-      void listAreas({ search: locationSearch.trim() || undefined, page_size: 20 })
-        .then((res) => setLocationResults(res.data || []))
+      setLocationPage(1);
+      void listAreas({ search: locationSearch.trim() || undefined, page_size: 20, page: 1 })
+        .then((res) => {
+          setLocationResults(res.data || []);
+          setLocationHasMore(res.pagination.has_next);
+          locationFetchedQueryRef.current = locationSearch;
+        })
         .catch(() => setLocationResults([]))
         .finally(() => setLocationSearching(false));
-    }, 300);
+    }, delay);
     return () => {
       if (locationDebounceRef.current) clearTimeout(locationDebounceRef.current);
     };
   }, [locationSearch, locationDropdownOpen]);
+
+  // Load next page and append results — deduplicate to avoid duplicate key errors
+  const loadMoreLocations = useCallback(() => {
+    if (locationLoadingMore || !locationHasMore) return;
+    const nextPage = locationPage + 1;
+    setLocationLoadingMore(true);
+    void listAreas({ search: locationSearch.trim() || undefined, page_size: 20, page: nextPage })
+      .then((res) => {
+        const incoming = res.data || [];
+        setLocationResults((prev) => {
+          const existingIds = new Set(prev.map((a) => a.area_id));
+          const unique = incoming.filter((a) => !existingIds.has(a.area_id));
+          return [...prev, ...unique];
+        });
+        setLocationHasMore(res.pagination.has_next);
+        setLocationPage(nextPage);
+      })
+      .catch(() => undefined)
+      .finally(() => setLocationLoadingMore(false));
+  }, [locationLoadingMore, locationHasMore, locationPage, locationSearch]);
+
+  // IntersectionObserver on sentinel to trigger infinite scroll
+  useEffect(() => {
+    const sentinel = locationSentinelRef.current;
+    if (!sentinel) return;
+    const observer = new IntersectionObserver(
+      (entries) => { if (entries[0].isIntersecting) loadMoreLocations(); },
+      { threshold: 1.0 }
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [loadMoreLocations]);
 
 
 
@@ -237,6 +285,8 @@ export default function MarketplacePage() {
     setSelectedAreaObj(null);
     setLocationSearch("");
     setLocationDropdownOpen(false);
+    setLocationResults([]);
+    locationFetchedQueryRef.current = undefined;
   };
 
   // Quick area pill click — fetch full Area object so ancestors/breadcrumb works
@@ -253,7 +303,7 @@ export default function MarketplacePage() {
   return (
     <div className="w-full flex flex-col gap-8">
       {/* Grouped Header & Flat Filter Banner */}
-      <section className="w-full bg-main-200 border-b border-main-300 py-8 px-0 shadow-none">
+      <section className="w-full bg-main-100/20 border-b border-main-300 py-8 px-0 shadow-none">
         <div className="mx-auto max-w-7xl px-6 lg:px-8 flex flex-col gap-6" onClick={() => setLocationDropdownOpen(false)}>
           {/* Breadcrumb — shows full ancestor chain when a location is selected */}
           <nav className="text-xs font-semibold text-main-600 flex items-center flex-wrap gap-2">
@@ -266,7 +316,7 @@ export default function MarketplacePage() {
                 <span className="text-main-500">{seg}</span>
               </span>
             ))}
-            <i className="bi bi-chevron-right text-3xs text-main-400" />
+            <i className="bi bi-chevron-right text-3xs text-main-400"/>
             <span className="text-main-800">{selectedAreaName}</span>
           </nav>
 
@@ -326,8 +376,17 @@ export default function MarketplacePage() {
                         </li>
                       ))
                     )}
+                    {/* Infinite scroll sentinel */}
+                    {locationHasMore && (
+                      <li>
+                        <div ref={locationSentinelRef} className="px-3 py-2 text-2xs text-main-400 flex items-center gap-1">
+                          {locationLoadingMore && <><i className="bi bi-arrow-repeat animate-spin" /> Loading more...</>}
+                        </div>
+                      </li>
+                    )}
                   </ul>
                 )}
+
               </div>
             </div>
 
@@ -397,7 +456,7 @@ export default function MarketplacePage() {
       </section>
 
       {/* Main Content Area */}
-      <div className="mx-auto w-full max-w-7xl px-6 py-12 lg:px-8 flex flex-col gap-6">
+      <div className="mx-auto w-full max-w-7xl px-6 pb-5 lg:px-8 flex flex-col gap-6">
         {/* Notifications */}
         {error && (
           <div className="rounded-xl border border-danger-300 bg-danger-100 px-4 py-3 text-sm font-semibold text-danger-700 shadow-sm">
@@ -413,7 +472,7 @@ export default function MarketplacePage() {
         )}
 
         {/* Quick Area Tags */}
-        <section className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs font-bold text-main-600 mt-1 pb-4 border-b border-main-200">
+        <section className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs font-bold text-main-600 mt-1 pb-4">
           <span className="text-main-500 uppercase tracking-wider text-2xs">Quick Areas:</span>
           <button
             onClick={handleAreaClear}

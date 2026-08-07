@@ -137,6 +137,10 @@ export function Sidebar({
         icon: <i className="bi bi-tags" />,
         items: [
           {
+            label: "Marketplace",
+            to: "/market",
+          },
+          {
             label: "Listings",
             to: "/listings",
           },
