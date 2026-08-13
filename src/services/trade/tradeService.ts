@@ -15,6 +15,22 @@ export type ListingImage = {
   is_primary: boolean;
 };
 
+export type TradeUserSummary = {
+  user_id: string | null;
+  username: string;
+  email: string;
+  first_name: string;
+  last_name: string;
+  full_name: string;
+  phone_number: string;
+  organization: string;
+  avatar_url: string;
+  role: {
+    code: string;
+    name: string;
+  } | null;
+};
+
 export type CommodityListing = {
   listing_id: string;
   commodity: {
@@ -28,6 +44,7 @@ export type CommodityListing = {
     path: string;
   };
   seller_id: string | null;
+  seller: TradeUserSummary | null;
   title: string;
   description: string;
   price: string;
@@ -53,6 +70,7 @@ export type Order = {
   order_id: string;
   listing: CommodityListing;
   buyer_id: string | null;
+  buyer: TradeUserSummary | null;
   quantity: string;
   total_price: string;
   status: string;

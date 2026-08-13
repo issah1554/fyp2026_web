@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { useAuth } from "@/src/app/(public)/auth/hooks/useAuth";
+import Avatar from "@/src/components/ui/Avatar";
 
 interface TopNavBarProps {
   isMobile: boolean;
@@ -137,23 +138,19 @@ export default function TopNavBar({ isMobile, onToggleSidebar }: TopNavBarProps)
               className="cursor-pointer focus:outline-none"
               type="button"
             >
-              <span className="flex size-8 items-center justify-center rounded-full bg-primary-700 text-xs font-semibold text-main-0">
-                {initials}
-              </span>
+              <Avatar src={user?.avatarUrl} alt={displayName} initials={initials} size={32} status="offline" />
             </button>
 
             {open === "profile" && (
               <div className="absolute right-0 z-50 mt-2 w-max min-w-56 max-w-[calc(100vw-1rem)] rounded-md border border-main-300 bg-main-200 text-sm shadow-lg">
                 <div className="max-w-full border-b border-main-300 px-4 py-4 text-center">
-                  <span className="mx-auto flex size-12 items-center justify-center rounded-full bg-primary-700 text-sm font-semibold text-main-0">
-                    {initials}
-                  </span>
+                  <Avatar src={user?.avatarUrl} alt={displayName} initials={initials} size={48} status="offline" className="mx-auto" />
                   <div className="mt-2 wrap-break-word font-semibold">{displayName}</div>
                   <div className="break-all text-xs text-main-500">{user?.email}</div>
                 </div>
 
-                <Link href="/me/companies" onClick={() => setOpen(null)} prefetch={false} className="flex items-center gap-2 px-4 py-2 hover:bg-main-300">
-                  <i className="bi bi-buildings" /> My companies
+                <Link href="/profile" onClick={() => setOpen(null)} prefetch={false} className="flex items-center gap-2 px-4 py-2 hover:bg-main-300">
+                  <i className="bi bi-person-circle" /> Profile
                 </Link>
 
                 <Link href="/settings" onClick={() => setOpen(null)} prefetch={false} className="flex items-center gap-2 px-4 py-2 hover:bg-main-300">

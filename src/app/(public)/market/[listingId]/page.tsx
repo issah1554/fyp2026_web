@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/src/app/(public)/auth/hooks/useAuth";
+import Avatar from "@/src/components/ui/Avatar";
 import { createOrder, getListing, type CommodityListing } from "@/src/services/trade/tradeService";
 
 export default function MarketplaceListingDetailPage() {
@@ -197,8 +198,21 @@ export default function MarketplaceListingDetailPage() {
 
           <div className="grid gap-3 text-sm sm:grid-cols-2">
             <div className="rounded-lg bg-main-100 p-4">
-              <p className="text-2xs font-bold uppercase text-main-500">Seller ID</p>
-              <p className="mt-1 font-mono text-xs font-bold text-main-800">{listing.seller_id || "Unknown"}</p>
+              <p className="text-2xs font-bold uppercase text-main-500">Seller</p>
+              {listing.seller ? (
+                <div className="mt-2 flex min-w-0 items-start gap-2">
+                  <Avatar src={listing.seller.avatar_url} alt={listing.seller.full_name || listing.seller.username} initials={listing.seller.full_name || listing.seller.username} size={36} status="offline" />
+                  <div className="min-w-0">
+                    <p className="truncate font-bold text-main-800">{listing.seller.full_name || listing.seller.username}</p>
+                    {listing.seller.email && <p className="truncate text-xs text-main-500">{listing.seller.email}</p>}
+                    {(listing.seller.phone_number || listing.seller.organization || listing.seller_id) && (
+                      <p className="truncate text-xs text-main-500">{listing.seller.phone_number || listing.seller.organization || listing.seller_id}</p>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <p className="mt-1 font-mono text-xs font-bold text-main-800">{listing.seller_id || "Unknown"}</p>
+              )}
             </div>
             <div className="rounded-lg bg-main-100 p-4">
               <p className="text-2xs font-bold uppercase text-main-500">Status</p>

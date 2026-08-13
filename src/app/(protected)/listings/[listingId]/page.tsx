@@ -4,11 +4,13 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "@/src/components/ui/Toast";
+import Avatar from "@/src/components/ui/Avatar";
 import {
   getListing,
   listOrders,
   type CommodityListing,
   type Order,
+  type TradeUserSummary,
 } from "@/src/services/trade/tradeService";
 
 function statusClass(status: string) {
@@ -165,7 +167,7 @@ export default function ListingDetailsPage() {
           <div className="mt-5 grid gap-3 sm:grid-cols-2">
             <Detail label="Price" value={`TZS ${parseFloat(listing.price).toLocaleString()}`} />
             <Detail label="Quantity" value={`${parseFloat(listing.quantity).toLocaleString()} ${listing.commodity?.unit}`} />
-            <Detail label="Seller ID" value={listing.seller_id ?? "N/A"} mono />
+            <UserDetail label="Seller" user={listing.seller} fallbackId={listing.seller_id} />
             <div className="rounded-lg border border-main-200 bg-main-0 p-3">
               <p className="text-xs font-bold uppercase text-main-500">Status</p>
               <span className={`mt-2 inline-block rounded-full px-2.5 py-1 text-2xs font-bold uppercase ${statusClass(listing.status)}`}>
@@ -200,7 +202,7 @@ export default function ListingDetailsPage() {
               <thead>
                 <tr className="border-b border-main-200 bg-main-200/50 text-xs font-bold uppercase text-main-500">
                   <th className="px-4 py-3">Order ID</th>
-                  <th className="px-4 py-3">Buyer ID</th>
+                  <th className="px-4 py-3">Buyer</th>
                   <th className="px-4 py-3">Quantity</th>
                   <th className="px-4 py-3">Total Price</th>
                   <th className="px-4 py-3">Status</th>
@@ -211,7 +213,9 @@ export default function ListingDetailsPage() {
                 {listingOrders.map((order) => (
                   <tr key={order.order_id} className="hover:bg-main-50">
                     <td className="px-4 py-3 font-mono text-xs font-bold text-main-700">#{order.order_id}</td>
-                    <td className="px-4 py-3 font-mono text-xs text-main-600">{order.buyer_id ?? "N/A"}</td>
+                    <td className="px-4 py-3">
+                      <UserInline user={order.buyer} fallbackId={order.buyer_id} />
+                    </td>
                     <td className="px-4 py-3 text-main-700">
                       {parseFloat(order.quantity).toLocaleString()} {listing.commodity?.unit}
                     </td>
@@ -231,6 +235,39 @@ export default function ListingDetailsPage() {
           </div>
         )}
       </section>
+    </div>
+  );
+}
+
+function UserInline({ user, fallbackId }: { user?: TradeUserSummary | null; fallbackId?: string | null }) {
+  if (!user) {
+    return <span className="font-mono text-xs text-main-500">{fallbackId ?? "N/A"}</span>;
+  }
+
+  return (
+    <div className="flex min-w-0 items-start gap-2">
+      <Avatar src={user.avatar_url} alt={user.full_name || user.username} initials={user.full_name || user.username} size={34} status="offline" />
+      <div className="min-w-0">
+        <p className="truncate font-bold text-main-900">{user.full_name || user.username}</p>
+        {user.email && <p className="truncate text-xs text-main-500">{user.email}</p>}
+        {(user.phone_number || user.organization || user.user_id) && (
+          <p className="truncate text-xs text-main-500">{user.phone_number || user.organization || user.user_id}</p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function UserDetail({ label, user, fallbackId }: { label: string; user?: TradeUserSummary | null; fallbackId?: string | null }) {
+  return (
+    <div className="rounded-lg border border-main-200 bg-main-0 p-3">
+      <p className="text-xs font-bold uppercase text-main-500">{label}</p>
+      <UserInline user={user} fallbackId={fallbackId} />
+      {user?.role && (
+        <span className="mt-2 inline-block rounded bg-main-200 px-2 py-0.5 text-2xs font-bold uppercase text-main-600">
+          {user.role.name}
+        </span>
+      )}
     </div>
   );
 }

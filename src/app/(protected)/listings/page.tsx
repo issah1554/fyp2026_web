@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/src/app/(public)/auth/hooks/useAuth";
 import { userCan } from "@/src/services/auth/authService";
+import Avatar from "@/src/components/ui/Avatar";
 import {
   listListings,
   deleteListing,
@@ -242,7 +243,7 @@ export default function ProtectedListingsPage() {
                 <th className="py-3 px-4">Quantity</th>
                 <th className="py-3 px-4">Price</th>
                 <th className="py-3 px-4">Status</th>
-                {activeTab === "system-listings" && <th className="py-3 px-4">Seller ID</th>}
+                {activeTab === "system-listings" && <th className="py-3 px-4">Seller</th>}
                 <th className="py-3 px-4">Created</th>
                 <th className="py-3 px-4 text-right">Actions</th>
               </tr>
@@ -277,8 +278,21 @@ export default function ProtectedListingsPage() {
                     </span>
                   </td>
                   {activeTab === "system-listings" && (
-                    <td className="py-4 px-4 font-mono text-xs text-main-600">
-                      {item.seller_id}
+                    <td className="py-4 px-4">
+                      {item.seller ? (
+                        <div className="flex min-w-0 items-start gap-2">
+                          <Avatar src={item.seller.avatar_url} alt={item.seller.full_name || item.seller.username} initials={item.seller.full_name || item.seller.username} size={34} status="offline" />
+                          <div className="min-w-0">
+                            <p className="truncate font-bold text-main-900">{item.seller.full_name || item.seller.username}</p>
+                            {item.seller.email && <p className="truncate text-xs text-main-500">{item.seller.email}</p>}
+                            {(item.seller.phone_number || item.seller.organization || item.seller_id) && (
+                              <p className="truncate text-xs text-main-500">{item.seller.phone_number || item.seller.organization || item.seller_id}</p>
+                            )}
+                          </div>
+                        </div>
+                      ) : (
+                        <span className="font-mono text-xs text-main-500">{item.seller_id || "N/A"}</span>
+                      )}
                     </td>
                   )}
                   <td className="py-4 px-4 text-main-500 text-xs">

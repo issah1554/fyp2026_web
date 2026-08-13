@@ -2,10 +2,12 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/src/app/(public)/auth/hooks/useAuth";
+import Avatar from "@/src/components/ui/Avatar";
 import {
   listOrders,
   updateOrderStatus,
   type Order,
+  type TradeUserSummary,
 } from "../../../services/trade/tradeService";
 
 export default function OrdersPage() {
@@ -191,6 +193,7 @@ export default function OrdersPage() {
               <tr className="border-b border-main-200 text-xs font-bold uppercase text-main-500 bg-main-200/50">
                 <th className="py-3 px-4">Order ID</th>
                 <th className="py-3 px-4">Commodity / Title</th>
+                <th className="py-3 px-4">{activeTab === "placed" ? "Seller" : "Buyer"}</th>
                 <th className="py-3 px-4">Quantity</th>
                 <th className="py-3 px-4">Total Price</th>
                 <th className="py-3 px-4">Status</th>
@@ -207,6 +210,9 @@ export default function OrdersPage() {
                     <span className="inline-block mt-0.5 rounded bg-primary-100 px-2 py-0.5 text-2xs font-semibold text-primary-700">
                       {order.listing?.commodity?.name}
                     </span>
+                  </td>
+                  <td className="py-4 px-4">
+                    <UserSummary user={activeTab === "placed" ? order.listing?.seller : order.buyer} fallbackId={activeTab === "placed" ? order.listing?.seller_id : order.buyer_id} />
                   </td>
                   <td className="py-4 px-4 text-main-700">
                     {parseFloat(order.quantity).toLocaleString()} {order.listing?.commodity?.unit}
@@ -260,6 +266,18 @@ export default function OrdersPage() {
               <div className="flex justify-between border-b border-main-200 pb-2">
                 <span className="text-main-500">Listing:</span>
                 <span className="font-bold text-main-900">{selectedOrder.listing?.title}</span>
+              </div>
+              <div className="border-b border-main-200 pb-2">
+                <span className="text-main-500">Buyer:</span>
+                <div className="mt-1">
+                  <UserSummary user={selectedOrder.buyer} fallbackId={selectedOrder.buyer_id} />
+                </div>
+              </div>
+              <div className="border-b border-main-200 pb-2">
+                <span className="text-main-500">Seller:</span>
+                <div className="mt-1">
+                  <UserSummary user={selectedOrder.listing?.seller} fallbackId={selectedOrder.listing?.seller_id} />
+                </div>
               </div>
               <div className="flex justify-between border-b border-main-200 pb-2">
                 <span className="text-main-500">Commodity:</span>
@@ -356,6 +374,30 @@ export default function OrdersPage() {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function UserSummary({ user, fallbackId }: { user?: TradeUserSummary | null; fallbackId?: string | null }) {
+  if (!user) {
+    return <span className="font-mono text-xs text-main-500">{fallbackId || "N/A"}</span>;
+  }
+
+  return (
+    <div className="flex min-w-0 items-start gap-2">
+      <Avatar src={user.avatar_url} alt={user.full_name || user.username} initials={user.full_name || user.username} size={34} status="offline" />
+      <div className="min-w-0">
+        <p className="truncate font-bold text-main-900">{user.full_name || user.username}</p>
+        {user.email && <p className="truncate text-xs text-main-500">{user.email}</p>}
+        {(user.phone_number || user.organization || user.user_id) && (
+          <p className="truncate text-xs text-main-500">{user.phone_number || user.organization || user.user_id}</p>
+        )}
+        {user.role && (
+          <span className="mt-1 inline-block rounded bg-main-200 px-2 py-0.5 text-2xs font-bold uppercase text-main-600">
+            {user.role.name}
+          </span>
+        )}
+      </div>
     </div>
   );
 }

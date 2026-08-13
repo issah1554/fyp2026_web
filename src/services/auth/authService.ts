@@ -13,11 +13,10 @@ export type AuthUser = {
   firstName: string;
   lastName: string;
   email: string;
+  avatarUrl: string;
   role: string | AuthRole;
   permissions: string[];
 };
-
-type StoredAuthUser = Omit<AuthUser, "permissions">;
 
 const AUTH_USER_KEY = "marketia.auth.user";
 const AUTH_ACCESS_TOKEN_KEY = "marketia.auth.access-token";
@@ -27,6 +26,11 @@ export const AUTH_SESSION_CHANGED_EVENT = "marketia.auth.session-changed";
 type BackendProfile = {
   role?: string | AuthRole;
   permissions?: BackendPermission[];
+  phone_number?: string;
+  organization?: string;
+  farm_location?: string;
+  farm_group?: string;
+  avatar_url?: string;
 };
 
 type BackendUser = {
@@ -87,6 +91,24 @@ export type RegisterResult = {
 
 export type MessageResult = {
   message: string;
+};
+
+export type CurrentProfile = AuthUser & {
+  username: string;
+  phoneNumber: string;
+  organization: string;
+  farmLocation: string;
+  farmGroup: string;
+};
+
+export type ProfileUpdatePayload = {
+  first_name: string;
+  last_name: string;
+  phone_number: string;
+  organization: string;
+  farm_location: string;
+  farm_group: string;
+  avatar_upload?: File | null;
 };
 
 export function getRoleCode(role: string | AuthRole | undefined) {
@@ -230,18 +252,21 @@ function normalizeUser(user: BackendUser): AuthUser {
     firstName: user.first_name ?? "",
     lastName: user.last_name ?? "",
     email: user.email ?? "",
+    avatarUrl: user.profile?.avatar_url ?? "",
     role,
     permissions: roleCode.toLowerCase() === "admin" ? ["*"] : uniquePermissions,
   };
 }
 
-function toStoredUser(user: AuthUser): StoredAuthUser {
+function normalizeCurrentProfile(user: BackendUser): CurrentProfile {
+  const normalized = normalizeUser(user);
   return {
-    id: user.id,
-    firstName: user.firstName,
-    lastName: user.lastName,
-    email: user.email,
-    role: user.role,
+    ...normalized,
+    username: user.username ?? "",
+    phoneNumber: user.profile?.phone_number ?? "",
+    organization: user.profile?.organization ?? "",
+    farmLocation: user.profile?.farm_location ?? "",
+    farmGroup: user.profile?.farm_group ?? "",
   };
 }
 
@@ -314,7 +339,7 @@ function setStoredAccessToken(access: string, refresh?: string) {
   }
 }
 
-async function fetchCurrentUser(): Promise<AuthUser | null> {
+export async function fetchCurrentUser(): Promise<AuthUser | null> {
   const response = await authenticatedFetch(apiUrl("/auth/me"));
   const payload = (await response.json().catch(() => null)) as ApiResponse<BackendUser> | null;
 
@@ -330,6 +355,45 @@ async function fetchCurrentUser(): Promise<AuthUser | null> {
   const user = normalizeUser(payload.data);
   setStoredUser(user);
   return user;
+}
+
+export async function getCurrentProfile(): Promise<CurrentProfile> {
+  const response = await authenticatedFetch(apiUrl("/auth/me"));
+  const payload = (await response.json().catch(() => null)) as ApiResponse<BackendUser> | null;
+  if (!response.ok || !payload?.data) {
+    throw new Error(getErrorMessage(payload, "Could not load profile."));
+  }
+  const profile = normalizeCurrentProfile(payload.data);
+  setStoredUser(profile);
+  return profile;
+}
+
+export async function updateCurrentProfile(data: ProfileUpdatePayload): Promise<{ message: string; profile: CurrentProfile }> {
+  const formData = new FormData();
+  formData.append("first_name", data.first_name);
+  formData.append("last_name", data.last_name);
+  formData.append("phone_number", data.phone_number);
+  formData.append("organization", data.organization);
+  formData.append("farm_location", data.farm_location);
+  formData.append("farm_group", data.farm_group);
+  if (data.avatar_upload) {
+    formData.append("avatar_upload", data.avatar_upload);
+  }
+
+  const response = await authenticatedFetch(apiUrl("/auth/me"), {
+    method: "PATCH",
+    body: formData,
+  });
+  const payload = (await response.json().catch(() => null)) as ApiResponse<BackendUser> | null;
+  if (!response.ok || !payload?.data) {
+    throw new Error(getErrorMessage(payload, "Could not update profile."));
+  }
+  const profile = normalizeCurrentProfile(payload.data);
+  setStoredUser(profile);
+  return {
+    message: payload.message ?? "Profile updated successfully.",
+    profile,
+  };
 }
 
 export async function loginWithPassword(credentials: LoginCredentials): Promise<AuthUser> {
