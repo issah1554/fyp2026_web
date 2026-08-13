@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Modal } from "@/src/components/ui/Modal";
 import Pagination from "@/src/components/ui/Pagination";
-import { useAuth } from "../../auth/hooks/useAuth";
+import { useAuth } from "@/src/app/(public)/auth/hooks/useAuth";
 import { userCan } from "@/src/services/auth/authService";
 import { listAreas, type Area } from "@/src/services/areas/areaService";
 import { listCommodities, type Commodity } from "@/src/services/commodities/commodityService";

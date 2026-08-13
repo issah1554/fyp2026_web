@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useMemo } from "react";
 import { userCan } from "@/src/services/auth/authService";
-import { useAuth } from "../../../../auth/hooks/useAuth";
+import { useAuth } from "@/src/app/(public)/auth/hooks/useAuth";
 import appIcon from "../../../../icon.png";
 import { NavItem } from "./NavItem";
 import { NavItems } from "./NavItems";

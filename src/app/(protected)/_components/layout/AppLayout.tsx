@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { useAuth } from "../../../auth/hooks/useAuth";
+import { useAuth } from "@/src/app/(public)/auth/hooks/useAuth";
 import Footer from "./Footer";
 import TopNavBar from "./TopNavBar";
 import { SideNavBar } from "./sidenavbar/SideNavBar";

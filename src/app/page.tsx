@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { useAuth } from "./auth/hooks/useAuth";
+import { useAuth } from "@/src/app/(public)/auth/hooks/useAuth";
 
 const impactMetrics = [
   { value: "24/7", label: "USSD and web access" },
@@ -66,13 +66,17 @@ export default function Home() {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
+    // avoid synchronous setState inside effect by deferring to next frame
+    const rafId = requestAnimationFrame(() => setMounted(true));
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 20);
     };
     handleScroll();
     window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
+    return () => {
+      cancelAnimationFrame(rafId);
+      window.removeEventListener("scroll", handleScroll);
+    };
   }, []);
 
   const isLoggedIn = mounted && Boolean(user);
@@ -80,18 +84,16 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-main-50 text-main-900">
       <header
-        className={`sticky top-0 z-50 transition-all duration-300 ${
-          isScrolled
+        className={`sticky top-0 z-50 transition-all duration-300 ${isScrolled
             ? "border-b border-main-200 bg-main-100/90 backdrop-blur-sm shadow-sm"
             : "border-b border-transparent bg-transparent"
-        }`}
+          }`}
       >
         <nav className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5 lg:px-8">
           <a href="#" className="flex items-center gap-3" aria-label="Marketia home">
             <span
-              className={`flex size-12 items-center justify-center rounded-full p-1.5 transition-colors ${
-                isScrolled ? "hover:bg-primary-100" : "hover:bg-main-800/40"
-              }`}
+              className={`flex size-12 items-center justify-center rounded-full p-1.5 transition-colors ${isScrolled ? "hover:bg-primary-100" : "hover:bg-main-800/40"
+                }`}
             >
               <Image
                 src="/logo.png"
@@ -103,42 +105,38 @@ export default function Home() {
               />
             </span>
             <span
-              className={`text-sm font-semibold uppercase transition-colors ${
-                isScrolled
+              className={`text-sm font-semibold uppercase transition-colors ${isScrolled
                   ? "text-main-800 hover:text-primary-700"
                   : "text-main-0 hover:text-primary-300"
-              }`}
+                }`}
             >
               Marketia
             </span>
           </a>
           <div className="hidden items-center gap-8 text-sm font-medium md:flex">
             <a
-              className={`flex items-center gap-2 transition-colors ${
-                isScrolled
+              className={`flex items-center gap-2 transition-colors ${isScrolled
                   ? "text-main-600 hover:text-primary-700"
                   : "text-main-200 hover:text-primary-300"
-              }`}
+                }`}
               href="#features"
             >
               Features
             </a>
             <a
-              className={`flex items-center gap-2 transition-colors ${
-                isScrolled
+              className={`flex items-center gap-2 transition-colors ${isScrolled
                   ? "text-main-600 hover:text-primary-700"
                   : "text-main-200 hover:text-primary-300"
-              }`}
+                }`}
               href="#benefits"
             >
               Benefits
             </a>
             <Link
-              className={`flex items-center gap-2 transition-colors ${
-                isScrolled
+              className={`flex items-center gap-2 transition-colors ${isScrolled
                   ? "text-main-600 hover:text-primary-700"
                   : "text-main-200 hover:text-primary-300"
-              }`}
+                }`}
               href="/market"
             >
               Marketplace

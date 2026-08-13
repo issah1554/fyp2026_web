@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { HorizontalTabs, type HorizontalTab } from "@/src/components/ui/HorizontalTabs";
 import { Modal } from "@/src/components/ui/Modal";
 import Pagination from "@/src/components/ui/Pagination";
-import { useAuth } from "../../auth/hooks/useAuth";
+import { useAuth } from "@/src/app/(public)/auth/hooks/useAuth";
 import { userCan } from "@/src/services/auth/authService";
 import {
   createCommodity,

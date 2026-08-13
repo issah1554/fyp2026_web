@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { useAuth } from "../auth/hooks/useAuth";
+import { useAuth } from "@/src/app/(public)/auth/hooks/useAuth";
 
 export default function PublicLayout({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
