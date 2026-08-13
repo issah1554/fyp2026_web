@@ -626,6 +626,19 @@ export default function MarketplacePage() {
                     <i className={`bi ${isItemInCart ? "bi-cart-check-fill" : "bi-cart-plus"}`} />
                   </button>
 
+                  {item.images.length > 0 && (
+                    <Link
+                      href={`/market/${item.listing_id}`}
+                      className="mb-4 block aspect-video w-full overflow-hidden rounded-lg border border-main-200 bg-main-200 text-left"
+                    >
+                      <img
+                        src={item.images.find((image) => image.is_primary)?.image_url ?? item.images[0].image_url}
+                        alt={item.title || item.commodity?.name || "Listing image"}
+                        className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-105"
+                      />
+                    </Link>
+                  )}
+
                   <div>
                     <div className="flex items-start justify-between gap-2">
                       <span className="rounded-full bg-primary-100 px-2.5 py-1 text-xs font-bold text-primary-700">
@@ -639,8 +652,12 @@ export default function MarketplacePage() {
                     <h3 className="mt-3 text-lg font-bold text-main-950 group-hover:text-primary-700 transition-colors">
                       {item.title || `${item.commodity?.name} for Sale`}
                     </h3>
-                    <p className="mt-2 line-clamp-3 text-sm text-main-600 leading-relaxed">
-                      {item.description || "No description provided."}
+                    <p className="mt-2 line-clamp-2 text-sm text-main-600 leading-relaxed">
+                      {item.description
+                        ? item.description.length > 110
+                          ? `${item.description.slice(0, 110).trim()}...`
+                          : item.description
+                        : "No description provided."}
                     </p>
                   </div>
 
@@ -664,14 +681,28 @@ export default function MarketplacePage() {
                     <div className="mt-4 flex gap-2">
                       {isLoggedIn ? (
                         item.seller_id === user?.id ? (
-                          <button
-                            disabled
-                            className="w-full rounded-lg bg-main-300 py-2.5 text-center text-xs font-bold text-main-600 cursor-not-allowed"
-                          >
-                            Your Listing
-                          </button>
+                          <>
+                            <Link
+                              href={`/market/${item.listing_id}`}
+                              className="flex-1 rounded-lg border border-main-300 bg-main-0 py-2.5 text-center text-xs font-bold text-main-800 hover:border-primary-500 hover:text-primary-700 transition-all cursor-pointer"
+                            >
+                              Details
+                            </Link>
+                            <button
+                              disabled
+                              className="flex-1 rounded-lg bg-main-300 py-2.5 text-center text-xs font-bold text-main-600 cursor-not-allowed"
+                            >
+                              Your Listing
+                            </button>
+                          </>
                         ) : (
                           <>
+                            <Link
+                              href={`/market/${item.listing_id}`}
+                              className="flex-1 rounded-lg border border-main-300 bg-main-0 py-2.5 text-center text-xs font-bold text-main-800 hover:border-primary-500 hover:text-primary-700 transition-all cursor-pointer"
+                            >
+                              Details
+                            </Link>
                             <button
                               onClick={() => addToCart(item, 1)}
                               className={`flex-1 flex items-center justify-center gap-1.5 rounded-lg border py-2.5 text-xs font-bold transition-all cursor-pointer ${
@@ -693,6 +724,12 @@ export default function MarketplacePage() {
                         )
                       ) : (
                         <div className="flex w-full gap-2">
+                          <Link
+                            href={`/market/${item.listing_id}`}
+                            className="flex-1 rounded-lg border border-main-300 bg-main-0 py-2.5 text-center text-xs font-bold text-main-800 hover:border-primary-500 hover:text-primary-700 transition-all cursor-pointer"
+                          >
+                            Details
+                          </Link>
                           <button
                             onClick={() => addToCart(item, 1)}
                             className={`flex-1 flex items-center justify-center gap-1.5 rounded-lg border py-2.5 text-xs font-bold transition-all cursor-pointer ${
