@@ -65,9 +65,13 @@ export default function ProtectedListingsPage() {
     setError("");
     try {
       const [listingsData, commoditiesData, areasData] = await Promise.all([
-        listListings(),
+        listListings({
+          area_id: selectedArea || undefined,
+          commodity_id: selectedCommodity || undefined,
+          status: selectedStatus || undefined,
+        }),
         listCommodities(),
-        listAreas(),
+        listAreas({ page_size: 1000 }),
       ]);
       setListings(listingsData);
       const fetchedCommodities = commoditiesData.data || [];
@@ -87,7 +91,7 @@ export default function ProtectedListingsPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [selectedArea, selectedCommodity, selectedStatus]);
 
   useEffect(() => {
     const timeout = window.setTimeout(() => {
@@ -96,7 +100,7 @@ export default function ProtectedListingsPage() {
     return () => window.clearTimeout(timeout);
   }, [loadData]);
 
-  // Filter listings based on active tab and search filters
+  // Backend handles listing location, commodity, and status filters.
   const filteredListings = useMemo(() => {
     return listings.filter((item) => {
       // Tab separation
@@ -118,13 +122,9 @@ export default function ProtectedListingsPage() {
         }
       }
 
-      if (selectedArea && item.adm_area?.area_id !== selectedArea) return false;
-      if (selectedCommodity && item.commodity?.commodity_id !== selectedCommodity) return false;
-      if (selectedStatus && item.status !== selectedStatus) return false;
-
       return true;
     });
-  }, [listings, activeTab, searchQuery, selectedArea, selectedCommodity, selectedStatus, user, isAdmin]);
+  }, [listings, activeTab, searchQuery, user, isAdmin]);
 
   // Modals triggers
   const handleOpenCreateModal = () => {

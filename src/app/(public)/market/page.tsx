@@ -64,14 +64,17 @@ export default function MarketplacePage() {
 
   // Load cart from localStorage
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem("marketia_cart");
-      if (saved) {
-        setCart(JSON.parse(saved));
+    const timeout = window.setTimeout(() => {
+      try {
+        const saved = localStorage.getItem("marketia_cart");
+        if (saved) {
+          setCart(JSON.parse(saved));
+        }
+      } catch {
+        // ignore
       }
-    } catch {
-      // ignore
-    }
+    }, 0);
+    return () => window.clearTimeout(timeout);
   }, []);
 
   // Save cart to localStorage
@@ -89,7 +92,11 @@ export default function MarketplacePage() {
     setError("");
     try {
       const [listingsData, commoditiesData] = await Promise.all([
-        listListings(),
+        listListings({
+          area_id: selectedArea || undefined,
+          commodity_id: selectedCommodity || undefined,
+          status: "active",
+        }),
         listCommodities(),
       ]);
       setListings(listingsData);
@@ -99,7 +106,7 @@ export default function MarketplacePage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [selectedArea, selectedCommodity]);
 
   useEffect(() => {
     const timeout = window.setTimeout(() => {
@@ -151,11 +158,9 @@ export default function MarketplacePage() {
     return map[level];
   };
 
-  // Filter listings: active only for marketplace
+  // Backend handles listing location, commodity, and status filters.
   const filteredListings = useMemo(() => {
     const list = listings.filter((item) => {
-      if (item.status !== "active") return false;
-
       // Search query
       if (searchQuery) {
         const query = searchQuery.toLowerCase();
@@ -166,12 +171,6 @@ export default function MarketplacePage() {
           return false;
         }
       }
-
-      // Location Filter
-      if (selectedArea && item.adm_area?.area_id !== selectedArea) return false;
-
-      // Commodity Filter
-      if (selectedCommodity && item.commodity?.commodity_id !== selectedCommodity) return false;
 
       // Price Range Filter
       const price = parseFloat(item.price);
@@ -192,7 +191,7 @@ export default function MarketplacePage() {
     }
 
     return list;
-  }, [listings, searchQuery, selectedArea, selectedCommodity, priceRange, sortBy]);
+  }, [listings, searchQuery, priceRange, sortBy]);
 
   // Cart operations
   const addToCart = (listing: CommodityListing, qty: number = 1) => {
@@ -774,7 +773,7 @@ export default function MarketplacePage() {
                   <i className="bi bi-cart-x text-5xl text-main-300" />
                   <p className="mt-4 text-base font-bold text-main-800">Your cart is empty</p>
                   <p className="mt-1 text-xs text-main-500 max-w-xs">
-                    Browse available commodities and click "Add to Cart" to start building your purchase order.
+                    Browse available commodities and click &quot;Add to Cart&quot; to start building your purchase order.
                   </p>
                 </div>
               ) : (
