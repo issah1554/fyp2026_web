@@ -57,6 +57,7 @@ export default function ProtectedListingsPage() {
     price: 0,
     quantity: 0,
     status: "active",
+    images_upload: [] as File[],
   });
 
   // Load catalogs and listings
@@ -137,6 +138,7 @@ export default function ProtectedListingsPage() {
       price: 0,
       quantity: 0,
       status: "active",
+      images_upload: [],
     });
     setListingModalOpen(true);
   };
@@ -151,6 +153,7 @@ export default function ProtectedListingsPage() {
       price: parseFloat(listing.price),
       quantity: parseFloat(listing.quantity),
       status: listing.status,
+      images_upload: [],
     });
     setListingModalOpen(true);
   };
@@ -480,6 +483,22 @@ export default function ProtectedListingsPage() {
                   placeholder="Provide details..."
                   className="mt-1 h-24 w-full rounded-lg border border-main-300 bg-main-0 px-3 py-2 text-sm outline-none focus:border-primary-500"
                 />
+              </div>
+
+              <div>
+                <label className="text-xs font-bold uppercase text-main-500">Listing Images</label>
+                <input
+                  type="file"
+                  multiple
+                  accept="image/*"
+                  onChange={(e) => setListingForm({ ...listingForm, images_upload: Array.from(e.target.files || []) })}
+                  className="mt-1 w-full rounded-lg border border-main-300 bg-main-0 px-3 py-2 text-sm outline-none file:mr-3 file:rounded-md file:border-0 file:bg-primary-100 file:px-3 file:py-1.5 file:text-xs file:font-bold file:text-primary-700 hover:file:bg-primary-200"
+                />
+                {listingForm.images_upload.length > 0 && (
+                  <p className="mt-1 text-xs font-semibold text-main-500">
+                    {listingForm.images_upload.length} image{listingForm.images_upload.length === 1 ? "" : "s"} selected
+                  </p>
+                )}
               </div>
 
               <div>

@@ -1,6 +1,5 @@
 import { authenticatedFetch } from "@/src/services/auth/authService";
 import { apiUrl } from "@/src/services/config";
-import type { PaginationMeta } from "../commodities/commodityService";
 
 type ApiResponse<T> = {
   success?: boolean;
@@ -47,6 +46,7 @@ export type CommodityListingFormPayload = {
   quantity: number;
   status?: string;
   image_urls?: string[];
+  images_upload?: File[];
 };
 
 export type Order = {
@@ -81,12 +81,14 @@ function getErrorMessage(payload: ApiResponse<unknown> | null, fallback: string)
 }
 
 async function tradeRequest<T>(path: string, init: RequestInit = {}, fallback = "Request failed.") {
+  const headers = new Headers(init.headers);
+  if (!(init.body instanceof FormData) && !headers.has("Content-Type")) {
+    headers.set("Content-Type", "application/json");
+  }
+
   const response = await authenticatedFetch(apiUrl(path), {
     ...init,
-    headers: {
-      "Content-Type": "application/json",
-      ...init.headers,
-    },
+    headers,
   });
   const payload = (await response.json().catch(() => null)) as ApiResponse<T> | null;
 
@@ -99,16 +101,21 @@ async function tradeRequest<T>(path: string, init: RequestInit = {}, fallback = 
   return payload;
 }
 
-function normalizePagination(meta: Record<string, unknown> | undefined, fallbackCount: number): PaginationMeta {
-  const pagination = (meta?.pagination ?? {}) as Partial<PaginationMeta>;
-  return {
-    page: Number(pagination.page ?? 1),
-    page_size: Number(pagination.page_size ?? fallbackCount),
-    total_items: Number(pagination.total_items ?? fallbackCount),
-    total_pages: Number(pagination.total_pages ?? 1),
-    has_next: Boolean(pagination.has_next),
-    has_previous: Boolean(pagination.has_previous),
-  };
+function listingPayloadToFormData(data: Partial<CommodityListingFormPayload>) {
+  const formData = new FormData();
+  Object.entries(data).forEach(([key, value]) => {
+    if (value === undefined || value === null) return;
+    if (key === "image_urls" && Array.isArray(value)) {
+      value.forEach((url) => formData.append("image_urls", url));
+      return;
+    }
+    if (key === "images_upload" && Array.isArray(value)) {
+      value.forEach((file) => formData.append("images_upload", file));
+      return;
+    }
+    formData.append(key, String(value));
+  });
+  return formData;
 }
 
 export async function listListings(params: {
@@ -137,7 +144,7 @@ export async function createListing(data: CommodityListingFormPayload) {
     "/listings",
     {
       method: "POST",
-      body: JSON.stringify(data),
+      body: listingPayloadToFormData(data),
     },
     "Could not create commodity listing."
   );
@@ -149,7 +156,7 @@ export async function updateListing(listingId: string, data: Partial<CommodityLi
     `/listings/${listingId}`,
     {
       method: "PATCH",
-      body: JSON.stringify(data),
+      body: listingPayloadToFormData(data),
     },
     "Could not update commodity listing."
   );
