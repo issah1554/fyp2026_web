@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+import { Toaster } from "@/src/components/ui/Toast";
 import "bootstrap-icons/font/bootstrap-icons.css";
 import "./globals.css";
 
@@ -21,7 +22,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${inter.className} bg-main-50 text-main-900 antialiased`}>{children}</body>
+      <body className={`${inter.className} bg-main-50 text-main-900 antialiased`}>
+        {children}
+        <Toaster />
+      </body>
     </html>
   );
 }

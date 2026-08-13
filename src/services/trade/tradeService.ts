@@ -163,6 +163,30 @@ export async function updateListing(listingId: string, data: Partial<CommodityLi
   return { message: payload.message ?? "Listing updated successfully.", listing: payload.data };
 }
 
+export async function addListingImages(listingId: string, files: File[]) {
+  const formData = new FormData();
+  files.forEach((file) => formData.append("images_upload", file));
+
+  const payload = await tradeRequest<ListingImage[]>(
+    `/listings/${listingId}/images`,
+    {
+      method: "POST",
+      body: formData,
+    },
+    "Could not add listing images."
+  );
+  return { message: payload.message ?? "Listing image(s) added successfully.", images: payload.data ?? [] };
+}
+
+export async function deleteListingImage(listingId: string, imageId: string) {
+  const payload = await tradeRequest<unknown>(
+    `/listings/${listingId}/images/${imageId}`,
+    { method: "DELETE" },
+    "Could not delete listing image."
+  );
+  return payload.message ?? "Listing image deleted successfully.";
+}
+
 export async function deleteListing(listingId: string) {
   const payload = await tradeRequest<unknown>(
     `/listings/${listingId}`,

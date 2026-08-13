@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/src/app/(public)/auth/hooks/useAuth";
-import { userCan } from "@/src/services/auth/authService";
 import {
   listOrders,
   updateOrderStatus,
@@ -45,7 +44,10 @@ export default function OrdersPage() {
   }, [isLoggedIn]);
 
   useEffect(() => {
-    void loadData();
+    const timeout = window.setTimeout(() => {
+      void loadData();
+    }, 0);
+    return () => window.clearTimeout(timeout);
   }, [loadData]);
 
   // Separate orders
@@ -91,14 +93,6 @@ export default function OrdersPage() {
 
   return (
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 py-4">
-      {/* Header */}
-      <section className="rounded-xl border border-main-200 bg-main-100 p-6 shadow-sm">
-        <h1 className="text-2xl font-extrabold text-main-950 sm:text-3xl">Trade Orders</h1>
-        <p className="mt-2 text-sm text-main-600">
-          Track purchases and incoming sales orders, accept trades, and update shipment status.
-        </p>
-      </section>
-
       {/* Tabs */}
       <div className="flex border-b border-main-200">
         <button
@@ -188,7 +182,7 @@ export default function OrdersPage() {
         <div className="rounded-xl border border-dashed border-main-300 py-16 text-center text-main-500 bg-main-100">
           <i className="bi bi-receipt text-4xl text-main-300" />
           <p className="mt-4 text-base font-bold text-main-800">No orders found</p>
-          <p className="text-xs text-main-500">You don't have any orders listed in this tab.</p>
+          <p className="text-xs text-main-500">You don&apos;t have any orders listed in this tab.</p>
         </div>
       ) : (
         <div className="overflow-x-auto rounded-xl border border-main-200 bg-main-100 shadow-sm">

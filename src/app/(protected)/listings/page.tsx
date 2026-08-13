@@ -1,15 +1,13 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { useAuth } from "@/src/app/(public)/auth/hooks/useAuth";
 import { userCan } from "@/src/services/auth/authService";
 import {
   listListings,
-  createListing,
-  updateListing,
   deleteListing,
   type CommodityListing,
-  type CommodityListingFormPayload,
 } from "../../../services/trade/tradeService";
 import { listCommodities, type Commodity } from "../../../services/commodities/commodityService";
 import { listAreas, type Area } from "../../../services/areas/areaService";
@@ -43,23 +41,6 @@ export default function ProtectedListingsPage() {
   const [selectedCommodity, setSelectedCommodity] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("");
 
-  // Modals
-  const [listingModalOpen, setListingModalOpen] = useState(false);
-  const [editingListing, setEditingListing] = useState<CommodityListing | null>(null);
-  const [submitting, setSubmitting] = useState(false);
-
-  // Form
-  const [listingForm, setListingForm] = useState({
-    title: "",
-    description: "",
-    commodity_id: "",
-    adm_area_id: "",
-    price: 0,
-    quantity: 0,
-    status: "active",
-    images_upload: [] as File[],
-  });
-
   // Load catalogs and listings
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -75,18 +56,8 @@ export default function ProtectedListingsPage() {
         listAreas({ page_size: 1000 }),
       ]);
       setListings(listingsData);
-      const fetchedCommodities = commoditiesData.data || [];
-      const fetchedAreas = areasData.data || [];
-      setCommodities(fetchedCommodities);
-      setAreas(fetchedAreas);
-
-      if (fetchedCommodities.length > 0 && fetchedAreas.length > 0) {
-        setListingForm((prev) => ({
-          ...prev,
-          commodity_id: prev.commodity_id || fetchedCommodities[0].commodity_id,
-          adm_area_id: prev.adm_area_id || fetchedAreas[0].area_id,
-        }));
-      }
+      setCommodities(commoditiesData.data || []);
+      setAreas(areasData.data || []);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load listings data.");
     } finally {
@@ -127,60 +98,6 @@ export default function ProtectedListingsPage() {
     });
   }, [listings, activeTab, searchQuery, user, isAdmin]);
 
-  // Modals triggers
-  const handleOpenCreateModal = () => {
-    setEditingListing(null);
-    setListingForm({
-      title: "",
-      description: "",
-      commodity_id: commodities[0]?.commodity_id || "",
-      adm_area_id: areas[0]?.area_id || "",
-      price: 0,
-      quantity: 0,
-      status: "active",
-      images_upload: [],
-    });
-    setListingModalOpen(true);
-  };
-
-  const handleOpenEditModal = (listing: CommodityListing) => {
-    setEditingListing(listing);
-    setListingForm({
-      title: listing.title,
-      description: listing.description,
-      commodity_id: listing.commodity?.commodity_id || "",
-      adm_area_id: listing.adm_area?.area_id || "",
-      price: parseFloat(listing.price),
-      quantity: parseFloat(listing.quantity),
-      status: listing.status,
-      images_upload: [],
-    });
-    setListingModalOpen(true);
-  };
-
-  // Create or Update Listing API submit
-  const handleListingSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSubmitting(true);
-    setError("");
-    setNotice("");
-    try {
-      if (editingListing) {
-        const response = await updateListing(editingListing.listing_id, listingForm);
-        setNotice(response.message);
-      } else {
-        const response = await createListing(listingForm as CommodityListingFormPayload);
-        setNotice(response.message);
-      }
-      setListingModalOpen(false);
-      await loadData();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to save listing.");
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
   // Delete Listing
   const handleDeleteListing = async (listingId: string) => {
     if (!window.confirm("Are you sure you want to delete this listing?")) return;
@@ -197,12 +114,6 @@ export default function ProtectedListingsPage() {
 
   return (
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
-      {/* Title */}
-      <div>
-        <h1 className="text-2xl font-bold text-main-950">Listings Workspace</h1>
-        <p className="text-sm text-main-600">Create and manage your commodity offerings or review platform listings.</p>
-      </div>
-
       {/* Tabs */}
       {isAdmin && (
         <div className="flex border-b border-main-200">
@@ -298,13 +209,13 @@ export default function ProtectedListingsPage() {
           </select>
 
           {activeTab === "my-listings" && canCreate && (
-            <button
-              onClick={handleOpenCreateModal}
+            <Link
+              href="/listings/new"
               className="flex items-center gap-2 rounded-lg bg-primary-600 px-4 py-2 text-sm font-bold text-main-0 hover:bg-primary-700 transition-all cursor-pointer"
             >
               <i className="bi bi-plus-lg" />
               Create Listing
-            </button>
+            </Link>
           )}
         </div>
       </section>
@@ -374,13 +285,19 @@ export default function ProtectedListingsPage() {
                     {new Date(item.created_at).toLocaleDateString()}
                   </td>
                   <td className="py-4 px-4 text-right space-x-2">
+                    <Link
+                      href={`/listings/${item.listing_id}`}
+                      className="rounded border border-main-300 bg-main-100 px-2.5 py-1.5 text-xs font-bold text-main-700 hover:border-primary-300 hover:text-primary-700 transition-colors cursor-pointer"
+                    >
+                      View
+                    </Link>
                     {(canUpdate || item.seller_id === user?.id) && (
-                      <button
-                        onClick={() => handleOpenEditModal(item)}
+                      <Link
+                        href={`/listings/${item.listing_id}/edit`}
                         className="rounded border border-main-300 bg-main-100 px-2.5 py-1.5 text-xs font-bold text-main-700 hover:border-primary-300 hover:text-primary-700 transition-colors cursor-pointer"
                       >
                         Edit
-                      </button>
+                      </Link>
                     )}
                     {(canDelete || item.seller_id === user?.id) && (
                       <button
@@ -398,142 +315,6 @@ export default function ProtectedListingsPage() {
         </div>
       )}
 
-      {/* Listing Form Modal */}
-      {listingModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-main-950/40 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-xl border border-main-200 bg-main-100 p-6 shadow-xl">
-            <h2 className="text-xl font-bold text-main-950">
-              {editingListing ? "Edit Commodity Listing" : "Create Commodity Listing"}
-            </h2>
-            <form onSubmit={(e) => void handleListingSubmit(e)} className="mt-4 space-y-4">
-              <div>
-                <label className="text-xs font-bold uppercase text-main-500">Listing Title</label>
-                <input
-                  type="text"
-                  required
-                  value={listingForm.title}
-                  onChange={(e) => setListingForm({ ...listingForm, title: e.target.value })}
-                  placeholder="e.g. Grade A Maize Stock"
-                  className="mt-1 w-full rounded-lg border border-main-300 bg-main-0 px-3 py-2 text-sm outline-none focus:border-primary-500"
-                />
-              </div>
-
-              <div>
-                <label className="text-xs font-bold uppercase text-main-500">Commodity</label>
-                <select
-                  value={listingForm.commodity_id}
-                  onChange={(e) => setListingForm({ ...listingForm, commodity_id: e.target.value })}
-                  className="mt-1 w-full rounded-lg border border-main-300 bg-main-0 px-3 py-2 text-sm outline-none focus:border-primary-500"
-                >
-                  {commodities.map((c) => (
-                    <option key={c.commodity_id} value={c.commodity_id}>
-                      {c.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-xs font-bold uppercase text-main-500">Quantity</label>
-                  <input
-                    type="number"
-                    step="any"
-                    required
-                    min="0"
-                    value={listingForm.quantity || ""}
-                    onChange={(e) => setListingForm({ ...listingForm, quantity: parseFloat(e.target.value) || 0 })}
-                    className="mt-1 w-full rounded-lg border border-main-300 bg-main-0 px-3 py-2 text-sm outline-none focus:border-primary-500"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs font-bold uppercase text-main-500">Price (TZS)</label>
-                  <input
-                    type="number"
-                    step="any"
-                    required
-                    min="0"
-                    value={listingForm.price || ""}
-                    onChange={(e) => setListingForm({ ...listingForm, price: parseFloat(e.target.value) || 0 })}
-                    className="mt-1 w-full rounded-lg border border-main-300 bg-main-0 px-3 py-2 text-sm outline-none focus:border-primary-500"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="text-xs font-bold uppercase text-main-500">Location Area</label>
-                <select
-                  value={listingForm.adm_area_id}
-                  onChange={(e) => setListingForm({ ...listingForm, adm_area_id: e.target.value })}
-                  className="mt-1 w-full rounded-lg border border-main-300 bg-main-0 px-3 py-2 text-sm outline-none focus:border-primary-500"
-                >
-                  {areas.map((a) => (
-                    <option key={a.area_id} value={a.area_id}>
-                      {a.name} ({a.level})
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="text-xs font-bold uppercase text-main-500">Description</label>
-                <textarea
-                  value={listingForm.description}
-                  onChange={(e) => setListingForm({ ...listingForm, description: e.target.value })}
-                  placeholder="Provide details..."
-                  className="mt-1 h-24 w-full rounded-lg border border-main-300 bg-main-0 px-3 py-2 text-sm outline-none focus:border-primary-500"
-                />
-              </div>
-
-              <div>
-                <label className="text-xs font-bold uppercase text-main-500">Listing Images</label>
-                <input
-                  type="file"
-                  multiple
-                  accept="image/*"
-                  onChange={(e) => setListingForm({ ...listingForm, images_upload: Array.from(e.target.files || []) })}
-                  className="mt-1 w-full rounded-lg border border-main-300 bg-main-0 px-3 py-2 text-sm outline-none file:mr-3 file:rounded-md file:border-0 file:bg-primary-100 file:px-3 file:py-1.5 file:text-xs file:font-bold file:text-primary-700 hover:file:bg-primary-200"
-                />
-                {listingForm.images_upload.length > 0 && (
-                  <p className="mt-1 text-xs font-semibold text-main-500">
-                    {listingForm.images_upload.length} image{listingForm.images_upload.length === 1 ? "" : "s"} selected
-                  </p>
-                )}
-              </div>
-
-              <div>
-                <label className="text-xs font-bold uppercase text-main-500">Listing Status</label>
-                <select
-                  value={listingForm.status}
-                  onChange={(e) => setListingForm({ ...listingForm, status: e.target.value })}
-                  className="mt-1 w-full rounded-lg border border-main-300 bg-main-0 px-3 py-2 text-sm outline-none focus:border-primary-500"
-                >
-                  <option value="active">Active</option>
-                  <option value="sold">Sold</option>
-                  <option value="inactive">Inactive</option>
-                </select>
-              </div>
-
-              <div className="flex justify-end gap-2 border-t border-main-200 pt-4">
-                <button
-                  type="button"
-                  onClick={() => setListingModalOpen(false)}
-                  className="rounded-lg border border-main-300 bg-main-0 px-4 py-2 text-sm font-bold text-main-700 hover:bg-main-50 cursor-pointer"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className="rounded-lg bg-primary-600 px-4 py-2 text-sm font-bold text-main-0 hover:bg-primary-700 disabled:opacity-60 cursor-pointer"
-                >
-                  {submitting ? "Saving..." : "Save"}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
