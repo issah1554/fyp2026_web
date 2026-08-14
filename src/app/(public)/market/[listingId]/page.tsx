@@ -216,7 +216,7 @@ export default function MarketplaceListingDetailPage() {
             </div>
             <div className="rounded-lg bg-main-100 p-4">
               <p className="text-2xs font-bold uppercase text-main-500">Status</p>
-              <p className="mt-1 font-bold capitalize text-main-800">{listing.status}</p>
+              <p className="mt-1 font-bold capitalize text-main-800">{listing.status.replace("_", " ")}</p>
             </div>
           </div>
 
@@ -234,7 +234,7 @@ export default function MarketplaceListingDetailPage() {
               />
               <button
                 type="submit"
-                disabled={submitting || isOwnListing || orderQuantity <= 0 || orderQuantity > stock}
+                disabled={submitting || isOwnListing || listing.status !== "available" || orderQuantity <= 0 || orderQuantity > stock}
                 className="rounded-lg bg-primary-600 px-5 py-2 text-sm font-bold text-main-0 hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {isOwnListing ? "Your Listing" : submitting ? "Submitting..." : isLoggedIn ? "Buy Now" : "Login to Buy"}

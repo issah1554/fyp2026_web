@@ -56,7 +56,7 @@ export function ListingFormPage({ mode, listing }: Props) {
     adm_area_id: listing?.adm_area?.area_id ?? "",
     price: listing ? parseFloat(listing.price) : 0,
     quantity: listing ? parseFloat(listing.quantity) : 0,
-    status: listing?.status ?? "active",
+    status: listing?.status ?? "available",
     images_upload: [],
   });
   const [savedListingState, setSavedListingState] = useState<SavedListingState | null>(
@@ -301,9 +301,10 @@ export function ListingFormPage({ mode, listing }: Props) {
             </Field>
             <Field label="Listing Status">
               <select value={form.status} onChange={(event) => setForm({ ...form, status: event.target.value })} className={inputClass}>
-                <option value="active">Active</option>
-                <option value="sold">Sold</option>
-                <option value="inactive">Inactive</option>
+                <option value="available">Available</option>
+                <option value="sold_out">Sold Out</option>
+                <option value="draft">Draft</option>
+                <option value="archived">Archived</option>
               </select>
             </Field>
           </div>

@@ -95,7 +95,7 @@ export default function MarketplacePage() {
         listListings({
           area_id: selectedArea || undefined,
           commodity_id: selectedCommodity || undefined,
-          status: "active",
+          status: "available",
         }),
         listCommodities(),
       ]);
@@ -119,7 +119,7 @@ export default function MarketplacePage() {
   const activeListingAreas = useMemo<ActiveArea[]>(() => {
     const result = new Map<string, ActiveArea>();
     listings.forEach((item) => {
-      if (item.status === "active" && item.adm_area) {
+      if (item.status === "available" && item.adm_area) {
         const areaId = item.adm_area.area_id;
         const existing = result.get(areaId);
         if (existing) {

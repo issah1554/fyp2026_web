@@ -17,8 +17,9 @@ function statusClass(status: string) {
   if (status === "pending") return "bg-warning-100 text-warning-700";
   if (status === "accepted") return "bg-primary-100 text-primary-700";
   if (status === "completed") return "bg-success-100 text-success-700";
-  if (status === "active") return "bg-success-100 text-success-700";
-  if (status === "sold") return "bg-primary-100 text-primary-700";
+  if (status === "available") return "bg-success-100 text-success-700";
+  if (status === "sold_out") return "bg-primary-100 text-primary-700";
+  if (status === "draft") return "bg-warning-100 text-warning-700";
   return "bg-danger-100 text-danger-700";
 }
 
@@ -171,7 +172,7 @@ export default function ListingDetailsPage() {
             <div className="rounded-lg border border-main-200 bg-main-0 p-3">
               <p className="text-xs font-bold uppercase text-main-500">Status</p>
               <span className={`mt-2 inline-block rounded-full px-2.5 py-1 text-2xs font-bold uppercase ${statusClass(listing.status)}`}>
-                {listing.status}
+                {listing.status.replace("_", " ")}
               </span>
             </div>
           </div>

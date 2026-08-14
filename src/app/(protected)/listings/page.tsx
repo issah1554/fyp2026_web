@@ -204,9 +204,10 @@ export default function ProtectedListingsPage() {
             className="rounded-lg border border-main-300 bg-main-0 px-3 py-2 text-sm outline-none focus:border-primary-500 transition-colors"
           >
             <option value="">All Statuses</option>
-            <option value="active">Active</option>
-            <option value="sold">Sold</option>
-            <option value="inactive">Inactive</option>
+            <option value="available">Available</option>
+            <option value="sold_out">Sold Out</option>
+            <option value="draft">Draft</option>
+            <option value="archived">Archived</option>
           </select>
 
           {activeTab === "my-listings" && canCreate && (
@@ -267,14 +268,16 @@ export default function ProtectedListingsPage() {
                   <td className="py-4 px-4">
                     <span
                       className={`rounded-full px-2.5 py-1 text-2xs font-bold uppercase ${
-                        item.status === "active"
+                        item.status === "available"
                           ? "bg-success-100 text-success-700"
-                          : item.status === "sold"
+                          : item.status === "sold_out"
                           ? "bg-primary-100 text-primary-700"
+                          : item.status === "draft"
+                          ? "bg-warning-100 text-warning-700"
                           : "bg-main-200 text-main-600"
                       }`}
                     >
-                      {item.status}
+                      {item.status.replace("_", " ")}
                     </span>
                   </td>
                   {activeTab === "system-listings" && (
