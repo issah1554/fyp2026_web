@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 "use client";
 
 import Link from "next/link";
@@ -117,6 +118,7 @@ export default function ListingDetailsPage() {
         <div className="overflow-hidden rounded-xl border border-main-200 bg-main-100 shadow-sm">
           <div className="group relative aspect-video bg-main-200">
             {selectedImage ? (
+               
               <img src={selectedImage.image_url} alt={listing.title} className="h-full w-full object-cover" />
             ) : (
               <div className="flex h-full items-center justify-center text-main-400">
@@ -199,7 +201,7 @@ export default function ListingDetailsPage() {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[48rem] text-left text-sm">
+            <table className="w-full min-w-3xl text-left text-sm">
               <thead>
                 <tr className="border-b border-main-200 bg-main-200/50 text-xs font-bold uppercase text-main-500">
                   <th className="px-4 py-3">Order ID</th>
