@@ -189,6 +189,37 @@ export function Sidebar({
         ],
       },
       {
+        title: "ML Management",
+        icon: <i className="bi bi-cpu" />,
+        items: [
+          {
+            label: "Overview",
+            to: "/ml",
+            requiredPermission: ["ml.manage", "analytics.manage"],
+          },
+          {
+            label: "Models",
+            to: "/ml/models",
+            requiredPermission: ["ml.manage", "analytics.manage"],
+          },
+          {
+            label: "Training",
+            to: "/ml/training",
+            requiredPermission: ["ml.manage", "analytics.manage"],
+          },
+          {
+            label: "Predictions",
+            to: "/ml/predictions",
+            requiredPermission: ["ml.manage", "analytics.manage"],
+          },
+          {
+            label: "Evaluation",
+            to: "/ml/evaluation",
+            requiredPermission: ["ml.manage", "analytics.manage"],
+          },
+        ],
+      },
+      {
         title: "Admin",
         icon: <i className="bi bi-people" />,
         items: [
