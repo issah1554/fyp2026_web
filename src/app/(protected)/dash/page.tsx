@@ -49,7 +49,7 @@ export default function DashboardPage() {
     const [marketsRes, pricesRes, listingsRes, usersRes, healthRes] = await Promise.allSettled([
       listMarkets({ page: 1, page_size: 1 }),
       listMarketPrices({ page: 1, page_size: 6 }),
-      listListings(),
+      listListings({ page: 1, page_size: 1 }),
       listUsers({ page: 1, page_size: 1 }),
       checkMarketIntegrationHealth(),
     ]);
@@ -62,7 +62,7 @@ export default function DashboardPage() {
       setRecentPrices(pricesRes.value.data);
     }
     if (listingsRes.status === "fulfilled") {
-      setTradeListingsCount(listingsRes.value.length);
+      setTradeListingsCount(listingsRes.value.pagination.total_items);
     }
     if (usersRes.status === "fulfilled") {
       setUsersCount(usersRes.value.pagination.total_items);

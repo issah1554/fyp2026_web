@@ -1,12 +1,15 @@
+/* eslint-disable @next/next/no-img-element */
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/src/app/(public)/auth/hooks/useAuth";
+import Pagination from "@/src/components/ui/Pagination";
 import {
   listListings,
   createOrder,
   type CommodityListing,
+  type PaginationMeta,
 } from "../../../services/trade/tradeService";
 import { listCommodities, type Commodity } from "../../../services/commodities/commodityService";
 import { listAreas, type Area, type AreaLevel } from "../../../services/areas/areaService";
@@ -14,6 +17,15 @@ import { listAreas, type Area, type AreaLevel } from "../../../services/areas/ar
 type PriceRangeOption = "any" | "under-50k" | "50k-150k" | "over-150k";
 type SortOption = "recommended" | "price-asc" | "price-desc" | "newest";
 type ActiveArea = { area_id: string; name: string; level: AreaLevel | null; count: number };
+
+const emptyPagination: PaginationMeta = {
+  page: 1,
+  page_size: 9,
+  total_items: 0,
+  total_pages: 1,
+  has_next: false,
+  has_previous: false,
+};
 
 export type CartItem = {
   listing: CommodityListing;
@@ -40,6 +52,9 @@ export default function MarketplacePage() {
   const [selectedCommodity, setSelectedCommodity] = useState("");
   const [priceRange, setPriceRange] = useState<PriceRangeOption>("any");
   const [sortBy, setSortBy] = useState<SortOption>("recommended");
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(9);
+  const [pagination, setPagination] = useState<PaginationMeta>(emptyPagination);
 
   // Cart state
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -91,22 +106,43 @@ export default function MarketplacePage() {
     setLoading(true);
     setError("");
     try {
+      const priceFilters =
+        priceRange === "under-50k"
+          ? { max_price: 49999 }
+          : priceRange === "50k-150k"
+            ? { min_price: 50000, max_price: 150000 }
+            : priceRange === "over-150k"
+              ? { min_price: 150001 }
+              : {};
+      const ordering =
+        sortBy === "price-asc"
+          ? "price"
+          : sortBy === "price-desc"
+            ? "-price"
+            : sortBy === "newest"
+              ? "-created_at"
+              : undefined;
       const [listingsData, commoditiesData] = await Promise.all([
         listListings({
           area_id: selectedArea || undefined,
           commodity_id: selectedCommodity || undefined,
           status: "available",
+          ordering,
+          page,
+          page_size: pageSize,
+          ...priceFilters,
         }),
         listCommodities(),
       ]);
-      setListings(listingsData);
+      setListings(listingsData.data);
+      setPagination(listingsData.pagination);
       setCommodities(commoditiesData.data || []);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load listings and catalog data.");
     } finally {
       setLoading(false);
     }
-  }, [selectedArea, selectedCommodity]);
+  }, [page, pageSize, priceRange, selectedArea, selectedCommodity, sortBy]);
 
   useEffect(() => {
     const timeout = window.setTimeout(() => {
@@ -172,26 +208,11 @@ export default function MarketplacePage() {
         }
       }
 
-      // Price Range Filter
-      const price = parseFloat(item.price);
-      if (priceRange === "under-50k" && price >= 50000) return false;
-      if (priceRange === "50k-150k" && (price < 50000 || price > 150000)) return false;
-      if (priceRange === "over-150k" && price <= 150000) return false;
-
       return true;
     });
 
-    // Sorting
-    if (sortBy === "price-asc") {
-      list.sort((a, b) => parseFloat(a.price) - parseFloat(b.price));
-    } else if (sortBy === "price-desc") {
-      list.sort((a, b) => parseFloat(b.price) - parseFloat(a.price));
-    } else if (sortBy === "newest") {
-      list.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-    }
-
     return list;
-  }, [listings, searchQuery, priceRange, sortBy]);
+  }, [listings, searchQuery]);
 
   // Cart operations
   const addToCart = (listing: CommodityListing, qty: number = 1) => {
@@ -365,6 +386,7 @@ export default function MarketplacePage() {
     setSelectedAreaObj(area);
     setLocationSearch(area.name);
     setLocationDropdownOpen(false);
+    setPage(1);
   };
 
   const handleAreaClear = () => {
@@ -374,12 +396,14 @@ export default function MarketplacePage() {
     setLocationDropdownOpen(false);
     setLocationResults([]);
     locationFetchedQueryRef.current = undefined;
+    setPage(1);
   };
 
   // Quick area pill click
   const handleQuickAreaSelect = (areaId: string, areaName: string) => {
     setSelectedArea(areaId);
     setLocationSearch(areaName);
+    setPage(1);
     void listAreas({ search: areaName, page_size: 20 }).then((res) => {
       const match = res.data?.find((a) => a.area_id === areaId);
       if (match) setSelectedAreaObj(match);
@@ -423,6 +447,7 @@ export default function MarketplacePage() {
                     setLocationSearch(e.target.value);
                     setSelectedArea("");
                     setLocationDropdownOpen(true);
+                    setPage(1);
                   }}
                   className="w-full rounded-lg border border-main-400 bg-main-0 py-2 pl-9 pr-8 text-xs text-main-900 outline-none focus:border-primary-500 transition-colors"
                 />
@@ -481,7 +506,10 @@ export default function MarketplacePage() {
                 <i className="bi bi-basket absolute left-3 top-1/2 -translate-y-1/2 text-main-400" />
                 <select
                   value={selectedCommodity}
-                  onChange={(e) => setSelectedCommodity(e.target.value)}
+                  onChange={(e) => {
+                    setSelectedCommodity(e.target.value);
+                    setPage(1);
+                  }}
                   className="w-full rounded-lg border border-main-400 bg-main-0 py-2 pl-9 pr-4 text-xs text-main-900 outline-none focus:border-primary-500 transition-colors cursor-pointer"
                 >
                   <option value="" className="bg-main-0 text-main-900">Any commodity</option>
@@ -501,7 +529,10 @@ export default function MarketplacePage() {
                 <i className="bi bi-cash-stack absolute left-3 top-1/2 -translate-y-1/2 text-main-400" />
                 <select
                   value={priceRange}
-                  onChange={(e) => setPriceRange(e.target.value as PriceRangeOption)}
+                  onChange={(e) => {
+                    setPriceRange(e.target.value as PriceRangeOption);
+                    setPage(1);
+                  }}
                   className="w-full rounded-lg border border-main-400 bg-main-0 py-2 pl-9 pr-4 text-xs text-main-900 outline-none focus:border-primary-500 transition-colors cursor-pointer"
                 >
                   <option value="any" className="bg-main-0 text-main-900">Any price</option>
@@ -523,6 +554,7 @@ export default function MarketplacePage() {
                   setSearchQuery("");
                   setSortBy("recommended");
                   setLocationSearch("");
+                  setPage(1);
                 }}
                 className="w-full flex items-center justify-center gap-2 rounded-lg border border-main-400 bg-main-0 py-2 text-xs font-bold text-main-700 hover:bg-main-100 hover:text-main-900 transition-all cursor-pointer shadow-sm"
               >
@@ -533,9 +565,27 @@ export default function MarketplacePage() {
           </div>
 
           {/* Results count */}
-          <p className="text-sm font-semibold text-main-600">
-            {filteredListings.length.toLocaleString()} results found
-          </p>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm font-semibold text-main-600">
+              {pagination.total_items.toLocaleString()} results found
+            </p>
+            <label className="flex items-center gap-2 text-xs font-bold text-main-600">
+              Per page
+              <select
+                value={pageSize}
+                onChange={(event) => {
+                  setPageSize(Number(event.target.value));
+                  setPage(1);
+                }}
+                className="rounded-md border border-main-300 bg-main-0 px-2 py-1.5 text-xs text-main-900 outline-none focus:border-primary-500"
+              >
+                <option value={6}>6</option>
+                <option value={9}>9</option>
+                <option value={12}>12</option>
+                <option value={24}>24</option>
+              </select>
+            </label>
+          </div>
         </div>
       </section>
 
@@ -602,15 +652,16 @@ export default function MarketplacePage() {
             <p className="text-xs text-main-500">Try adjusting your locations, commodity filters, or search keywords.</p>
           </div>
         ) : (
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {filteredListings.map((item) => {
-              const isItemInCart = cart.some((c) => c.listing.listing_id === item.listing_id);
+          <>
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {filteredListings.map((item) => {
+                const isItemInCart = cart.some((c) => c.listing.listing_id === item.listing_id);
 
-              return (
-                <div
-                  key={item.listing_id}
-                  className="group flex flex-col justify-between overflow-hidden rounded-xl border border-main-200 bg-main-100 p-5 shadow-sm hover:shadow-md transition-all duration-200 relative"
-                >
+                return (
+                  <div
+                    key={item.listing_id}
+                    className="group flex flex-col justify-between overflow-hidden rounded-xl border border-main-200 bg-main-100 p-5 shadow-sm hover:shadow-md transition-all duration-200 relative"
+                  >
                   {/* Cart quick-add icon button on top right (Replaces heart icon) */}
                   <button
                     type="button"
@@ -751,10 +802,22 @@ export default function MarketplacePage() {
                       )}
                     </div>
                   </div>
-                </div>
-              );
-            })}
-          </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <Pagination
+              page={pagination.page}
+              pageSize={pageSize}
+              totalItems={pagination.total_items}
+              onChange={setPage}
+              showHelper
+              size="sm"
+              rounded="full"
+              className="justify-end"
+            />
+          </>
         )}
       </div>
 

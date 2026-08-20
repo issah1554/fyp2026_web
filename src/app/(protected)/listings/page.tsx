@@ -52,11 +52,13 @@ export default function ProtectedListingsPage() {
           area_id: selectedArea || undefined,
           commodity_id: selectedCommodity || undefined,
           status: selectedStatus || undefined,
+          page: 1,
+          page_size: 100,
         }),
         listCommodities(),
         listAreas({ page_size: 1000 }),
       ]);
-      setListings(listingsData);
+      setListings(listingsData.data);
       setCommodities(commoditiesData.data || []);
       setAreas(areasData.data || []);
     } catch (err) {

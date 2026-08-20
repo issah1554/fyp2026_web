@@ -109,8 +109,8 @@ export default function ReportsPage() {
       }
       if (includeListings) {
         tasks.push(
-          listListings().then((res) => {
-            exportPackage.trade_listings = res;
+          listListings({ page: 1, page_size: 100 }).then((res) => {
+            exportPackage.trade_listings = res.data;
           }),
         );
       }

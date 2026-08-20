@@ -9,6 +9,15 @@ type ApiResponse<T> = {
   meta?: Record<string, unknown>;
 };
 
+export type PaginationMeta = {
+  page: number;
+  page_size: number;
+  total_items: number;
+  total_pages: number;
+  has_next: boolean;
+  has_previous: boolean;
+};
+
 export type ListingImage = {
   image_id: string;
   image_url: string;
@@ -82,6 +91,11 @@ export type OrderFormPayload = {
   quantity: number;
 };
 
+export type ListingCollection = {
+  data: CommodityListing[];
+  pagination: PaginationMeta;
+};
+
 function getErrorMessage(payload: ApiResponse<unknown> | null, fallback: string) {
   if (payload?.message) {
     return payload.message;
@@ -140,15 +154,38 @@ export async function listListings(params: {
   commodity_id?: string;
   area_id?: string;
   status?: string;
-} = {}): Promise<CommodityListing[]> {
+  min_price?: number;
+  max_price?: number;
+  ordering?: "price" | "-price" | "created_at" | "-created_at";
+  page?: number;
+  page_size?: number;
+} = {}): Promise<ListingCollection> {
   const query = new URLSearchParams();
   if (params.commodity_id) query.set("commodity_id", params.commodity_id);
   if (params.area_id) query.set("area_id", params.area_id);
   if (params.status) query.set("status", params.status);
+  if (params.min_price !== undefined) query.set("min_price", String(params.min_price));
+  if (params.max_price !== undefined) query.set("max_price", String(params.max_price));
+  if (params.ordering) query.set("ordering", params.ordering);
+  if (params.page) query.set("page", String(params.page));
+  if (params.page_size) query.set("page_size", String(params.page_size));
 
   const path = `/listings${query.toString() ? `?${query.toString()}` : ""}`;
   const payload = await tradeRequest<CommodityListing[]>(path, {}, "Could not load commodity listings.");
-  return payload.data ?? [];
+  const data = payload.data ?? [];
+  const pagination = ((payload.meta ?? {}).pagination ?? {}) as Partial<PaginationMeta>;
+
+  return {
+    data,
+    pagination: {
+      page: Number(pagination.page ?? params.page ?? 1),
+      page_size: Number(pagination.page_size ?? params.page_size ?? 9),
+      total_items: Number(pagination.total_items ?? data.length),
+      total_pages: Number(pagination.total_pages ?? 1),
+      has_next: Boolean(pagination.has_next),
+      has_previous: Boolean(pagination.has_previous),
+    },
+  };
 }
 
 export async function getListing(listingId: string): Promise<CommodityListing> {
