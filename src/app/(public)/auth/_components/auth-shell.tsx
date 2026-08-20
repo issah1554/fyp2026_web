@@ -11,6 +11,7 @@ export default function AuthShell({ children, contentClassName = "" }: AuthShell
     <main className="flex min-h-screen items-center justify-center bg-[url('/rice-field.jpg')] bg-cover bg-center px-4 text-main-900">
       <section className="grid w-full max-w-6xl overflow-hidden rounded-lg lg:grid-cols-[0.95fr_1.05fr]">
         
+        {/*  */}
         <div className="flex min-h-72 items-center justify-center bg-primary-700/80 px-5 py-8 text-main-0 lg:min-h-124">
           <div className="flex flex-col items-center text-center">
             <div className="flex size-24 items-center justify-center rounded-full bg-main-100 p-3 shadow-lg shadow-primary-900">
