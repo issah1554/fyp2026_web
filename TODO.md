@@ -6,4 +6,5 @@
 - [ ] Remove the topnav & footer in authentication module
 - [ ] The authentication shell should be responsive i.e. the left column should hide
       in small screens
-- [ ] Prepare the
+- [ ] Fix the add new price form inside (protected)/markets page, the form requires the quantity
+      field to be filled in, but the quantity field is not visible in the form.
